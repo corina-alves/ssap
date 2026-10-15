@@ -1,0 +1,33 @@
+:root{--sssp-navy:#071a2c;--sssp-blue:#075bb5;--sssp-cyan:#12a8d2;--sssp-text:#18324a;--sssp-muted:#6d7f91;--sssp-bg:#f4f7fb;--sssp-border:#dfe8f1}
+body.public-page{background:var(--sssp-bg);color:var(--sssp-text);font-family:'Inter','Segoe UI',sans-serif}
+.public-hero{position:relative;overflow:hidden;padding:72px 0 64px;background:linear-gradient(135deg,#071a2c 0%,#0a4677 62%,#087ca4 100%);color:#fff}
+.public-hero:after{content:"";position:absolute;width:420px;height:420px;border-radius:50%;right:-140px;top:-170px;background:rgba(255,255,255,.08)}
+.public-hero .container{position:relative;z-index:2}.public-kicker{display:inline-flex;gap:8px;align-items:center;padding:7px 12px;border-radius:999px;background:rgba(255,255,255,.11);border:1px solid rgba(255,255,255,.14);font-size:.78rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase}
+.public-hero h1{font-size:clamp(2.1rem,4vw,3.6rem);font-weight:800;margin:18px 0 12px}.public-hero p{max-width:760px;color:#dcecf7;font-size:1.03rem;line-height:1.7;margin:0}
+.public-content{padding:48px 0 70px}.public-toolbar{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:24px}.public-search{position:relative;min-width:min(100%,380px);flex:0 1 430px}.public-search i{position:absolute;left:15px;top:50%;transform:translateY(-50%);color:#8496a8}.public-search input{width:100%;border:1px solid var(--sssp-border);border-radius:14px;padding:12px 16px 12px 42px;background:#fff;outline:none}.public-search input:focus{border-color:#79bde8;box-shadow:0 0 0 4px rgba(7,91,181,.08)}
+.info-card,.boletim-card{background:#fff;border:1px solid var(--sssp-border);border-radius:20px;box-shadow:0 12px 34px rgba(26,62,91,.07)}.boletim-card{padding:22px;height:100%;transition:.2s ease}.boletim-card:hover{transform:translateY(-3px);box-shadow:0 18px 38px rgba(26,62,91,.11)}.boletim-icon{width:48px;height:48px;border-radius:14px;display:grid;place-items:center;background:linear-gradient(145deg,#075bb5,#14a9d1);color:white;font-size:1.3rem}.boletim-title{font-size:1rem;font-weight:800;color:#17344e;margin:16px 0 7px}.boletim-meta{font-size:.78rem;color:var(--sssp-muted);margin-bottom:17px}.btn-public{display:inline-flex;align-items:center;gap:8px;border-radius:12px;padding:10px 14px;text-decoration:none;font-weight:700;font-size:.86rem;background:#075bb5;color:#fff;border:0}.btn-public:hover{background:#064e9a;color:#fff}.btn-public-light{background:#eef6fc;color:#075bb5}.btn-public-light:hover{background:#e0effa;color:#064e9a}.empty-state{background:#fff;border:1px dashed #cbd9e5;border-radius:20px;padding:48px 24px;text-align:center;color:var(--sssp-muted)}.empty-state i{font-size:2.2rem;color:#7aaed3}.empty-state h3{font-size:1.15rem;color:#24435d;margin-top:14px}
+.info-card{padding:26px}.info-card h2,.info-card h3{font-weight:800;color:#17344e}.info-card p{color:#667b8d;line-height:1.7}.quick-link{display:flex;align-items:flex-start;gap:15px;text-decoration:none;color:inherit;padding:18px;border:1px solid var(--sssp-border);border-radius:16px;background:#fff;height:100%;transition:.2s}.quick-link:hover{transform:translateY(-2px);border-color:#90c6e8;box-shadow:0 10px 28px rgba(26,62,91,.08)}.quick-link .qicon{width:44px;height:44px;border-radius:13px;display:grid;place-items:center;flex:0 0 44px;background:#eaf5fc;color:#075bb5;font-size:1.2rem}.quick-link strong{display:block;color:#193a56;margin-bottom:5px}.quick-link small{color:#738698;line-height:1.45;display:block}.status-pill{display:inline-flex;align-items:center;gap:7px;padding:6px 10px;border-radius:999px;font-size:.76rem;font-weight:800;background:#eaf7f1;color:#20774e}.section-eyebrow{font-size:.76rem;font-weight:800;color:#087aaa;text-transform:uppercase;letter-spacing:.06em}.section-heading{font-size:1.55rem;font-weight:800;color:#17344e;margin:5px 0 8px}.section-copy{color:#6c8092;max-width:760px}.public-footer{background:#071a2c;color:#b9ccda;padding:28px 0;font-size:.83rem}.public-footer a{color:#d9edf8;text-decoration:none}.public-footer a:hover{color:#fff}
+@media(max-width:767px){.public-hero{padding:52px 0 45px}.public-content{padding:34px 0 50px}.public-toolbar{align-items:stretch}.public-search{flex-basis:100%}}
+
+/* ---------------------------------------------------------------------------
+   Padrão de tabelas nas páginas públicas
+   Cabeçalho com cor de destaque + linhas com tom suave (zebra) e realce no hover.
+--------------------------------------------------------------------------- */
+.sssp-section-card table thead th,
+.sssp-section-card .table thead th {
+  background: var(--sssp-blue, #0b4f8a);
+  color: #fff;
+  font-weight: 700;
+  border-color: var(--sssp-blue, #0b4f8a);
+  vertical-align: middle;
+}
+.sssp-section-card table tbody tr:nth-child(even) > *,
+.sssp-section-card .table tbody tr:nth-child(even) > * {
+  background: #f4f8fc;
+}
+.sssp-section-card table tbody tr:hover > *,
+.sssp-section-card .table tbody tr:hover > * {
+  background: #e9f1f9;
+}
+.sssp-section-card table th,
+.sssp-section-card table td { padding: 10px 12px; }

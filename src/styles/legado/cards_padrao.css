@@ -1,0 +1,195 @@
+/* =========================================================
+   PADRÃO DE CARDS — SALA DE SITUAÇÃO ALFREDO PISANI
+   Mantém as cores operacionais/semânticas e uniformiza
+   os demais cards no padrão claro das páginas públicas.
+========================================================= */
+:root{
+    --ss-card-bg:#f5f9fd;
+    --ss-card-border:#bfd3e3;
+    --ss-card-text:#17344e;
+    --ss-card-muted:#526b80;
+    --ss-card-shadow:0 12px 30px rgba(18,58,91,.13);
+    --ss-card-shadow-hover:0 18px 38px rgba(18,58,91,.20);
+    --ss-blue:#075bb5; --ss-blue-soft:#dcecff;
+    --ss-cyan:#078daa; --ss-cyan-soft:#d5f2f8;
+    --ss-green:#087f68; --ss-green-soft:#d9f1ea;
+    --ss-orange:#d8750d; --ss-orange-soft:#ffe9cb;
+    --ss-purple:#6848c7; --ss-purple-soft:#e8e1ff;
+    --ss-red:#cb4050; --ss-red-soft:#ffdde1;
+}
+
+/* Base compartilhada */
+.card-precipitacao,
+.card-vazao,
+.card-reservatorio,
+.card-protocolo,
+.card-resolucao-ana-daee,
+.monitor-card,
+.status-card,
+.card-monitoramento,
+.card-volume,
+.info-box{
+    --card-accent:var(--ss-blue);
+    --card-soft:var(--ss-blue-soft);
+    background:linear-gradient(145deg,var(--card-soft) 0%,var(--ss-card-bg) 48%,#ffffff 100%) !important;
+    color:var(--ss-card-text) !important;
+    border:1px solid var(--ss-card-border) !important;
+    border-top:4px solid var(--card-accent) !important;
+    border-radius:20px !important;
+    box-shadow:var(--ss-card-shadow) !important;
+    transition:transform .22s ease, box-shadow .22s ease, border-color .22s ease !important;
+    position:relative;
+}
+
+.card-precipitacao,
+.card-vazao,
+.card-reservatorio,
+.card-protocolo,
+.card-resolucao-ana-daee,
+.monitor-card,
+.status-card,
+.card-monitoramento{padding:22px !important;}
+
+.card-precipitacao:hover,
+.card-vazao:hover,
+.card-reservatorio:hover,
+.card-protocolo:hover,
+.card-resolucao-ana-daee:hover,
+.monitor-card:hover,
+.status-card:hover,
+.card-monitoramento:hover,
+.card-volume:hover{
+    transform:translateY(-3px) !important;
+    border-color:color-mix(in srgb, var(--card-accent) 42%, #dce8f1) !important;
+    box-shadow:var(--ss-card-shadow-hover) !important;
+}
+
+/* Tipografia interna */
+.card-precipitacao h1,.card-precipitacao h2,.card-precipitacao h3,.card-precipitacao h4,.card-precipitacao h5,.card-precipitacao h6,
+.card-vazao h1,.card-vazao h2,.card-vazao h3,.card-vazao h4,.card-vazao h5,.card-vazao h6,
+.card-reservatorio h1,.card-reservatorio h2,.card-reservatorio h3,.card-reservatorio h4,.card-reservatorio h5,.card-reservatorio h6,
+.card-protocolo h1,.card-protocolo h2,.card-protocolo h3,.card-protocolo h4,.card-protocolo h5,.card-protocolo h6,
+.card-resolucao-ana-daee h1,.card-resolucao-ana-daee h2,.card-resolucao-ana-daee h3,.card-resolucao-ana-daee h4,.card-resolucao-ana-daee h5,.card-resolucao-ana-daee h6,
+.monitor-card h1,.monitor-card h2,.monitor-card h3,.monitor-card h4,.monitor-card h5,.monitor-card h6,
+.status-card h1,.status-card h2,.status-card h3,.status-card h4,.status-card h5,.status-card h6,
+.card-monitoramento h1,.card-monitoramento h2,.card-monitoramento h3,.card-monitoramento h4,.card-monitoramento h5,.card-monitoramento h6,
+.info-box h1,.info-box h2,.info-box h3,.info-box h4,.info-box h5,.info-box h6{
+    color:var(--ss-card-text) !important;
+    font-weight:800;
+}
+
+.card-precipitacao p,.card-vazao p,.card-reservatorio p,.card-protocolo p,.card-resolucao-ana-daee p,
+.monitor-card p,.status-card p,.card-monitoramento p,.info-box p,
+.card-precipitacao small,.card-vazao small,.card-reservatorio small,.card-protocolo small,.card-resolucao-ana-daee small,
+.monitor-card small,.status-card small,.card-monitoramento small,.info-box small{
+    color:var(--ss-card-muted) !important;
+}
+
+.card-precipitacao .text-white,.card-vazao .text-white,.card-reservatorio .text-white,
+.card-protocolo .text-white,.card-resolucao-ana-daee .text-white,
+.monitor-card .text-white,.status-card .text-white,.card-monitoramento .text-white,.info-box .text-white{
+    color:var(--ss-card-muted) !important;
+}
+
+/* Ícone sem necessidade de alterar o HTML */
+.card-precipitacao > i:first-child,
+.card-vazao > i:first-child,
+.card-reservatorio > i:first-child,
+.card-protocolo > i:first-child,
+.card-resolucao-ana-daee > i:first-child,
+.status-card > i:first-child,
+.card-monitoramento > i:first-child,
+.icon-box{
+    width:52px;
+    height:52px;
+    display:inline-grid;
+    place-items:center;
+    border-radius:15px;
+    background:var(--card-soft) !important;
+    color:var(--card-accent) !important;
+    font-size:1.45rem !important;
+    line-height:1;
+    margin-bottom:4px;
+}
+
+.card-precipitacao h5 > i,
+.card-vazao h5 > i,
+.card-reservatorio h5 > i,
+.card-protocolo h5 > i,
+.card-resolucao-ana-daee h5 > i{
+    color:var(--card-accent) !important;
+}
+
+/* Caixa informativa clara com faixa de cor */
+.info-box{
+    border-left:4px solid var(--card-accent) !important;
+    padding:20px 22px !important;
+}
+
+/* Variações automáticas em grupos de cards */
+.row > [class*="col-"]:nth-child(6n+1) :is(.card-precipitacao,.card-vazao,.card-reservatorio,.card-protocolo,.card-resolucao-ana-daee,.monitor-card,.status-card,.card-monitoramento,.card-volume,.info-box){--card-accent:var(--ss-blue);--card-soft:var(--ss-blue-soft)}
+.row > [class*="col-"]:nth-child(6n+2) :is(.card-precipitacao,.card-vazao,.card-reservatorio,.card-protocolo,.card-resolucao-ana-daee,.monitor-card,.status-card,.card-monitoramento,.card-volume,.info-box){--card-accent:var(--ss-cyan);--card-soft:var(--ss-cyan-soft)}
+.row > [class*="col-"]:nth-child(6n+3) :is(.card-precipitacao,.card-vazao,.card-reservatorio,.card-protocolo,.card-resolucao-ana-daee,.monitor-card,.status-card,.card-monitoramento,.card-volume,.info-box){--card-accent:var(--ss-orange);--card-soft:var(--ss-orange-soft)}
+.row > [class*="col-"]:nth-child(6n+4) :is(.card-precipitacao,.card-vazao,.card-reservatorio,.card-protocolo,.card-resolucao-ana-daee,.monitor-card,.status-card,.card-monitoramento,.card-volume,.info-box){--card-accent:var(--ss-green);--card-soft:var(--ss-green-soft)}
+.row > [class*="col-"]:nth-child(6n+5) :is(.card-precipitacao,.card-vazao,.card-reservatorio,.card-protocolo,.card-resolucao-ana-daee,.monitor-card,.status-card,.card-monitoramento,.card-volume,.info-box){--card-accent:var(--ss-purple);--card-soft:var(--ss-purple-soft)}
+.row > [class*="col-"]:nth-child(6n+6) :is(.card-precipitacao,.card-vazao,.card-reservatorio,.card-protocolo,.card-resolucao-ana-daee,.monitor-card,.status-card,.card-monitoramento,.card-volume,.info-box){--card-accent:var(--ss-red);--card-soft:var(--ss-red-soft)}
+
+/* Cards de volume: destaque com filete superior */
+.card-volume{
+    position:relative;
+    overflow:hidden;
+    padding:22px !important;
+}
+.card-volume::before{
+    content:"";
+    position:absolute;
+    inset:0 0 auto 0;
+    height:4px;
+    background:var(--card-accent);
+}
+.card-volume h5{color:var(--ss-card-text) !important;font-weight:800}
+.card-volume .volume-numero{color:var(--card-accent) !important}
+
+/* Monitoramento: imagens ficam mais leves dentro do card branco */
+.monitor-card img{border:1px solid #e3edf4;box-shadow:none !important;}
+.status-card{text-align:center;}
+.status-card .card-subtitle{color:#738698 !important;}
+
+/* Cards de previsão antigos */
+.previsao-card,.card-chuva,.mini-card,.temp-box,.tendencia{
+    background:#fff !important;
+    color:var(--ss-card-text) !important;
+    border:1px solid var(--ss-card-border) !important;
+    box-shadow:var(--ss-card-shadow) !important;
+}
+.previsao-card h1,.previsao-card h2,.previsao-card h3,.previsao-card h4,.previsao-card h5,.previsao-card h6,
+.card-chuva h1,.card-chuva h2,.card-chuva h3,.card-chuva h4,.card-chuva h5,.card-chuva h6,
+.mini-card h6,.temp-box strong{color:var(--ss-card-text) !important}
+.previsao-card p,.previsao-card small,.card-chuva p,.card-chuva small,.mini-card small,.temp-box small,.descricao-tempo,.dia-previsao,.dia-previsao span{
+    color:var(--ss-card-muted) !important;
+}
+.icone-tempo{background:var(--ss-blue-soft) !important;color:var(--ss-blue) !important;}
+.temperatura,.valor-chuva{color:var(--ss-blue) !important;}
+
+/* Cards Bootstrap genéricos em áreas públicas */
+.public-page .card,
+main .card:not(.loader-card):not(.dashboard-card){
+    border:1px solid var(--ss-card-border);
+    border-radius:20px;
+    box-shadow:var(--ss-card-shadow);
+    background:#f8fbfe;
+}
+
+/* Não altera as cores semânticas de estágios/alertas */
+.estagio.e0,.estagio-mini.e0,.normal{--card-accent:#16a34a}
+.estagio.e1,.estagio-mini.e1,.atencao{--card-accent:#eab308}
+.estagio.e2,.estagio-mini.e2,.alerta{--card-accent:#f97316}
+.estagio.e3,.estagio-mini.e3,.critico{--card-accent:#dc2626}
+.estagio.e4,.estagio-mini.e4,.emergencia{--card-accent:#7e22ce}
+
+@media(max-width:767.98px){
+    .card-precipitacao,.card-vazao,.card-reservatorio,.card-protocolo,
+    .card-resolucao-ana-daee,.monitor-card,.status-card,.card-monitoramento,.card-volume,.info-box{
+        border-radius:18px !important;
+    }
+}

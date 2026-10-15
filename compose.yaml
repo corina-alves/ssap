@@ -1,0 +1,262 @@
+# Sala de Situação — banco + migrações + aplicação (produção).
+#
+#   1. cp .env.docker.example .env.docker         (ajuste o endereço público)
+#   2. crie as senhas em secrets/                  (veja DOCKER.md)
+#   3. docker compose up -d --build
+#   4. docker compose run --rm ferramentas npm run admin:criar
+#
+# A aplicação fica em http://127.0.0.1:3000 (só na própria máquina). Para
+# publicar com HTTPS, use o perfil "proxy" ou o proxy reverso da instituição.
+# Desenvolvimento: compose.dev.yaml. Passo a passo completo: DOCKER.md.
+
+name: sala-situacao
+
+x-logs: &logs
+  driver: json-file
+  options:
+    max-size: '10m' # cada serviço guarda no máximo 5 arquivos de 10 MB
+    max-file: '5'
+
+x-banco: &banco # como a aplicação e as ferramentas chegam ao banco
+  DB_HOST: db
+  DB_PORTA: '5432'
+  DB_NOME: ssap
+  DB_USUARIO: ssap_app
+  DB_SENHA_ARQUIVO: /run/secrets/app_db_password
+
+x-protegido: &protegido # contêiner sem privilégios extras
+  security_opt:
+    - no-new-privileges:true
+  cap_drop:
+    - ALL
+
+services:
+  db:
+    image: postgres:18.6
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ssap
+      POSTGRES_USER: postgres # administrador: só para manutenção; a aplicação NÃO usa
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+      APP_DB_USER: ssap_app # criado na primeira subida por db/docker-init, sem superusuário
+      APP_DB_PASSWORD_FILE: /run/secrets/app_db_password
+      POSTGRES_INITDB_ARGS: --encoding=UTF8 --locale-provider=icu --icu-locale=pt-BR
+      TZ: America/Sao_Paulo
+      PGTZ: America/Sao_Paulo
+    secrets:
+      - postgres_password
+      - app_db_password
+    volumes:
+      - banco:/var/lib/postgresql # dados do PostgreSQL — FAZER BACKUP
+      - ./db/docker-init:/docker-entrypoint-initdb.d:ro
+    networks:
+      - interna # sem porta publicada: só os outros contêineres alcançam o banco
+    shm_size: 256mb
+    stop_grace_period: 1m
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add: # o mínimo para o PostgreSQL ajustar a pasta de dados e trocar para o usuário postgres
+      - CHOWN
+      - DAC_OVERRIDE
+      - FOWNER
+      - SETGID
+      - SETUID
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 1g
+    logging: *logs
+
+  # Garante que os volumes de arquivos e de cache pertencem ao usuário da aplicação (1000).
+  # Roda a cada subida, termina na hora e não mexe no conteúdo.
+  permissoes:
+    image: postgres:18.6
+    restart: 'no'
+    user: root
+    network_mode: none
+    volumes:
+      - arquivos:/dados/storage
+      - cache:/dados/cache
+    entrypoint: ['chown', '1000:1000', '/dados/storage', '/dados/cache']
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+    logging: *logs
+
+  # Aplica as migrações que faltam e termina. Também roda scripts (admin:criar, integracoes:testar).
+  ferramentas:
+    build:
+      context: .
+      target: ferramentas
+    image: sala-situacao-ferramentas
+    restart: 'no'
+    env_file: .env.docker
+    environment:
+      <<: *banco
+    secrets:
+      - app_db_password
+    command: ['npm', 'run', 'db:migrar']
+    volumes:
+      - arquivos:/dados/storage # para o script arquivos:banco
+    depends_on:
+      db:
+        condition: service_healthy
+      permissoes:
+        condition: service_completed_successfully
+    networks:
+      - interna
+      - externa # scripts que consultam as APIs (integracoes:testar)
+    <<: *protegido
+    logging: *logs
+
+  app:
+    build:
+      context: .
+      target: app
+    image: sala-situacao-app
+    restart: unless-stopped
+    init: true
+    env_file: .env.docker
+    environment:
+      <<: *banco
+    secrets:
+      - app_db_password
+    ports:
+      - '127.0.0.1:${APP_PORTA:-3000}:3000' # só na própria máquina; o proxy reverso é quem publica
+    volumes:
+      - arquivos:/dados/storage # PDFs e documentos — FAZER BACKUP
+      - cache:/dados/cache # cache das integrações — descartável
+    read_only: true # o contêiner só escreve nos volumes e nas pastas temporárias abaixo
+    tmpfs:
+      - /tmp
+      - /app/.next/cache:uid=1000,gid=1000
+    depends_on:
+      ferramentas:
+        condition: service_completed_successfully
+    networks:
+      - interna
+      - externa # saída para as APIs (SABESP, ANA, SIBH, SSD, Open-Meteo, IBGE…)
+    <<: *protegido
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 1536m
+    logging: *logs
+
+  # Proxy reverso com HTTPS (opcional):  docker compose --profile proxy up -d
+  # Certificado em deploy/certs/fullchain.pem e deploy/certs/privkey.pem.
+  proxy:
+    profiles: [proxy]
+    image: nginx:1.30.5-alpine
+    restart: unless-stopped
+    env_file: .env.docker # SERVIDOR_NOME
+    ports:
+      - '${PROXY_PORTA_HTTP:-80}:80'
+      - '${PROXY_PORTA_HTTPS:-443}:443'
+    volumes:
+      - ./deploy/nginx/ssap.conf.template:/etc/nginx/templates/default.conf.template:ro
+      - ./deploy/certs:/etc/nginx/certs:ro
+    depends_on:
+      app:
+        condition: service_healthy
+    networks:
+      - externa
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ['CMD-SHELL', 'wget -q -O /dev/null http://127.0.0.1/saude-proxy || exit 1']
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 256m
+    logging: *logs
+
+  # Backup do banco e dos arquivos em ./backups:  docker compose run --rm backup
+  backup:
+    profiles: [manutencao]
+    image: postgres:18.6
+    restart: 'no'
+    user: '1000:1000' # o mesmo usuário dos arquivos enviados
+    environment:
+      <<: *banco
+      HOME: /tmp
+      TZ: America/Sao_Paulo
+      BACKUP_MANTER_DIAS: ${BACKUP_MANTER_DIAS:-} # vazio = nunca apaga backup antigo
+    secrets:
+      - app_db_password
+    volumes:
+      - ./docker/backup.sh:/usr/local/bin/backup.sh:ro
+      - arquivos:/dados/storage:ro
+      - ./backups:/backups
+    entrypoint: ['sh', '/usr/local/bin/backup.sh']
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - interna
+    <<: *protegido
+    logging: *logs
+
+  # Restauração (substitui o banco pelo do backup):
+  #   docker compose stop app
+  #   docker compose run --rm -e CONFIRMAR=SIM restaurar ssap_AAAAMMDD-HHMMSS
+  restaurar:
+    profiles: [manutencao]
+    image: postgres:18.6
+    restart: 'no'
+    user: '1000:1000'
+    environment:
+      <<: *banco
+      HOME: /tmp
+      TZ: America/Sao_Paulo
+      CONFIRMAR: ${CONFIRMAR:-}
+    secrets:
+      - app_db_password
+    volumes:
+      - ./docker/restaurar.sh:/usr/local/bin/restaurar.sh:ro
+      - arquivos:/dados/storage
+      - ./backups:/backups:ro
+    entrypoint: ['sh', '/usr/local/bin/restaurar.sh']
+    depends_on:
+      db:
+        condition: service_healthy
+      permissoes:
+        condition: service_completed_successfully
+    networks:
+      - interna
+    <<: *protegido
+    logging: *logs
+
+networks:
+  interna:
+    internal: true # sem saída para a internet nem entrada de fora
+  externa:
+
+volumes:
+  banco:
+  arquivos:
+  cache:
+
+# Senhas em arquivos fora do repositório (pasta secrets/, ignorada pelo git).
+secrets:
+  postgres_password:
+    file: ./secrets/postgres_password.txt
+  app_db_password:
+    file: ./secrets/app_db_password.txt

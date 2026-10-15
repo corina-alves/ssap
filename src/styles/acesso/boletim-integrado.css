@@ -1,0 +1,152 @@
+/* Boletins mensais do Alto Tietê (Chuva-Vazão, Mananciais e Exutórios), dentro da área administrativa.
+   Tela: cartões nas cores do logo SP Águas. Impressão ("Gerar PDF"): some a moldura da área e cada
+   cartão vira uma folha A4 paisagem, com capa, título e logos. As regras ficam presas a .bi-area. */
+.bi-area {
+  --azul: #0050FF; --azul-escuro: #0039C4; --marinho: #0B1F5C; --verde: #00B154; --borda: #D8E0EC;
+
+  .bi-faixa { display: flex; align-items: center; justify-content: space-between; gap: 18px; flex-wrap: wrap; background: linear-gradient(120deg, var(--marinho), var(--azul-escuro) 55%, var(--azul)); border-bottom: 5px solid var(--verde); border-radius: 12px; color: #fff; padding: 14px 20px; margin-bottom: 16px; }
+  .bi-faixa small { display: block; font-size: 11.5px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; opacity: .85; }
+  .bi-faixa strong { display: block; font-size: 21px; line-height: 1.2; }
+  .bi-faixa span { font-size: 14.5px; opacity: .92; }
+  .bi-faixa-logos { display: flex; align-items: center; gap: 12px; background: #fff; border-radius: 10px; padding: 6px 12px; }
+  .bi-faixa-logos img { height: 40px; width: auto; display: block; }
+  .bi-barra { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; justify-content: space-between; }
+  .bi-barra > * { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-end; }
+  .bi-barra label { display: block; font-size: 12px; font-weight: 700; color: var(--ac-cinza, #475569); margin-bottom: 2px; }
+  .status-edicao { font-size: 13px; font-weight: 600; }
+  .carregando-boletim { text-align: center; padding: 60px 20px; color: #475569; background: #fff; border: 1px dashed var(--borda); border-radius: 12px; }
+
+  /* ---- Páginas do boletim */
+  .capa-boletim { display: none; }
+  .slide-tela { background: #fff; border: 1px solid var(--borda); border-top: 4px solid var(--azul-escuro); border-radius: 12px; padding: 18px 22px; margin-bottom: 22px; overflow-x: auto; box-shadow: 0 4px 18px rgba(15, 23, 42, .06); }
+  .slide-cab { display: flex; align-items: center; justify-content: center; gap: 16px; margin-bottom: 14px; }
+  .slide-tela-titulo { flex: 1; text-align: center; font-size: 21px; font-weight: 800; color: var(--marinho); margin: 0; line-height: 1.25; }
+  .slide-logos { display: none; align-items: center; gap: 3mm; }
+  .slide-logos img { height: 13mm; width: auto; }
+  .divisoria-tela { background: linear-gradient(90deg, var(--azul-escuro), var(--azul)); border-bottom: 5px solid var(--verde); color: #fff; text-align: center; font-size: 19px; font-weight: 800; letter-spacing: .02em; padding: 13px; border-radius: 10px; margin: 28px 0 18px; }
+  .aviso { background: #FDF2E9; border: 1px solid #F0B27A; color: #7E5109; padding: 12px 16px; border-radius: 8px; font-size: 14.5px; margin: 8px auto 16px; max-width: 920px; text-align: center; }
+  .nota { font-size: 12.5px; color: #334155; margin: 8px 0 0; }
+  .nota-fonte { text-align: right; font-style: italic; }
+  .grafico-tela { position: relative; margin-bottom: 10px; }
+  .conteudo-boletim svg { max-width: 100%; height: auto; display: block; margin: 0 auto; }
+  .conteudo-boletim svg text { font-family: "Segoe UI", Arial, sans-serif; }
+  
+  /* Mapa */
+  .mapa-titulo { text-align: center; font-weight: 700; font-style: italic; color: #C00000; font-size: 15px; margin-bottom: 8px; }
+  .mapa-svg svg { width: 100%; max-width: 940px; border-radius: 8px; }
+  .mapa-legenda { display: flex; flex-wrap: wrap; justify-content: center; gap: 18px; font-size: 13px; margin-top: 8px; }
+  .mapa-legenda i { display: inline-block; width: 11px; height: 11px; border-radius: 50%; margin-right: 6px; }
+  
+  /* Tabelas */
+  .conteudo-boletim table { border-collapse: collapse; }
+  table.tab-chuva, table.tab-flu, table.carga, table.qual-info { width: 100%; }
+  table.tab-chuva th.titulo-tab, table.carga th { background: linear-gradient(90deg, var(--azul-escuro), var(--azul)); color: #fff; font-size: 18px; padding: 10px; border: 1px solid #fff; }
+  table.tab-chuva th { background: #DCE6FF; color: var(--marinho); font-size: 14px; padding: 9px 6px; border: 1px solid #fff; text-align: center; }
+  table.tab-chuva th.titulo-tab, table.tab-chuva th:first-child { text-align: left; }
+  table.tab-chuva th.hist { background: #C8F0D9; color: #0B4D2A; }
+  table.tab-chuva td { font-size: 15px; text-align: center; padding: 11px 6px; border: 1px solid #fff; }
+  table.tab-chuva td.sub { text-align: left; font-size: 17px; font-weight: 700; }
+  table.tab-chuva tr.impar td { background: #F3F7FF; }
+  table.tab-chuva tr.par td { background: #E6EEFF; }
+  table.tab-flu { font-size: 12px; }
+  table.tab-flu th { background: #1F4E9A; color: #fff; padding: 5px 4px; border: 1px solid #fff; }
+  table.tab-flu td { background: #EAF0FB; padding: 4px 5px; border: 1px solid #fff; text-align: center; }
+  table.tab-flu td.al { text-align: left; }
+  table.tab-flu td.grupo { background: #D5DFF3; font-weight: 700; }
+  table.tab-flu tr.vazao td { font-weight: 700; }
+  td.p-normal { background: #3E8E2F !important; color: #fff; }
+  td.p-atencao { background: #FFFF00 !important; }
+  td.p-alerta { background: #F39C12 !important; }
+  td.p-emerg { background: #FF00FF !important; color: #fff; }
+  td.p-extrav { background: #FF0000 !important; color: #fff; }
+  table.quadro { font-size: 13px; margin: 8px auto 0; }
+  table.quadro td, table.quadro th { border: 1px solid #9FB3C8; padding: 4px 10px; background: #F4F7FC; }
+  table.quadro th { background: #DCE6FF; }
+  table.carga { font-size: 18px; }
+  table.carga th.sub { background: #DCE6FF; color: var(--marinho); font-size: 16px; }
+  table.carga td { background: #F3F7FF; text-align: center; padding: 18px 6px; border: 1px solid #fff; }
+  table.carga tr.media td { background: #E6EEFF; }
+  table.qual-info { font-size: 13px; margin-bottom: 8px; }
+  table.qual-info th { background: var(--azul-escuro); color: #fff; padding: 5px; }
+  table.qual-info td { text-align: center; padding: 5px; border: 1px solid #D0D8E8; }
+  .conama-titulo { text-align: center; font-size: 13px; margin-bottom: 4px; }
+  table.conama { font-size: 13px; margin: 0 auto 8px; }
+  table.conama th { background: var(--azul-escuro); color: #fff; padding: 4px 8px; border: 1px solid #fff; }
+  table.conama td { padding: 4px 10px; text-align: center; border: 1px solid #fff; background: #F2F2F2; }
+  table.conama tr.conf td.rot { background: #C4D79B; }
+  table.conama tr.nconf td.rot { background: #E6B9B8; }
+  .grade-qual { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .grade-qual > div { border: 1px solid #E2E8F0; border-radius: 8px; padding: 6px; min-width: 0; }
+  .grade-qual h3 { font-size: 13px; margin: 0 0 4px; color: var(--marinho); }
+  .grade-qual .nota { padding: 10px; }
+  
+  /* Análise e edição */
+  .analise-tela { margin-top: 12px; background: #F8FAFC; border-left: 5px solid var(--verde); border-radius: 8px; padding: 10px 14px; }
+  .analise-tela.vazia { display: none; }
+  .analise-rotulo { font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--azul-escuro); margin-bottom: 4px; }
+  .analise-texto { font-size: 14px; line-height: 1.55; }
+  .ajustado { color: #B45309; font-weight: 700; }
+  .ajustado::after { content: "*"; }
+  .dados-diarios { margin-top: 10px; display: none; }
+  .dados-diarios summary { cursor: pointer; font-weight: 700; color: var(--marinho); padding: 6px 0; }
+  .dados-diarios .rolagem { overflow-x: auto; }
+  .dados-diarios table { font-size: 13px; background: #fff; }
+  .dados-diarios th, .dados-diarios td { border: 1px solid #E2E8F0; padding: 4px 10px; text-align: center; }
+  .dados-diarios th { background: #EEF2FF; }
+  .modo-edicao .dados-diarios, .modo-edicao .analise-tela.vazia { display: block; }
+  .modo-edicao .analise-tela { border-left-color: #F59E0B; }
+  .modo-edicao .analise-texto { min-height: 44px; outline: 2px dashed #F59E0B; outline-offset: 4px; border-radius: 4px; cursor: text; }
+  .modo-edicao .analise-tela.vazia .analise-texto:empty::before { content: "Clique para escrever a análise desta seção…"; color: #94A3B8; }
+  .modo-edicao .editavel { cursor: pointer; background: #FEF3C7; border-radius: 4px; padding: 1px 4px; outline: 1px dashed #F59E0B; }
+  .modo-edicao .editavel:hover { background: #FDE68A; }
+  .editavel input { width: 90px; font: inherit; padding: 2px 4px; border: 2px solid #F59E0B; border-radius: 4px; text-align: right; }
+  
+  /* ---- Cadastro dos exutórios */
+  .form-exut textarea { min-height: 170px; font: 13px Consolas, monospace; }
+  .form-exut .colunas { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 18px; }
+  .form-exut .rolagem { max-height: 360px; overflow: auto; }
+  .form-exut table th { position: sticky; top: 0; }
+
+  @media (max-width: 760px) {
+    .slide-tela { padding: 12px 10px; }
+    .slide-tela-titulo { font-size: 17px; }
+    .grade-qual { grid-template-columns: 1fr; }
+  }
+}
+
+/* ---- Impressão: A4 paisagem, uma página do boletim por folha.
+   A classe "imprimindo" entra antes da impressão para os gráficos serem redesenhados na largura da folha. */
+@page { size: A4 landscape; margin: 9mm 11mm 10mm; }
+body.imprimindo .bi-area .conteudo-boletim { width: 1040px; }
+body.imprimindo .bi-area .grafico-tela { height: 400px !important; }
+body.imprimindo .bi-area .slide-tela:has(.grafico-tela + .grafico-tela) .grafico-tela { height: 285px !important; }
+body.imprimindo .bi-area .grade-qual .grafico-tela { height: 150px !important; }
+@media print {
+  body:has(.bi-area) { background: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  /* some a moldura da área administrativa: fica só o boletim */
+  body:has(.bi-area) :is(.acesso-topo, .acesso-menu, .acesso-rodape, .acesso-cabecalho, .acesso-pular) { display: none !important; }
+  body:has(.bi-area) :is(.acesso-app, .acesso-corpo, .acesso-conteudo) { display: block; min-height: 0; max-width: none; margin: 0; padding: 0; background: #fff; }
+  .bi-area {
+    .sem-imprimir, .dados-diarios, .analise-tela.vazia, .conteudo-boletim > .aviso { display: none !important; }
+    .conteudo-boletim { width: auto !important; }
+    .capa-boletim { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; height: 188mm; break-after: page; background: linear-gradient(180deg, #fff, #C6D7F3); border-radius: 4mm; font-weight: 800; }
+    .capa-linha1 { font-size: 34pt; color: #2F4F7A; }
+    .capa-linha2 { font-size: 34pt; color: #0070C0; margin-bottom: 16mm; }
+    .capa-bacia { font-size: 26pt; color: #2F4F7A; line-height: 1.4; }
+    .capa-competencia { font-size: 26pt; color: #2F4F7A; margin: 12mm 0 14mm; }
+    .slide-logos { display: flex; }
+    .capa-boletim .slide-logos img { height: 18mm; }
+    .slide-tela { border: 0; border-radius: 0; box-shadow: none; padding: 0; margin: 0; overflow: visible; break-after: page; break-inside: avoid; }
+    .slide-tela:last-child { break-after: auto; }
+    .slide-cab { border-bottom: 1.2mm solid var(--azul-escuro); padding-bottom: 2mm; margin-bottom: 3mm; }
+    .slide-tela-titulo { font-size: 18pt; color: #000; }
+    .divisoria-tela { display: flex; align-items: center; justify-content: center; height: 188mm; margin: 0; border-radius: 4mm; font-size: 32pt; line-height: 1.35; break-after: page; }
+    .mapa-svg svg { max-width: 235mm; }
+    table.tab-chuva td { padding: 3mm 2mm; }
+    table.tab-flu { font-size: 6.6pt; }
+    table.tab-flu th, table.tab-flu td { padding: .7mm 1.2mm; }
+    table.quadro, table.qual-info, table.conama { font-size: 8.5pt; }
+    .analise-tela { background: #fff; border-left-color: #0070C0; font-size: 10.5pt; }
+    .ajustado { color: inherit; font-weight: inherit; }
+  }
+}

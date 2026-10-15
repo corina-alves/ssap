@@ -1,0 +1,15 @@
+/* Filtros e buscas padronizados - Sala de Situação */
+.sssp-filter-form{align-items:end}
+.sssp-filter-field label,.sssp-filter-form label{font-size:.78rem;font-weight:750;letter-spacing:.015em;color:#526577;margin-bottom:6px}
+.sssp-filter-control,.sssp-filter-form .form-control,.sssp-filter-form .form-select{
+  min-height:46px;border:1px solid #d7e3ed;border-radius:13px;background-color:#fff;color:#172033;
+  box-shadow:0 4px 14px rgba(28,72,105,.045);transition:border-color .18s ease,box-shadow .18s ease,transform .18s ease
+}
+.sssp-filter-control:hover,.sssp-filter-form .form-control:hover,.sssp-filter-form .form-select:hover{border-color:#aac7dc}
+.sssp-filter-control:focus,.sssp-filter-form .form-control:focus,.sssp-filter-form .form-select:focus{
+  border-color:#62aee0;box-shadow:0 0 0 .22rem rgba(7,92,168,.09);outline:0
+}
+.sssp-filter-form input[type="date"]{font-weight:650;color:#23435e}
+.sssp-filter-form .btn-primary,.sssp-filter-form button[type="submit"]{min-height:46px;border-radius:13px;font-weight:750}
+.sssp-filter-form .input-group .form-control{box-shadow:none}
+@media(max-width:767.98px){.sssp-filter-form .btn{width:100%}.sssp-filter-control,.sssp-filter-form .form-control,.sssp-filter-form .form-select{min-height:44px}}

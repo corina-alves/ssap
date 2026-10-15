@@ -1,0 +1,320 @@
+/* =========================================
+NAVBAR
+========================================= */
+
+.menu {
+    background: rgba(8, 16, 25, 0.94);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    padding: 10px 0;
+    z-index: 999;
+}
+
+/* =========================================
+LOGO
+========================================= */
+
+.navbar-brand img {
+    transition: 0.3s;
+}
+
+.navbar-brand img:hover {
+    transform: scale(1.03);
+}
+
+/* =========================================
+LINKS
+========================================= */
+
+.nav-link {
+    color: #d7e2ec !important;
+    padding: 14px 18px !important;
+    font-size: 0.95rem;
+    transition: 0.3s;
+    border-radius: 8px;
+}
+
+.nav-link:hover {
+    color: #34d3ff !important;
+    background: rgba(52,211,255,0.08);
+}
+
+/* =========================================
+DROPDOWN
+========================================= */
+
+.dropdown-menu {
+    background: #08131d;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 18px;
+    padding: 10px;
+    min-width: 240px;
+    margin-top: 10px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+}
+
+.dropdown-item {
+    color: #d7e2ec;
+    border-radius: 12px;
+    padding: 12px 15px;
+    transition: 0.3s;
+    font-size: 0.92rem;
+}
+
+.dropdown-item:hover {
+    background: rgba(52,211,255,0.12);
+    color: #34d3ff;
+}
+
+/* =========================================
+BOTÃO MOBILE
+========================================= */
+
+.navbar-toggler {
+    border: 1px solid rgba(255,255,255,0.15);
+    padding: 8px 12px;
+    border-radius: 12px;
+}
+
+.navbar-toggler:focus {
+    box-shadow: none;
+}
+
+.navbar-toggler-icon {
+    filter: invert(1);
+}
+
+/* =========================================
+MOBILE
+========================================= */
+
+@media (max-width: 991px) {
+
+    .navbar-collapse {
+        background: #08131d;
+        margin-top: 15px;
+        border-radius: 20px;
+        padding: 15px;
+        border: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .navbar-nav {
+        gap: 5px;
+    }
+
+    .nav-link {
+        width: 100%;
+        padding: 14px 16px !important;
+    }
+
+    .dropdown-menu {
+        background: #0d1b2a;
+        border: none;
+        margin-top: 5px;
+        box-shadow: none;
+        padding: 5px;
+    }
+
+    .dropdown-item {
+        padding: 12px 14px;
+    }
+
+}
+
+/* =========================================
+ANIMAÇÃO
+========================================= */
+
+.navbar-collapse {
+    transition: all 0.3s ease;
+}
+
+/* ========================================= HEADER ========================================= */
+    section{
+        width: 100%;
+        /* display: flex; */
+        align-items: center;
+        justify-content: center;
+    }
+
+.header {
+  /* --background-color: rgba(255, 255, 255, 0); */
+  --heading-color: #ffffff;
+  color: var(--default-color);
+  /* background-color: var(--background-color); */
+  padding: 20px 0;
+  transition: all 0.5s;
+  z-index: 997;
+  background-color: transparent;
+}
+
+.header .logo {
+  line-height: 1;
+}
+
+.header .logo img {
+  max-height: 60px;
+  margin-right: 8px;
+  /* filter:invert(); */
+}
+
+.header .logo h1 {
+  font-size: 30px;
+  margin: 0;
+  font-weight: 700;
+  color: var(--heading-color);
+}
+
+.header .btn-getstarted,
+.header .btn-getstarted:focus {
+  color: var(--contrast-color);
+  background: var(--accent-color);
+  font-size: 14px;
+  padding: 8px 25px;
+  margin: 0 0 0 30px;
+  border-radius: 4px;
+  transition: 0.3s;
+}
+
+.header .btn-getstarted:hover,
+.header .btn-getstarted:focus:hover {
+  color: var(--contrast-color);
+  background: color-mix(in srgb, var(--accent-color), transparent 15%);
+}
+
+@media (max-width: 1200px) {
+  .header .logo {
+    order: 1;
+  }
+
+  .header .btn-getstarted {
+    order: 2;
+    margin: 0 15px 0 0;
+    padding: 6px 15px;
+  }
+
+  .header .navmenu {
+    order: 3;
+  }
+}
+
+
+/* ==========================================================
+   PADRÃO VISUAL GLOBAL · SALA DE SITUAÇÃO ALFREDO PISANI
+   ========================================================== */
+:root{
+    --sssp-navy:#071a2c;
+    --sssp-navy-2:#0a2944;
+    --sssp-blue:#075bb5;
+    --sssp-cyan:#12a8d2;
+    --sssp-ice:#eef7fc;
+    --sssp-text:#17344e;
+    --sssp-muted:#6e8294;
+    --sssp-line:#dce7f0;
+    --sssp-shadow:0 16px 45px rgba(17,50,78,.09);
+}
+
+html{scroll-behavior:smooth}
+body{background:#f5f8fb;color:var(--sssp-text);font-family:'Inter','Segoe UI',Arial,sans-serif;-webkit-font-smoothing:antialiased}
+
+.menu{
+    background:linear-gradient(90deg,rgba(5,22,37,.98),rgba(7,36,59,.97));
+    border-bottom:1px solid rgba(255,255,255,.08);
+    box-shadow:0 10px 28px rgba(0,16,31,.18);
+    padding:8px 0;
+    min-height:72px;
+}
+.sssp-nav-shell{max-width:1400px}
+.sssp-brand{display:flex;align-items:center;gap:12px;min-width:max-content;padding:0;margin-right:24px}
+.sssp-brand-logo{width:auto!important;height:46px;max-width:112px;object-fit:contain;transition:.25s ease}
+.sssp-brand:hover .sssp-brand-logo{transform:translateY(-1px) scale(1.02)}
+.sssp-brand-copy{flex-direction:column;line-height:1.05;border-left:1px solid rgba(255,255,255,.18);padding-left:12px;color:#fff}
+.sssp-brand-copy strong{font-size:.86rem;font-weight:800;letter-spacing:.01em}
+.sssp-brand-copy small{font-size:.68rem;color:#9fc5da;margin-top:4px;letter-spacing:.035em;text-transform:uppercase;font-weight:600}
+.sssp-nav-list{gap:2px}
+.menu .nav-link{display:flex;align-items:center;gap:7px;color:#d9e7f1!important;padding:10px 11px!important;font-size:.84rem;font-weight:600;border-radius:11px;white-space:nowrap;position:relative}
+.menu .nav-link:hover{background:rgba(71,194,234,.10);color:#fff!important}
+.menu .nav-link.active{background:rgba(37,180,225,.14);color:#69d9fb!important;box-shadow:inset 0 0 0 1px rgba(84,211,251,.10)}
+.menu .nav-link.active:after{content:"";position:absolute;left:12px;right:12px;bottom:4px;height:2px;border-radius:99px;background:linear-gradient(90deg,#25b9e7,#74e4ff)}
+.sssp-nav-icon{font-size:.92rem;opacity:.92}
+.menu .dropdown-menu{background:rgba(6,25,41,.985);border:1px solid rgba(255,255,255,.09);border-radius:16px;padding:9px;min-width:255px;margin-top:10px;box-shadow:0 22px 50px rgba(0,11,22,.34)}
+.menu .dropdown-header{color:#7399ae;text-transform:uppercase;letter-spacing:.08em;font-size:.64rem;font-weight:800;padding:8px 11px 6px}
+.menu .dropdown-item{display:flex;align-items:center;gap:10px;color:#dce9f2;border-radius:11px;padding:10px 11px;font-size:.84rem;font-weight:600}
+.menu .dropdown-item i{width:20px;text-align:center;color:#58cbea;font-size:.92rem}
+.menu .dropdown-item:hover,.menu .dropdown-item:focus{background:rgba(56,189,232,.12);color:#fff}
+.menu .navbar-toggler{border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.04);padding:8px 10px;border-radius:11px}
+.menu .navbar-toggler-icon{filter:invert(1)}
+
+/* Hero padrão aplicado às páginas legadas */
+.hero-reservatorios,.hero-precipitacao,.hero-vazao,.hero-protocolo,.monitor-hero,.hero-resolucao-ana-daee{
+    position:relative!important;
+    overflow:hidden;
+    min-height:auto!important;
+    padding:64px 0 58px!important;
+    background:linear-gradient(135deg,#071a2c 0%,#0a4677 62%,#087ca4 100%)!important;
+    color:#fff!important;
+    border-radius:0!important;
+    box-shadow:none!important;
+}
+.hero-reservatorios:before,.hero-precipitacao:before,.hero-vazao:before,.hero-protocolo:before,.monitor-hero:before,.hero-resolucao-ana-daee:before{
+    content:"";position:absolute;width:420px;height:420px;border-radius:50%;right:-150px;top:-190px;background:rgba(255,255,255,.07);pointer-events:none
+}
+.hero-reservatorios:after,.hero-precipitacao:after,.hero-vazao:after,.hero-protocolo:after,.monitor-hero:after,.hero-resolucao-ana-daee:after{
+    content:"";position:absolute;width:220px;height:220px;border-radius:50%;right:18%;bottom:-170px;border:1px solid rgba(255,255,255,.08);pointer-events:none
+}
+.hero-reservatorios .container,.hero-precipitacao .container,.hero-vazao .container,.hero-protocolo .container,.monitor-hero .container,.hero-resolucao-ana-daee .container{position:relative;z-index:2}
+.hero-reservatorios h1,.hero-precipitacao h1,.hero-vazao h1,.hero-protocolo h1,.monitor-hero h1,.hero-resolucao-ana-daee h1{
+    color:#fff!important;font-size:clamp(2rem,3.6vw,3.25rem)!important;line-height:1.08!important;font-weight:800!important;letter-spacing:-.035em;margin:0 0 16px!important;max-width:900px
+}
+.hero-reservatorios .lead,.hero-precipitacao .lead,.hero-vazao .lead,.hero-protocolo .lead,.monitor-hero .lead,.hero-resolucao-ana-daee .lead,
+.hero-reservatorios p,.hero-precipitacao p,.hero-vazao p,.hero-protocolo p,.monitor-hero p,.hero-resolucao-ana-daee p{
+    color:#dcecf7!important;max-width:830px;font-size:1rem!important;line-height:1.7!important;text-align:left!important
+}
+.hero-reservatorios .btn,.hero-precipitacao .btn,.hero-vazao .btn,.hero-protocolo .btn,.monitor-hero .btn,.hero-resolucao-ana-daee .btn{
+    border-radius:12px!important;font-weight:700!important;padding:11px 16px!important;box-shadow:none!important
+}
+
+/* Superfícies e tipografia comuns */
+main,.container.py-4{--bs-gutter-x:1.5rem}
+.card{border-color:var(--sssp-line);border-radius:18px;box-shadow:0 10px 28px rgba(26,62,91,.06)}
+.table{--bs-table-bg:transparent}
+.form-control,.form-select{border-radius:12px;border-color:#d8e4ed}
+.form-control:focus,.form-select:focus{border-color:#75bde4;box-shadow:0 0 0 .22rem rgba(7,91,181,.08)}
+.btn{border-radius:11px;font-weight:650}
+
+/* Resolução / páginas documentais sem hero próprio */
+.sssp-document-hero{position:relative;overflow:hidden;padding:54px 0 46px;background:linear-gradient(135deg,#071a2c 0%,#0a4677 62%,#087ca4 100%);color:#fff}
+.sssp-document-hero:after{content:"";position:absolute;width:360px;height:360px;border-radius:50%;right:-120px;top:-170px;background:rgba(255,255,255,.07)}
+.sssp-document-hero .container{position:relative;z-index:2}
+.sssp-document-hero .sssp-kicker{display:inline-flex;align-items:center;gap:7px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.10);border-radius:999px;padding:7px 11px;text-transform:uppercase;letter-spacing:.055em;font-size:.7rem;font-weight:800}
+.sssp-document-hero h1{font-size:clamp(1.8rem,3.3vw,3rem);font-weight:800;line-height:1.12;letter-spacing:-.03em;margin:15px 0 10px;color:#fff}
+.sssp-document-hero p{max-width:820px;margin:0;color:#dcecf7;line-height:1.65}
+
+@media (max-width:1199.98px){
+    .menu{min-height:66px}
+    .menu .navbar-collapse{background:#081b2c;border:1px solid rgba(255,255,255,.07);border-radius:16px;margin-top:10px;padding:10px;box-shadow:0 16px 34px rgba(0,0,0,.18)}
+    .sssp-nav-list{align-items:stretch!important}
+    .menu .nav-link{padding:11px 12px!important}
+    .menu .nav-link.active:after{display:none}
+    .menu .dropdown-menu{margin:3px 0 7px;background:#0b2337;border:0;box-shadow:none;min-width:100%}
+}
+@media(max-width:767.98px){
+    .sssp-brand-logo{height:40px}
+    .hero-reservatorios,.hero-precipitacao,.hero-vazao,.hero-protocolo,.monitor-hero,.hero-resolucao-ana-daee{padding:48px 0 42px!important}
+    .hero-reservatorios h1,.hero-precipitacao h1,.hero-vazao h1,.hero-protocolo h1,.monitor-hero h1,.hero-resolucao-ana-daee h1{font-size:2rem!important}
+}
+.sssp-hero-kicker{display:inline-flex;align-items:center;gap:8px;padding:7px 12px;margin-bottom:15px;border-radius:999px;background:rgba(255,255,255,.11);border:1px solid rgba(255,255,255,.15);color:#f3fbff;font-size:.72rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase}
+
+
+
+/* ---------------------------------------------------------------------------
+   Largura do conteúdo — telas grandes
+   O .container do Bootstrap limitava o conteúdo a ~1140/1320px, deixando as
+   páginas estreitas em monitores widescreen. Alarga para acompanhar a barra
+   de navegação (.sssp-nav-shell = 1400px) com folga.
+--------------------------------------------------------------------------- */
+.public-page .container { max-width: 1400px; }
+@media (min-width: 1400px) {
+  .public-page .sssp-main > .container,
+  .public-page .sssp-page-hero .container { padding-left: 32px; padding-right: 32px; }
+}

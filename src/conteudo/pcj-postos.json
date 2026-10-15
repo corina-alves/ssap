@@ -1,0 +1,510 @@
+{
+ "chuva": [
+  {
+   "mapa": "53",
+   "rio": "Rio Cachoeira",
+   "local": "Captação Piracaia",
+   "id": 33277
+  },
+  {
+   "mapa": "80",
+   "rio": "Rio Atibainha",
+   "local": "Mascate | Nazaré Paulista",
+   "id": 33279
+  },
+  {
+   "mapa": "54",
+   "rio": "Rio Atibaia",
+   "local": "Atibaia",
+   "id": 33278
+  },
+  {
+   "mapa": "55",
+   "rio": "Rio Atibaia",
+   "local": "Bairro da Ponte | Itatiba",
+   "id": 33271
+  },
+  {
+   "mapa": "56",
+   "rio": "Rio Atibaia",
+   "local": "Captação Valinhos",
+   "id": 28665
+  },
+  {
+   "mapa": "59",
+   "rio": "Rio Atibaia",
+   "local": "Desemb. Furtado | Campinas",
+   "id": 28667
+  },
+  {
+   "mapa": "57",
+   "rio": "Rio Atibaia",
+   "local": "Acima de Paulínia",
+   "id": 33274
+  },
+  {
+   "mapa": "52",
+   "rio": "Rio Jaguari",
+   "local": "Guaripocaba | Bragança Paul.",
+   "id": 33270
+  },
+  {
+   "mapa": "138",
+   "rio": "Rio Jaguari",
+   "local": "Buenópolis | Morungaba",
+   "id": 33267
+  },
+  {
+   "mapa": "49",
+   "rio": "Rio Jaguari",
+   "local": "Jaguariúna",
+   "id": 33269
+  },
+  {
+   "mapa": "50",
+   "rio": "Rio Camanducaia",
+   "local": "Dal Bo | Jaguariúna",
+   "id": 33268
+  },
+  {
+   "mapa": "48",
+   "rio": "Rio Jaguari",
+   "local": "Usina Ester | Cosmópolis",
+   "id": 28715
+  },
+  {
+   "mapa": "863",
+   "rio": "Rio Jaguari",
+   "local": "Captação Limeira | Limeira",
+   "id": 599,
+   "recente": true
+  },
+  {
+   "mapa": "713",
+   "rio": "Rio Piracicaba",
+   "local": "Aimaratá | Americana",
+   "id": 602
+  },
+  {
+   "mapa": "607",
+   "rio": "Rib. Quilombo",
+   "local": "Americana",
+   "id": 837,
+   "recente": true
+  },
+  {
+   "mapa": "599",
+   "rio": "Rio Piracicaba",
+   "local": "Santa Bárbara D'Oeste",
+   "id": 839
+  },
+  {
+   "mapa": "46",
+   "rio": "Rio Piracicaba",
+   "local": "Piracicaba",
+   "id": 33272
+  },
+  {
+   "mapa": "601",
+   "rio": "Rio Corumbataí",
+   "local": "Rio Claro",
+   "id": 813
+  },
+  {
+   "mapa": "630",
+   "rio": "Rio Corumbataí",
+   "local": "Novo Batovi | Rio Claro",
+   "id": 33096
+  },
+  {
+   "mapa": "602",
+   "rio": "Rio Corumbataí",
+   "local": "Captação SEMAE | Piracicaba",
+   "id": 840
+  },
+  {
+   "mapa": "84",
+   "rio": "Rio Piracicaba",
+   "local": "Artemis | Piracicaba",
+   "id": 28721
+  },
+  {
+   "mapa": "603",
+   "rio": "Rio Capivari",
+   "local": "Reforma Agrária | Campinas",
+   "id": 33090
+  },
+  {
+   "mapa": "609",
+   "rio": "Rio Capivari",
+   "local": "Sabesp | Monte Mor",
+   "id": 844
+  },
+  {
+   "mapa": "502",
+   "rio": "Rio Jundiaí",
+   "local": "Itaici | Indaiatuba",
+   "id": 847
+  },
+  {
+   "mapa": "604",
+   "rio": "Rio Jundiaí",
+   "local": "Salto",
+   "id": 849
+  }
+ ],
+ "fluviometria": [
+  {
+   "mapa": "593",
+   "rio": "Rio Cachoeira",
+   "local": "Piracaia",
+   "codigo": "3E-122T",
+   "id": 1430
+  },
+  {
+   "mapa": "53",
+   "rio": "Rio Cachoeira",
+   "local": "Captação Piracaia",
+   "codigo": "3E-116T",
+   "id": 30862
+  },
+  {
+   "mapa": "80",
+   "rio": "Rio Atibainha",
+   "local": "Mascate | Nazaré Paulista",
+   "codigo": "3E-089T",
+   "id": 29652
+  },
+  {
+   "mapa": "54",
+   "rio": "Rio Atibaia",
+   "local": "Atibaia",
+   "codigo": "3E-063T",
+   "id": 30863
+  },
+  {
+   "mapa": "55",
+   "rio": "Rio Atibaia",
+   "local": "Bairro da Ponte | Itatiba",
+   "codigo": "3D-006T",
+   "id": 29591
+  },
+  {
+   "mapa": "56",
+   "rio": "Rio Atibaia",
+   "local": "Captação Valinhos",
+   "codigo": "3D-007T",
+   "id": 30846
+  },
+  {
+   "mapa": "59",
+   "rio": "Rio Atibaia",
+   "local": "Desemb. Furtado | Campinas",
+   "codigo": "3D-003T",
+   "id": 29590
+  },
+  {
+   "mapa": "57",
+   "rio": "Rio Atibaia",
+   "local": "Acima de Paulínia",
+   "codigo": "4D-009RT",
+   "id": 29694
+  },
+  {
+   "mapa": "52",
+   "rio": "Rio Jaguari",
+   "local": "Guaripocaba | Bragança Paul.",
+   "codigo": "3D-015T",
+   "id": 15314
+  },
+  {
+   "mapa": "138",
+   "rio": "Rio Jaguari",
+   "local": "Buenópolis | Morungaba",
+   "codigo": "3D-009T",
+   "id": 29592
+  },
+  {
+   "mapa": "49",
+   "rio": "Rio Jaguari",
+   "local": "Jaguariúna",
+   "codigo": "3D-008T",
+   "id": 30864
+  },
+  {
+   "mapa": "50",
+   "rio": "Rio Camanducaia",
+   "local": "Dal Bo | Jaguariúna",
+   "codigo": "3D-001T",
+   "id": 29588
+  },
+  {
+   "mapa": "48",
+   "rio": "Rio Jaguari",
+   "local": "Usina Ester | Cosmópolis",
+   "codigo": "4D-001T",
+   "id": 29692
+  },
+  {
+   "mapa": "607",
+   "rio": "Rib. Quilombo",
+   "local": "Americana",
+   "codigo": "4D-046",
+   "id": 838,
+   "orto": true
+  },
+  {
+   "mapa": "599",
+   "rio": "Rio Piracicaba",
+   "local": "Santa Bárbara D'Oeste",
+   "codigo": "4D-047",
+   "id": 814,
+   "orto": true
+  },
+  {
+   "mapa": "46",
+   "rio": "Rio Piracicaba",
+   "local": "Piracicaba",
+   "codigo": "4D-015T",
+   "id": 30181
+  },
+  {
+   "mapa": "601",
+   "rio": "Rio Corumbataí",
+   "local": "Rio Claro",
+   "codigo": "4D-048",
+   "id": 812,
+   "orto": true
+  },
+  {
+   "mapa": "630",
+   "rio": "Rio Corumbataí",
+   "local": "Novo Batovi | Rio Claro",
+   "codigo": "4D-042T",
+   "id": 30917,
+   "orto": true
+  },
+  {
+   "mapa": "602",
+   "rio": "Rio Corumbataí",
+   "local": "Captação SEMAE | Piracicaba",
+   "codigo": "4D-049",
+   "id": 841
+  },
+  {
+   "mapa": "84",
+   "rio": "Rio Piracicaba",
+   "local": "Artemis | Piracicaba",
+   "codigo": "4D-007T",
+   "id": 26242
+  },
+  {
+   "mapa": "603",
+   "rio": "Rio Capivari",
+   "local": "Reforma Agrária | Campinas",
+   "codigo": "4E-027",
+   "id": 30913
+  },
+  {
+   "mapa": "609",
+   "rio": "Rio Capivari",
+   "local": "Sabesp | Monte Mor",
+   "codigo": "4D-050",
+   "id": 845,
+   "orto": true
+  },
+  {
+   "mapa": "745",
+   "rio": "Rio Jundiaí",
+   "local": "Campo Limpo Paulista",
+   "codigo": "3E-146",
+   "id": 816
+  },
+  {
+   "mapa": "502",
+   "rio": "Rio Jundiaí",
+   "local": "Itaici | Indaiatuba",
+   "codigo": "4E-017",
+   "id": 29709,
+   "orto": true
+  },
+  {
+   "mapa": "604",
+   "rio": "Rio Jundiaí",
+   "local": "Salto",
+   "codigo": "4E-035",
+   "id": 850
+  },
+  {
+   "mapa": "608",
+   "rio": "Rio Capivari Mirim",
+   "local": "Monte Mor",
+   "codigo": "4D-051",
+   "id": 843
+  }
+ ],
+ "cotas": [
+  {
+   "mapa": "593",
+   "nome": "Rio Cachoeira Montante / Piracaia",
+   "codigo": "3E-122T",
+   "id": 1430
+  },
+  {
+   "mapa": "53",
+   "nome": "Rio Cachoeira Captação Piracaia / Piracaia",
+   "codigo": "3E-116T",
+   "id": 30862
+  },
+  {
+   "mapa": "80",
+   "nome": "Rio Atibainha - Mascate / Nazaré Paulista",
+   "codigo": "3E-089T",
+   "id": 29652
+  },
+  {
+   "mapa": "54",
+   "nome": "Rio Atibaia em Atibaia / Atibaia",
+   "codigo": "3E-063T",
+   "id": 30863
+  },
+  {
+   "mapa": "55",
+   "nome": "Rio Atibaia no Bairro da Ponte / Itatiba",
+   "codigo": "3D-006T",
+   "id": 29591
+  },
+  {
+   "mapa": "56",
+   "nome": "Rio Atibaia Captação Valinhos / Valinhos",
+   "codigo": "3D-007T",
+   "id": 30846
+  },
+  {
+   "mapa": "59",
+   "nome": "Rio Atibaia em Desembargador Furtado / Campinas",
+   "codigo": "3D-003T",
+   "id": 29590
+  },
+  {
+   "mapa": "57",
+   "nome": "Rio Atibaia Acima de Paulínia / Paulínia",
+   "codigo": "4D-009RT",
+   "id": 29694
+  },
+  {
+   "mapa": "52",
+   "nome": "Rio Jaguari em Guaripocaba / Bragança Paulista",
+   "codigo": "3D-015T",
+   "id": 15314
+  },
+  {
+   "mapa": "138",
+   "nome": "Rio Jaguari em Buenópolis / Morungaba",
+   "codigo": "3D-009T",
+   "id": 29592
+  },
+  {
+   "mapa": "49",
+   "nome": "Rio Jaguari em Jaguariúna / Jaguariúna",
+   "codigo": "3D-008T",
+   "id": 30864
+  },
+  {
+   "mapa": "50",
+   "nome": "Rio Camanducaia em Dal Bo / Jaguariúna",
+   "codigo": "3D-001T",
+   "id": 29588
+  },
+  {
+   "mapa": "48",
+   "nome": "Rio Jaguari em Usina Ester / Cosmópolis",
+   "codigo": "4D-001T",
+   "id": 29692
+  },
+  {
+   "mapa": "122",
+   "nome": "Ribeirão Quilombo em Americana / Americana",
+   "codigo": "-",
+   "id": 838,
+   "orto": true
+  },
+  {
+   "mapa": "599",
+   "nome": "Rio Piracicaba em Santa Bárbara D'Oeste / Santa Bárbara D'Oeste",
+   "codigo": "-",
+   "id": 814,
+   "orto": true
+  },
+  {
+   "mapa": "46",
+   "nome": "Rio Piracicaba em Piracicaba / Piracicaba",
+   "codigo": "4D-015T",
+   "id": 30181
+  },
+  {
+   "mapa": "601",
+   "nome": "Rio Corumbataí em Rio Claro / Rio Claro",
+   "codigo": "-",
+   "id": 812,
+   "orto": true
+  },
+  {
+   "mapa": "630",
+   "nome": "Rio Corumbataí - Novo Batovi / Rio Claro",
+   "codigo": "4D-042T",
+   "id": 30917,
+   "orto": true
+  },
+  {
+   "mapa": "602",
+   "nome": "Rio Corumbataí - Captação SEMAE Piracicaba / Piracicaba",
+   "codigo": "-",
+   "id": 841
+  },
+  {
+   "mapa": "84",
+   "nome": "Rio Piracicaba em Artemis / Piracicaba",
+   "codigo": "4D-007T",
+   "id": 26242
+  },
+  {
+   "mapa": "603",
+   "nome": "Rio Capivari - Reforma Agrária / Campinas",
+   "codigo": "4E-027T",
+   "id": 30913
+  },
+  {
+   "mapa": "609",
+   "nome": "Rio Capivari Sabesp Monte Mor / Monte Mor",
+   "codigo": "-",
+   "id": 845,
+   "orto": true
+  },
+  {
+   "mapa": "608",
+   "nome": "Rio Capivari Mirim em Monte Mor / Monte Mor",
+   "codigo": "-",
+   "id": 843
+  },
+  {
+   "mapa": "745",
+   "nome": "Rio Jundiaí em Campo Limpo Paulista / Campo Limpo Paulista",
+   "codigo": "-",
+   "id": 816
+  },
+  {
+   "mapa": "502",
+   "nome": "Rio Jundiaí - Itaici / Indaiatuba",
+   "codigo": "4E-017T",
+   "id": 29709,
+   "orto": true
+  },
+  {
+   "mapa": "604",
+   "nome": "Rio Jundiaí / Salto",
+   "codigo": "-",
+   "id": 850
+  }
+ ]
+}

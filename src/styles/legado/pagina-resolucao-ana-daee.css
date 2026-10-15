@@ -1,0 +1,115 @@
+/* Páginas de ato normativo (components/site/ato-normativo.tsx): Resolução ANA/DAEE nº 925/2017, Deliberação CRH nº 287/2024, Deliberação SP-Águas nº 10/2025. */
+
+/* Cabeçalho: texto à esquerda, órgãos signatários à direita. */
+.res-hero { display: flex; align-items: center; justify-content: space-between; gap: 32px; }
+.res-hero h1 { font-size: clamp(1.7rem, 3vw, 2.6rem); font-weight: 800; line-height: 1.15; letter-spacing: -.025em; margin: 14px 0 12px; color: #fff; }
+.res-hero__dados { display: flex; flex-wrap: wrap; gap: 8px 10px; list-style: none; padding: 0; margin: 18px 0 0; }
+.res-hero__dados li {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 6px 12px; border-radius: 999px;
+    background: rgba(255, 255, 255, .1); border: 1px solid rgba(255, 255, 255, .16);
+    font-size: .82rem; color: #eaf4fb;
+}
+.res-hero__orgaos {
+    position: relative; z-index: 1; flex: none;
+    display: flex; align-items: center; gap: 22px;
+    padding: 20px 26px; border-radius: var(--sp-radius);
+    background: #fff; box-shadow: 0 14px 34px rgba(0, 0, 0, .2);
+}
+.res-hero__orgaos img { height: auto; }
+@media (max-width: 991.98px) {
+    .res-hero { flex-direction: column; align-items: flex-start; }
+    .res-hero__orgaos { padding: 14px 20px; }
+}
+
+/* Corpo: índice fixo ao lado e texto em coluna de leitura. */
+.res-grade { display: grid; grid-template-columns: 250px minmax(0, 1fr); gap: 24px; align-items: start; }
+.res-indice { position: sticky; top: 92px; }
+.res-indice .sssp-section-card { max-height: calc(100vh - 112px); overflow-y: auto; margin-bottom: 0; }
+.res-indice h2 { font-size: .74rem; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; color: var(--sp-gray); margin: 0 0 10px; }
+.res-indice ol { list-style: none; padding: 0; margin: 0; }
+.res-indice a {
+    display: block; padding: 6px 10px; border-left: 2px solid var(--sp-border);
+    color: var(--sp-ink); font-size: .86rem; line-height: 1.35; text-decoration: none;
+}
+.res-indice a:hover { border-left-color: var(--sp-blue); color: var(--sp-blue); background: #f4f8fc; }
+.res-indice a strong { color: var(--sp-blue); margin-right: 4px; white-space: nowrap; }
+@media (max-width: 991.98px) {
+    .res-grade { grid-template-columns: 1fr; }
+    .res-indice { position: static; }
+    .res-indice .sssp-section-card { max-height: none; margin-bottom: 22px; }
+    .res-indice ol { display: flex; flex-wrap: wrap; gap: 6px; }
+    .res-indice a { border: 1px solid var(--sp-border); border-radius: 999px; padding: 5px 11px; }
+}
+
+/* Destino dos links do índice não fica atrás do menu fixo. */
+.res-conteudo [id] { scroll-margin-top: 92px; }
+
+/* Resumo das faixas (art. 4º). */
+.res-faixas { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
+.res-faixa {
+    display: flex; flex-direction: column; gap: 2px;
+    padding: 14px; border-radius: var(--sp-radius-sm);
+    border: 1px solid var(--sp-border); border-top: 4px solid var(--res-cor);
+    background: #fff; line-height: 1.3;
+}
+.res-faixa small { font-size: .7rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--sp-gray); }
+.res-faixa strong { font-size: 1.05rem; color: var(--sp-ink); }
+.res-faixa span { font-size: .82rem; color: var(--sp-gray); }
+.res-faixa b { margin-top: 8px; font-size: 1.35rem; font-weight: 800; color: var(--sp-ink); }
+.res-faixa em { font-style: normal; font-size: .78rem; font-weight: 600; color: var(--sp-gray); }
+.res-faixa--1 { --res-cor: #16a34a; }
+.res-faixa--2 { --res-cor: #eab308; }
+.res-faixa--3 { --res-cor: #f97316; }
+.res-faixa--4 { --res-cor: #dc2626; }
+.res-faixa--5 { --res-cor: #7f1d1d; }
+@media (max-width: 1199.98px) { .res-faixas { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 575.98px) { .res-faixas { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* Texto da resolução. */
+.res-texto .sssp-section-card__body { padding: 34px clamp(18px, 4vw, 48px) 40px; }
+.res-texto p { max-width: 74ch; margin: 0 0 .9rem; color: var(--sp-ink); font-size: 1rem; line-height: 1.75; text-align: justify; hyphens: auto; }
+.res-texto section + section { margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--sp-border); }
+.res-resolvem {
+    margin: 2rem 0 1.5rem; padding-bottom: .6rem; border-bottom: 2px solid var(--sp-blue);
+    font-size: 1.15rem; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; color: var(--sp-blue);
+}
+.res-resolvem + section { margin-top: 0; padding-top: 0; border-top: 0; }
+.res-artigo strong { color: var(--sp-blue); }
+.res-texto a { color: var(--sp-blue); overflow-wrap: anywhere; }
+/* Título de capítulo ou seção (e dos itens do anexo). */
+.res-capitulo { margin: 0 0 1.1rem; font-size: 1.02rem; font-weight: 800; line-height: 1.35; color: var(--sp-ink); }
+.res-capitulo small { display: block; font-size: .72rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--sp-blue); }
+.res-capitulo + .res-capitulo { margin-top: -.4rem; }
+.res-texto p.res-paragrafo { padding-left: 1.25rem; }
+.res-texto p.res-inciso { padding-left: 2.5rem; margin-bottom: .5rem; }
+.res-texto p.res-alinea { padding-left: 3.75rem; margin-bottom: .4rem; }
+.res-quadro { margin: 1.25rem 0 1.5rem; overflow-x: auto; }
+.res-quadro img { display: block; max-width: 100%; height: auto; border: 1px solid var(--sp-border); border-radius: 8px; }
+
+.res-assinaturas {
+    display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px;
+    margin-top: 2.5rem; padding-top: 2rem; border-top: 1px solid var(--sp-border); text-align: center;
+}
+.res-texto .res-assinaturas p { max-width: none; margin: 0; color: var(--sp-gray); font-size: .9rem; text-align: center; }
+.res-assinaturas p:only-child { grid-column: 1 / -1; }
+.res-assinaturas strong { display: block; color: var(--sp-ink); font-size: 1rem; text-transform: uppercase; letter-spacing: .03em; }
+@media (max-width: 575.98px) { .res-assinaturas { grid-template-columns: 1fr; } }
+
+/* Anexo: quadro de condições de cada estágio. */
+.res-estagio { margin-top: 1.5rem; padding-left: 14px; border-left: 4px solid var(--res-cor); }
+.res-estagio--0 { --res-cor: #16a34a; }
+.res-estagio--1 { --res-cor: #eab308; }
+.res-estagio--2 { --res-cor: #f97316; }
+.res-estagio--3 { --res-cor: #dc2626; }
+.res-estagio--4 { --res-cor: #800080; }
+.res-tabela { width: 100%; max-width: 74ch; border-collapse: collapse; font-size: .92rem; }
+.res-tabela th, .res-tabela td { padding: 9px 12px; border: 1px solid var(--sp-border); text-align: left; vertical-align: middle; }
+.res-tabela th { background: #f4f8fc; color: var(--sp-ink); font-weight: 700; }
+.res-tabela td:last-child { white-space: nowrap; }
+@media (max-width: 575.98px) { .res-tabela td:last-child { white-space: normal; } }
+
+@media print {
+    .res-indice, .res-hero__orgaos { display: none; }
+    .res-grade { display: block; }
+}

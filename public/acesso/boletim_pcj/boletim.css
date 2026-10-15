@@ -1,0 +1,232 @@
+/* Boletim Diário PCJ — páginas de 960 × 540 px (16:9, 10 × 5,625 pol.) */
+:root {
+    --azul-tab: #31849b;
+    --azul-claro: #dbe5f1;
+    --linha: #7f7f7f;
+    --normal: #00b0f0;
+    --atencao: #ffff00;
+    --alerta: #ffc000;
+    --emerg: #ff00ff;
+    --extra: #ff0000;
+    --orto: #2f5597;
+}
+
+* { box-sizing: border-box; }
+
+html, body { margin: 0; }
+
+body {
+    background: #e9edf2;
+    color: #000;
+    font-family: Calibri, Carlito, "Segoe UI", Arial, sans-serif;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+}
+
+/* ---------- Barra de ferramentas (só na tela) ---------- */
+.barra {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    background: #0b3a5b;
+    color: #fff;
+    font: 14px "Segoe UI", Arial, sans-serif;
+}
+.barra label { display: flex; align-items: center; gap: 6px; }
+.barra input[type=date] { font: inherit; padding: 4px 6px; border-radius: 4px; border: 0; }
+.barra button {
+    font: inherit;
+    padding: 6px 12px;
+    border-radius: 4px;
+    border: 1px solid #ffffff66;
+    background: transparent;
+    color: #fff;
+    cursor: pointer;
+}
+.barra button:hover { background: #ffffff22; }
+.barra button.primario { background: #1f7a4d; border-color: #1f7a4d; }
+.barra button.destaque { background: #fff; color: #0b3a5b; font-weight: 600; }
+.barra button:disabled { opacity: .55; cursor: wait; }
+.barra__voltar { color: #cfe3f5; text-decoration: none; margin-right: 8px; }
+.barra__link { color: #fff; font-weight: 600; text-decoration: none; padding: 6px 12px; border-radius: 4px; border: 1px solid #ffffff66; }
+.barra__link:hover { background: #ffffff22; }
+.barra__status { margin-left: auto; font-size: 13px; color: #cfe3f5; }
+.barra__status.erro { color: #ffb4b4; }
+
+.dica {
+    max-width: 960px;
+    margin: 12px auto 0;
+    padding: 0 4px;
+    font: 13px "Segoe UI", Arial, sans-serif;
+    color: #44525f;
+}
+
+/* ---------- Páginas ---------- */
+.pagina {
+    position: relative;
+    width: 960px;
+    height: 540px;
+    margin: 16px auto;
+    background: #fff;
+    overflow: hidden;
+    box-shadow: 0 2px 10px #0003;
+}
+
+.fundo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+
+.capa__data {
+    position: absolute;
+    left: 79px;
+    top: 281px;
+    min-width: 120px;
+    font-size: 15px;
+}
+
+.cab {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 52px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+.cab span { margin: 22px 0 0 20px; font-weight: 700; font-size: 11px; }
+.cab img { width: 180px; height: 52px; }
+
+.rodape {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 2px;
+    height: 9px;
+    background: repeating-linear-gradient(#222 0 1px, transparent 1px 3px);
+}
+
+[contenteditable="true"]:hover { outline: 1px dashed #5b9bd5; }
+[contenteditable="true"]:focus { outline: 2px solid #5b9bd5; background: #fffbe6; }
+
+/* ---------- Mapa e radar ---------- */
+.titulo-mapa {
+    position: absolute;
+    top: 44px;
+    left: 0;
+    right: 0;
+    margin: 0;
+    text-align: center;
+    font-size: 21px;
+    line-height: 1.3;
+}
+.imagem-trocavel { position: absolute; left: 0; right: 0; }
+.imagem-trocavel img { width: 100%; height: 100%; object-fit: contain; }
+.imagem-mapa { top: 112px; bottom: 13px; }
+.imagem-radar { top: 56px; bottom: 13px; }
+.imagem-trocavel .vazio {
+    position: absolute;
+    inset: 40px 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    margin: 0;
+    border: 2px dashed #9fb3c8;
+    color: #5a6b7b;
+    font-size: 16px;
+}
+.trocar {
+    position: absolute;
+    right: 12px;
+    bottom: 8px;
+    padding: 4px 10px;
+    border-radius: 4px;
+    background: #0b3a5bdd;
+    color: #fff;
+    font: 12px "Segoe UI", Arial, sans-serif;
+    cursor: pointer;
+}
+.trocar input { display: none; }
+
+/* ---------- Tabelas ---------- */
+.tab {
+    position: absolute;
+    border-collapse: collapse;
+    font-size: 7.4px;
+    line-height: 1.05;
+}
+.tab th, .tab td { border: 1px solid var(--linha); padding: 1px 3px; }
+.tab thead th { background: var(--azul-tab); color: #fff; font-weight: 400; text-align: center; }
+.tab tbody td { text-align: center; }
+.tab .posto { text-align: left; background: var(--azul-claro); }
+.tab .posto b { display: block; }
+.tab .mapa { font-weight: 700; }
+.tab td.num { text-align: center; }
+
+.tab-chuva { top: 58px; left: 13px; width: 934px; font-size: 6.6px; line-height: 1; }
+.tab-chuva th, .tab-chuva td { padding: 0 3px; }
+.tab-chuva thead th { padding: 1px 3px; }
+.tab-chuva .posto { width: 118px; white-space: nowrap; }
+
+.notas { position: absolute; left: 20px; right: 36px; bottom: 16px; font-size: 8.5px; font-weight: 700; }
+.notas p { margin: 1px 0; }
+.notas .fonte { position: absolute; right: 0; bottom: 12px; }
+
+.tab-cotas { top: 40px; left: 213px; width: 560px; font-size: 7.2px; }
+.tab-cotas thead th { font-weight: 700; padding: 2px 3px; }
+.tab-cotas tbody td { font-weight: 700; font-size: 9.5px; padding: 3px 4px; }
+.tab-cotas tbody td.nome { text-align: left; font-size: 6.8px; }
+.tab-cotas tbody td.cod, .tab-cotas tbody td.mapa { font-size: 6.8px; }
+.tab-cotas .titulo-rede { background: var(--azul-tab); font-size: 10px; }
+.tab-cotas .c-atencao { background: var(--atencao); color: #000; }
+.tab-cotas .c-alerta { background: var(--alerta); color: #000; }
+.tab-cotas .c-emerg { background: var(--emerg); color: #000; }
+.tab-cotas .c-extra { background: var(--extra); color: #000; }
+.tab-cotas tbody tr:nth-child(odd) td { background: var(--azul-claro); }
+.tab-cotas td.orto { color: var(--orto); }
+.nota-cotas { position: absolute; left: 240px; bottom: 16px; margin: 0; font-size: 7.5px; font-weight: 700; }
+
+.tab-flu { top: 50px; left: 10px; width: 940px; font-size: 6.4px; line-height: 1; }
+.tab-flu th, .tab-flu td { padding: 0 2px; }
+.tab-flu thead th { padding: 1px 2px; }
+.tab-flu .posto { white-space: nowrap; width: 112px; }
+.tab-flu thead .grupo-q { background: #d8e4bc; color: #000; }
+.tab-flu thead .grupo-n { background: #b7dee8; color: #000; }
+.tab-flu thead .sub { background: var(--azul-claro); color: #000; }
+.tab-flu thead .titulo-rede { font-weight: 700; }
+
+.n-normal { background: var(--normal); }
+.n-atencao { background: var(--atencao); }
+.n-alerta { background: var(--alerta); }
+.n-emerg { background: var(--emerg); }
+.n-extra { background: var(--extra); }
+
+.obs-flu {
+    position: absolute;
+    left: 10px;
+    right: 10px;
+    bottom: 13px;
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    font-size: 6.6px;
+    font-weight: 700;
+}
+.obs-flu p { margin: 1px 0; }
+.legenda { display: flex; align-items: center; gap: 0; white-space: nowrap; }
+.legenda span { padding: 1px 12px; margin-left: 2px; }
+.legenda em { font-style: normal; margin-left: 12px; }
+
+/* ---------- Impressão / PDF ---------- */
+@page { size: 960px 540px; margin: 0; }
+@media print {
+    body { background: #fff; }
+    .no-print { display: none !important; }
+    .pagina { margin: 0; box-shadow: none; break-after: page; page-break-after: always; }
+    .pagina:last-child { break-after: auto; page-break-after: auto; }
+    [contenteditable="true"]:hover, [contenteditable="true"]:focus { outline: none; background: transparent; }
+}

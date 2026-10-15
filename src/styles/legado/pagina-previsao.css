@@ -1,0 +1,58 @@
+/* Página de Previsão — estilos sobre o design system. */
+
+.prev-busca { display: grid; grid-template-columns: minmax(240px, 1fr) auto; gap: 10px; align-items: end; }
+@media (max-width: 720px) { .prev-busca { grid-template-columns: 1fr; } }
+.prev-busca .ts-wrapper { min-width: 260px; }
+
+.prev-destaque { display: grid; grid-template-columns: 1.25fr .75fr; gap: 18px; }
+@media (max-width: 900px) { .prev-destaque { grid-template-columns: 1fr; } }
+
+.weather-main {
+    border: 1px solid var(--sp-border);
+    border-radius: var(--sp-radius);
+    padding: 22px;
+    background: linear-gradient(135deg, #fff, var(--sp-blue-light));
+    box-shadow: var(--sp-shadow);
+}
+.weather-place { font-size: 1.6rem; font-weight: 800; color: var(--sp-ink); }
+.weather-rain { font-size: 3rem; font-weight: 800; color: var(--sp-blue); line-height: 1.05; }
+.weather-meta { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 16px; }
+@media (max-width: 1100px) { .weather-meta { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 600px) { .weather-meta { grid-template-columns: 1fr; } }
+.weather-meta > div { padding: 12px; border-radius: var(--sp-radius-sm); background: #fff; border: 1px solid var(--sp-border); }
+.weather-meta strong { color: var(--sp-ink); }
+.weather-meta i { margin-right: 4px; color: var(--sp-blue); }
+
+.weather-days { display: grid; grid-template-columns: repeat(7, minmax(120px, 1fr)); gap: 10px; overflow-x: auto; }
+.weather-day { min-width: 120px; border: 1px solid var(--sp-border); border-radius: var(--sp-radius-sm); padding: 13px; background: #fff; }
+.weather-day.active { box-shadow: var(--sp-shadow); border-color: var(--sp-blue); }
+.weather-day .day { font-weight: 800; color: var(--sp-ink); }
+.weather-day .rain { font-weight: 800; color: var(--sp-blue); margin: 10px 0 4px; }
+
+.weather-chart { position: relative; height: 340px; }
+
+/* Alternador de horizonte do mapa estadual */
+.prev-horizonte { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.prev-horizonte button {
+    border: 1px solid var(--sp-border);
+    background: #fff;
+    color: var(--sp-ink);
+    border-radius: 999px;
+    padding: 6px 14px;
+    font-size: .85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .15s, color .15s, border-color .15s;
+}
+.prev-horizonte button:hover { border-color: var(--sp-blue); }
+.prev-horizonte button.is-ativo { background: var(--sp-blue); border-color: var(--sp-blue); color: #fff; }
+
+/* Mapa de chuva do Estado */
+.prev-mapa-wrap { position: relative; }
+#prevMapa { height: 520px; border-radius: var(--sp-radius-sm); border: 1px solid var(--sp-border); z-index: 0; }
+@media (max-width: 600px) { #prevMapa { height: 400px; } }
+/* campo interpolado: escala suave ao dar zoom (aparência de mancha, não de blocos) */
+.prev-campo-img { image-rendering: auto; }
+.prev-legenda { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 12px; font-size: .82rem; color: var(--sp-gray); }
+.prev-legenda span { display: inline-flex; align-items: center; gap: 6px; }
+.prev-legenda i { width: 14px; height: 14px; border-radius: 3px; display: inline-block; }

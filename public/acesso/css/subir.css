@@ -1,0 +1,10 @@
+/* Botão "voltar ao topo" das páginas avulsas de boletim (js/subir.js). */
+.subir {
+    position: fixed; right: 22px; bottom: 22px; z-index: 1040; width: 44px; height: 44px;
+    border: 0; border-radius: 50%; background: #0b4f8a; color: #fff; font: 700 22px/1 Arial, sans-serif; cursor: pointer;
+    box-shadow: 0 6px 18px rgba(11, 79, 138, .38); opacity: 0; visibility: hidden; transform: translateY(12px);
+    transition: opacity .25s ease, transform .25s ease, visibility .25s;
+}
+.subir--visivel { opacity: 1; visibility: visible; transform: translateY(0); }
+.subir:hover { background: #073457; }
+@media print { .subir { display: none !important; } }

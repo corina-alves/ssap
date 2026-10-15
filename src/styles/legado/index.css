@@ -1,0 +1,1003 @@
+
+:root{
+    --azul:#0868b7;
+    --azul-escuro:#082c4c;
+    --azul-claro:#45b8df;
+    --verde:#49a942;
+    --verde-escuro:#2f7d32;
+    --preto:#111820;
+    --laranja:#f39b38;
+    --roxo:#7759d9;
+    --fundo:#f4f7fb;
+    --branco:#fff;
+    --texto:#1d3045;
+    --muted:#687b8e;
+    --borda:#e1e9f1;
+     --borda-cant:#034486;
+    --sombra:0 14px 36px rgba(23,58,91,.09);
+    --sombra-hover:0 21px 45px rgba(23,58,91,.16);
+}
+
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+
+body{
+    margin:0;
+    min-height:100vh;
+    font-family:'Inter',sans-serif;
+    background:var(--fundo);
+    color:var(--texto);
+}
+
+a{text-decoration:none}
+
+/* CABEÇALHO */
+.topbar{
+    background:#fff;
+    border-bottom:1px solid var(--borda);
+    box-shadow:0 3px 16px rgba(20,50,80,.05);
+}
+
+.topbar-inner{
+    min-height:86px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:28px;
+}
+
+.brand{
+    display:flex;
+    align-items:center;
+    gap:12px;
+}
+
+.brand-icon{
+    width:55px;
+    height:55px;
+    display:grid;
+    place-items:center;
+    border-radius:17px;
+    background:linear-gradient(145deg,var(--azul),var(--azul-claro));
+    color:#fff;
+    font-size:1.8rem;
+    box-shadow:0 9px 24px rgba(7,91,181,.23);
+}
+
+.brand strong{
+    display:block;
+    color:var(--azul);
+    font-size:1.42rem;
+    font-weight:800;
+    letter-spacing:.02em;
+}
+
+.brand small{
+    display:block;
+    max-width:190px;
+    color:#526579;
+    font-size:.65rem;
+    font-weight:700;
+    text-transform:uppercase;
+}
+
+.nav-main{
+    display:flex;
+    align-items:center;
+    gap:28px;
+}
+
+.nav-main a{
+    position:relative;
+    padding:34px 0 27px;
+    color:#46576b;
+    font-size:.79rem;
+    font-weight:700;
+    text-transform:uppercase;
+}
+
+.nav-main a:hover,.nav-main a.active{color:var(--azul)}
+
+.nav-main a.active::after{
+    content:'';
+    position:absolute;
+    left:0;
+    right:0;
+    bottom:17px;
+    height:3px;
+    border-radius:4px;
+    background:var(--azul);
+}
+
+/* HERO */
+.hero{
+    position:relative;
+    min-height:390px;
+    display:flex;
+    align-items:center;
+    overflow:hidden;
+    background-image:
+        linear-gradient(90deg,rgba(4,27,48,.96),rgba(8,68,111,.82),rgba(73,169,66,.30)),
+        url('/legado/img/hero.jpg');
+    background-size:cover;
+    background-position:center;
+}
+
+.hero::before{
+    content:'';
+    position:absolute;
+    inset:0;
+    background:
+        radial-gradient(circle at 12% 25%,rgba(20,169,209,.25),transparent 30%);
+}
+
+.hero .container{position:relative;z-index:2}
+
+.hero-content{
+    max-width:770px;
+    padding:64px 0;
+}
+
+.hero-tag{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    margin-bottom:20px;
+    padding:8px 14px;
+    border:1px solid rgba(255,255,255,.32);
+    border-radius:999px;
+    background:rgba(255,255,255,.10);
+    color:#fff;
+    font-size:.77rem;
+    font-weight:700;
+    backdrop-filter:blur(8px);
+}
+
+.hero h1{
+    margin:0;
+    color:#fff;
+    font-size:clamp(2.8rem,5vw,4.9rem);
+    line-height:1;
+    letter-spacing:-.05em;
+    font-weight:800;
+}
+
+.hero h1 span{
+    display:block;
+    color:#73d6ef;
+}
+
+.hero p{
+    max-width:680px;
+    margin:23px 0 0;
+    color:rgba(255,255,255,.91);
+    font-size:1.03rem;
+    line-height:1.72;
+}
+
+.hero-actions{
+    display:flex;
+    gap:12px;
+    margin-top:27px;
+    flex-wrap:wrap;
+}
+
+.hero-actions .btn{
+    padding:11px 21px;
+    border-radius:999px;
+    font-size:.84rem;
+    font-weight:700;
+}
+
+.hero-actions .btn-primary{
+    background:var(--azul-claro);
+    border-color:var(--azul-claro);
+}
+
+/* ÁREA PRINCIPAL */
+.main-area{
+    padding:36px 0 58px;
+}
+
+.section-head{
+    display:flex;
+    align-items:flex-end;
+    justify-content:space-between;
+    gap:20px;
+    margin-bottom:18px;
+}
+
+.section-head h2{
+    margin:0;
+    color:var(--azul-escuro);
+    font-size:1.1rem;
+    font-weight:800;
+}
+
+.section-head p{
+    margin:4px 0 0;
+    color:var(--muted);
+    font-size:.79rem;
+}
+
+.section-link{
+    color:var(--azul);
+    font-size:.75rem;
+    font-weight:700;
+}
+
+/* CARDS DE ACESSO */
+.quick-card{
+    position:relative;
+    min-height:164px;
+    height:100%;
+    overflow:hidden;
+    padding:20px;
+    border:1px solid var(--borda);
+    border-radius:20px;
+    background:#fff;
+    box-shadow:var(--sombra);
+    color:var(--texto);
+    transition:.28s ease;
+}
+
+.quick-card::before{
+    content:'';
+    position:absolute;
+    right:-30px;
+    top:-36px;
+    width:110px;
+    height:110px;
+    border-radius:50%;
+    background:var(--card-soft);
+}
+
+.quick-card:hover{
+    transform:translateY(-7px);
+    border-color:var(--card-color);
+    box-shadow:var(--sombra-hover);
+}
+
+.quick-icon{
+    position:relative;
+    z-index:2;
+    width:48px;
+    height:48px;
+    display:grid;
+    place-items:center;
+    margin-bottom:17px;
+    border-radius:15px;
+    background:var(--card-soft);
+    color:var(--card-color);
+    font-size:1.5rem;
+}
+
+.quick-card strong{
+    position:relative;
+    z-index:2;
+    display:block;
+    margin-bottom:7px;
+    color:var(--azul-escuro);
+    font-size:.84rem;
+}
+
+.quick-card p{
+    position:relative;
+    z-index:2;
+    margin:0;
+    max-width:175px;
+    color:var(--muted);
+    font-size:.7rem;
+    line-height:1.5;
+}
+
+.quick-arrow{
+    position:absolute;
+    right:18px;
+    bottom:17px;
+    width:29px;
+    height:29px;
+    display:grid;
+    place-items:center;
+    border-radius:50%;
+    background:var(--card-soft);
+    color:var(--card-color);
+}
+
+.card-blue{--card-color:#0d6ad2;--card-soft:#e8f2ff}
+.card-cyan{--card-color:#079fc2;--card-soft:#e2f8fc}
+.card-green{--card-color:#49a942;--card-soft:#edf8ea}
+.card-orange{--card-color:#e8851b;--card-soft:#fff2df}
+.card-purple{--card-color:#7759d9;--card-soft:#f0ecff}
+.card-red{--card-color:#de5562;--card-soft:#ffebed}
+
+/* TRIO: PREVISÃO, GRÁFICO E NORMAS */
+.dashboard-card{
+    height:100%;
+    overflow:hidden;
+    border:1px solid var(--borda);
+    border-radius:20px;
+    background:#fff;
+    box-shadow:var(--sombra);
+}
+.dashboard-card-cantareira{
+    height:100%;
+    overflow:hidden;
+    border:1px solid var(--borda-cant);
+    border-radius:20px;
+    background:#ffffff;
+    box-shadow:var(--sombra);
+}
+.dashboard-card-header{
+    min-height:58px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    padding:15px 18px;
+    border-bottom:1px solid var(--borda);
+    background:linear-gradient(180deg,#fff,#fbfdff);
+}
+
+.dashboard-card-title{
+    display:flex;
+    align-items:center;
+    gap:10px;
+}
+
+.dashboard-card-title i{
+    width:34px;
+    height:34px;
+    display:grid;
+    place-items:center;
+    border-radius:11px;
+    background:#e9f3ff;
+    color:var(--azul);
+}
+
+.dashboard-card-title h3{
+    margin:0;
+    color:var(--texto);
+    font-size:.79rem;
+    font-weight:800;
+    text-transform:uppercase;
+}
+
+.dashboard-card-body{
+    padding:17px;
+}
+
+/* PREVISÃO METROPOLITANA */
+.metropolitana-select{
+    border:1px solid var(--borda);
+    border-radius:12px;
+    background:#f8fbfe;
+    color:var(--texto);
+    font-size:.82rem;
+    font-weight:700;
+}
+
+#boxPrevisaoMunicipio{
+    text-align:left;
+}
+
+#boxPrevisaoMunicipio h2{
+    margin:14px 0 2px;
+    color:var(--azul-escuro);
+    font-size:1.25rem;
+    font-weight:800;
+}
+
+#boxPrevisaoMunicipio > p{
+    margin:0;
+    color:var(--muted)!important;
+    font-size:.7rem;
+}
+
+.valor-chuva{
+    margin-top:17px!important;
+    padding:15px;
+    border-radius:15px;
+    background:linear-gradient(135deg,#eaf5ff,#f2fbff);
+    color:var(--azul);
+    font-size:1.8rem;
+    font-weight:800;
+    text-align:center;
+}
+
+#boxPrevisaoMunicipio .mt-3{
+    margin-top:.5rem!important;
+    color:var(--muted)!important;
+    font-size:.7rem;
+    text-align:center;
+}
+
+.temperaturas{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:9px;
+    margin-top:12px;
+}
+
+.temp-box{
+    padding:12px;
+    border:1px solid var(--borda);
+    border-radius:13px;
+    background:#fff;
+}
+
+.temp-box small{
+    display:block;
+    margin-bottom:5px;
+    color:var(--muted);
+    font-size:.63rem;
+}
+
+.temp-box strong{
+    color:var(--azul-escuro);
+    font-size:.79rem;
+}
+
+/* GRÁFICO */
+.chart-area{
+    min-height:350px;
+}
+
+.chart-area canvas{
+    max-height:285px;
+}
+
+.chart-footer{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:12px;
+    margin-top:15px;
+}
+
+.chart-footer small{
+    color:var(--muted);
+    font-size:.67rem;
+}
+
+/* NORMAS */
+.norm-item{
+    display:flex;
+    align-items:center;
+    gap:11px;
+    padding:13px 0;
+    border-bottom:1px solid var(--borda);
+    color:var(--texto);
+}
+
+.norm-item:last-of-type{border-bottom:0}
+
+.norm-icon{
+    flex:0 0 38px;
+    width:38px;
+    height:38px;
+    display:grid;
+    place-items:center;
+    border-radius:12px;
+    background:#eaf4ff;
+    color:var(--azul);
+}
+
+.norm-item.warning .norm-icon{
+    background:#fff0e3;
+    color:#e87622;
+}
+
+.norm-item > div:nth-child(2){flex:1}
+
+.norm-item strong{
+    display:block;
+    color:var(--azul-escuro);
+    font-size:.7rem;
+}
+
+.norm-item small{
+    display:block;
+    margin-top:3px;
+    color:var(--muted);
+    font-size:.61rem;
+    line-height:1.4;
+}
+
+.norm-item > i{
+    color:#9aabba;
+    font-size:.72rem;
+}
+
+/* PREVISÃO DOS SISTEMAS */
+.systems-wrap{
+    margin-top:32px;
+    padding:24px;
+    border:1px solid var(--borda);
+    border-radius:22px;
+    background:#fff;
+    box-shadow:var(--sombra);
+}
+
+.previsao-card{
+    position:relative;
+    height:100%;
+    min-height:175px;
+    overflow:hidden;
+    padding:18px 12px;
+    border:1px solid var(--borda);
+    border-radius:17px;
+    background:linear-gradient(180deg,#fff,#f9fcff);
+    color:var(--texto);
+    box-shadow:0 8px 22px rgba(23,58,91,.07);
+    transition:.25s ease;
+}
+
+.previsao-card::before{
+    content:'';
+    position:absolute;
+    left:0;
+    right:0;
+    top:0;
+    height:5px;
+    background:linear-gradient(90deg,var(--azul-claro),var(--verde));
+}
+
+.previsao-card.cantareira::before{
+    background:linear-gradient(90deg,var(--azul),var(--azul-claro));
+}
+
+.previsao-card:hover{
+    transform:translateY(-5px);
+    box-shadow:var(--sombra-hover);
+}
+
+.previsao-card h5{
+    margin:4px 0 0;
+    color:var(--azul-escuro);
+    font-size:.8rem;
+    font-weight:800;
+}
+
+.previsao-card .display-5{
+    margin:.8rem 0!important;
+    font-size:2rem;
+}
+
+.previsao-card strong{font-size:.8rem}
+.previsao-card small{font-size:.67rem}
+.previsao-card hr{
+    margin:.75rem 0;
+    border-color:var(--borda);
+}
+
+
+/* SALAS DE SITUAÇÃO */
+.salas-section{
+    margin-top:42px;
+    padding:27px;
+    border:1px solid var(--borda);
+    border-radius:24px;
+    background:linear-gradient(180deg,#ffffff,#f9fcff);
+    box-shadow:var(--sombra);
+}
+
+.sala-card{
+    position:relative;
+    min-height:245px;
+    height:100%;
+    overflow:hidden;
+    display:flex;
+    align-items:flex-end;
+    padding:23px;
+    border-radius:20px;
+    background-size:cover;
+    background-position:center;
+    color:#fff;
+    box-shadow:0 12px 29px rgba(17,54,87,.16);
+    transition:transform .28s ease,box-shadow .28s ease;
+}
+
+.sala-card::before{
+    content:'';
+    position:absolute;
+    inset:0;
+    background:
+        linear-gradient(0deg,rgba(2,42,80,.96) 0%,rgba(2,55,99,.66) 52%,rgba(2,55,99,.16) 100%);
+}
+
+.sala-card::after{
+    content:'';
+    position:absolute;
+    top:17px;
+    right:17px;
+    width:42px;
+    height:42px;
+    border:1px solid rgba(255,255,255,.45);
+    border-radius:50%;
+    background:rgba(255,255,255,.14);
+    backdrop-filter:blur(8px);
+}
+
+.sala-card:hover{
+    transform:translateY(-7px);
+    box-shadow:0 22px 43px rgba(17,54,87,.24);
+}
+
+.sala-card-content{
+    position:relative;
+    z-index:2;
+    width:100%;
+}
+
+.sala-card-tag{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    margin-bottom:11px;
+    padding:6px 10px;
+    border:1px solid rgba(255,255,255,.35);
+    border-radius:999px;
+    background:rgba(255,255,255,.13);
+    color:#fff;
+    font-size:.63rem;
+    font-weight:700;
+    text-transform:uppercase;
+    backdrop-filter:blur(7px);
+}
+
+.sala-card h3{
+    margin:0 0 8px;
+    color:#fff;
+    font-size:1.12rem;
+    font-weight:800;
+}
+
+.sala-card p{
+    max-width:310px;
+    margin:0 0 17px;
+    color:rgba(255,255,255,.87);
+    font-size:.72rem;
+    line-height:1.55;
+}
+
+.sala-card-link{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    color:#fff;
+    font-size:.72rem;
+    font-weight:800;
+}
+
+.sala-card-link i{
+    width:27px;
+    height:27px;
+    display:grid;
+    place-items:center;
+    border-radius:50%;
+    background:rgba(255,255,255,.18);
+}
+
+/* DESTAQUES */
+.highlight-card{
+    position:relative;
+    min-height:170px;
+    overflow:hidden;
+    display:flex;
+    align-items:flex-end;
+    padding:21px;
+    border-radius:19px;
+    background-size:cover;
+    background-position:center;
+    color:#fff;
+    box-shadow:var(--sombra);
+    transition:.28s ease;
+}
+
+.highlight-card::before{
+    content:'';
+    position:absolute;
+    inset:0;
+    background:linear-gradient(0deg,rgba(0,39,78,.95),rgba(0,61,115,.20));
+}
+
+.highlight-card:hover{
+    transform:translateY(-6px);
+    box-shadow:var(--sombra-hover);
+}
+
+.highlight-card > div{
+    position:relative;
+    z-index:2;
+}
+
+.highlight-card h3{
+    margin:0 0 8px;
+    font-size:.94rem;
+    font-weight:800;
+}
+
+.highlight-card p{
+    margin:0;
+    color:rgba(255,255,255,.87);
+    font-size:.7rem;
+    line-height:1.5;
+}
+
+/* FOOTER */
+footer{
+    background:#fff;
+    border-top:1px solid var(--borda);
+}
+
+.footer-main{
+    padding:31px 0;
+}
+
+.footer-brand{
+    color:var(--azul);
+    font-weight:800;
+}
+
+.footer-data{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    color:#45596d;
+    font-size:.69rem;
+}
+
+.footer-data i{
+    color:var(--azul);
+    font-size:1.2rem;
+}
+
+.footer-bottom{
+    padding:15px;
+    background:linear-gradient(90deg,var(--azul-escuro),var(--azul));
+    color:#fff;
+    text-align:center;
+    font-size:.7rem;
+}
+
+#btnTopo{
+    position:fixed;
+    right:22px;
+    bottom:22px;
+    z-index:100;
+    width:46px;
+    height:46px;
+    border:0;
+    border-radius:50%;
+    background:var(--azul);
+    color:#fff;
+    box-shadow:0 11px 25px rgba(7,91,181,.30);
+}
+
+@media(max-width:991px){
+    .topbar-inner{
+        padding:13px 0;
+        align-items:flex-start;
+        flex-direction:column;
+    }
+
+    .nav-main{
+        width:100%;
+        gap:18px;
+        overflow-x:auto;
+    }
+
+    .nav-main a{
+        padding:5px 0 12px;
+        white-space:nowrap;
+    }
+
+    .nav-main a.active::after{bottom:2px}
+    .hero{min-height:auto}
+    .hero-content{padding:55px 0}
+}
+
+@media(max-width:576px){
+    .hero h1{font-size:2.65rem}
+    .section-head{align-items:flex-start;flex-direction:column}
+    .temperaturas{grid-template-columns:1fr}
+    .quick-card{min-height:155px}
+}
+/* Previsão municipal dentro do hero */
+/* Card de previsão */
+.hero-weather-card{
+    width: 340px;          /* antes 90% */
+    min-height: 300px;     /* altura menor */
+    margin-left: auto;
+    padding: 16px;
+
+    border: 1px solid rgba(255,255,255,.45);
+    border-radius: 18px;
+
+    background: rgba(228,239,249,.78);
+
+    box-shadow: 0 12px 30px rgba(0,24,48,.18);
+    backdrop-filter: blur(10px);
+}
+
+/* Cabeçalho */
+.hero-weather-header{
+    display:flex;
+    align-items:center;
+    gap:10px;
+
+    margin-bottom:12px;
+    padding-bottom:10px;
+
+    border-bottom:1px solid #eef2f7;
+}
+
+/* Ícone */
+.hero-weather-icon{
+    width:36px;
+    height:36px;
+    flex:0 0 36px;
+
+    border-radius:10px;
+
+    font-size:1rem;
+
+    background:linear-gradient(145deg,#0A5FAE,#16B7D8);
+}
+
+/* Textos */
+.hero-weather-header h6{
+    font-size:.60rem;
+    letter-spacing:.5px;
+    color:#034486;
+}
+
+.hero-weather-header strong{
+    font-size:.82rem;
+    color:#034486
+}
+
+/* Label */
+.hero-weather-card .form-label{
+    margin-bottom:4px;
+    font-size:.65rem;
+}
+
+/* Select */
+.hero-weather-card .form-select{
+    height:38px;
+    font-size:.78rem;
+    border-radius:10px;
+}
+
+/* Bloco da previsão */
+#boxPrevisaoMunicipioHero{
+    margin-top:12px;
+}
+
+/* Cidade */
+#boxPrevisaoMunicipioHero h2{
+    font-size:1.2rem;
+    margin-bottom:2px;
+}
+
+/* Chuva */
+.valor-chuva{
+    font-size:1.6rem !important;
+    padding:10px !important;
+    margin-top:12px !important;
+}
+
+/* Temperaturas */
+.temperaturas{
+    gap:8px !important;
+    margin-top:10px !important;
+}
+
+.temp-box{
+    padding:10px !important;
+}
+
+.temp-box strong{
+    font-size:.78rem;
+}
+
+.temp-box small{
+    font-size:.60rem;
+}
+#boxPrevisaoMunicipioHero h2,
+#boxPrevisaoMetropolitana h2{
+    margin:15px 0 2px;
+    color:#063669;
+    font-size:1.23rem;
+    font-weight:800;
+}
+
+#boxPrevisaoMunicipioHero > p,
+#boxPrevisaoMetropolitana > p{
+    margin:0;
+    color:#687b8e!important;
+    font-size:.7rem;
+}
+
+#boxPrevisaoMunicipioHero .valor-chuva,
+#boxPrevisaoMetropolitana .valor-chuva{
+    margin-top:15px!important;
+    padding:14px;
+    border-radius:14px;
+    background:linear-gradient(135deg,#eaf5ff,#f2fbff);
+    color:#075bb5;
+    font-size:1.75rem;
+    font-weight:800;
+    text-align:center;
+}
+
+#boxPrevisaoMunicipioHero .mt-3,
+#boxPrevisaoMetropolitana .mt-3{
+    margin-top:.45rem!important;
+    color:#687b8e!important;
+    font-size:.68rem;
+    text-align:center;
+}
+
+#boxPrevisaoMunicipioHero .temperaturas,
+#boxPrevisaoMetropolitana .temperaturas{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:9px;
+    margin-top:12px;
+}
+
+#boxPrevisaoMunicipioHero .temp-box,
+#boxPrevisaoMetropolitana .temp-box{
+    padding:11px;
+    border:1px solid #e1e9f1;
+    border-radius:12px;
+    background:#fff;
+}
+
+#boxPrevisaoMunicipioHero .temp-box small,
+#boxPrevisaoMetropolitana .temp-box small{
+    display:block;
+    margin-bottom:4px;
+    color:#687b8e;
+    font-size:.61rem;
+}
+
+#boxPrevisaoMunicipioHero .temp-box strong,
+#boxPrevisaoMetropolitana .temp-box strong{
+    color:#063669;
+    font-size:.77rem;
+}
+
+.metropolitana-identificacao{
+    display:flex;
+    align-items:center;
+    gap:11px;
+    padding:12px;
+    border:1px solid #e1e9f1;
+    border-radius:14px;
+    background:#f8fbfe;
+}
+
+@media(max-width:991px){
+    .hero-weather-card{
+        width:100%;
+        max-width:460px;
+        margin:0 0 54px;
+    }
+}
+
+@media(max-width:576px){
+    #boxPrevisaoMunicipioHero .temperaturas,
+    #boxPrevisaoMetropolitana .temperaturas{
+        grid-template-columns:1fr;
+    }
+}
+/* Ajuste 2026-08: previsão principal no hero */
+.hero-weather-card{width:min(100%,390px);min-height:330px;padding:19px;border-radius:22px;background:linear-gradient(180deg,rgba(228,239,249,.80),rgba(211,228,242,.74));box-shadow:0 18px 48px rgba(0,27,58,.18);border:1px solid rgba(255,255,255,.55);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
+.hero-weather-header{margin-bottom:14px;padding-bottom:13px}.hero-weather-header h6{font-size:.68rem;margin-bottom:2px}.hero-weather-header strong{font-size:.95rem}.hero-weather-principal{display:inline-flex;margin-left:5px;padding:2px 7px;border-radius:999px;background:#e8f4ff;color:#075bb5;font-size:.56rem;text-transform:uppercase;letter-spacing:.04em;vertical-align:middle}.hero-weather-card .form-label{font-size:.69rem;font-weight:700;color:#405c74}.hero-weather-card .form-select{height:42px;font-size:.82rem;border-color:#d6e4ef;background-color:#fff}.hero-weather-card #boxPrevisaoMunicipioHero h2{font-size:1.35rem}.hero-weather-card #boxPrevisaoMunicipioHero .valor-chuva{font-size:2rem!important;padding:15px!important}.hero-weather-card #boxPrevisaoMunicipioHero .temp-box{background:#f9fcff}
+
+/* Identidade SP-ÁGUAS · azul + verde institucional */
+.topbar{border-top:4px solid transparent;border-image:linear-gradient(90deg,var(--verde),var(--azul-claro),var(--azul)) 1}.section-head h2{position:relative;padding-left:13px}.section-head h2:before{content:"";position:absolute;left:0;top:2px;bottom:2px;width:4px;border-radius:5px;background:linear-gradient(180deg,var(--verde),var(--azul-claro))}.hero-actions .btn-primary{background:var(--verde);border-color:var(--verde);color:#fff}.hero-actions .btn-primary:hover{background:var(--verde-escuro);border-color:var(--verde-escuro)}.dashboard-card,.quick-card{border-color:#d8e7e9}.quick-card:hover{box-shadow:0 21px 45px rgba(8,44,76,.14)}

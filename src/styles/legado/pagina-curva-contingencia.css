@@ -1,0 +1,56 @@
+/* Página Curva de Contingência — cards do resumo.
+   Cada card usa a cor da linha correspondente no gráfico. */
+
+.sssp-stats-grid { gap: 18px; }
+
+.sssp-stat-card {
+    position: relative;
+    overflow: hidden;
+    align-items: flex-start;
+    padding: 22px 20px 20px;
+    border-radius: 21px;
+    min-height: 148px;
+    border-top: 3px solid var(--sp-border);
+    transition: transform .2s ease, box-shadow .2s ease;
+}
+.sssp-stat-card:hover { transform: translateY(-2px); box-shadow: 0 18px 38px rgba(18, 54, 82, .12); }
+.sssp-stat-card__icon { width: 52px; height: 52px; border-radius: 16px; font-size: 1.45rem; }
+.sssp-stat-card__label { font-size: .72rem; letter-spacing: .065em; }
+.sssp-stat-card__value strong { font-size: 2.15rem; }
+.sssp-stat-card small { font-size: .76rem; line-height: 1.35; }
+
+/* Selo neutro (cinza) — só diferencia por texto. */
+.sssp-stat-card::before {
+    position: absolute;
+    right: 14px;
+    top: 12px;
+    font-size: .58rem;
+    font-weight: 800;
+    letter-spacing: .08em;
+    color: var(--sp-gray);
+    background: #eef2f6;
+    border: 1px solid var(--sp-border);
+    padding: 4px 7px;
+    border-radius: 999px;
+}
+.sssp-stat-card:nth-child(1)::before,
+.sssp-stat-card:nth-child(2)::before { content: "OBSERVADO"; }
+.sssp-stat-card:nth-child(3)::before,
+.sssp-stat-card:nth-child(4)::before { content: "REFERÊNCIA"; }
+
+/* Cor de cada card = cor da linha no gráfico (ver curva_contingencia.php). */
+#cardObsSimWrap  { --linha: #0047d6; }  /* SIM observado */
+#cardObsCantWrap { --linha: #00953f; }  /* Cantareira observado */
+#cardMetaSimWrap { --linha: #00a8ff; }  /* Curva SIM */
+#cardMetaCantWrap{ --linha: #2ecc71; }  /* Curva Cantareira */
+.sssp-stat-card[id$="Wrap"] {
+    border: 1px solid color-mix(in srgb, var(--linha) 35%, #fff);
+    border-top: 5px solid var(--linha);
+    border-left: 5px solid var(--linha);
+    background: linear-gradient(180deg, color-mix(in srgb, var(--linha) 9%, #fff) 0%, #fff 70%);
+}
+.sssp-stat-card[id$="Wrap"] .sssp-stat-card__icon { background: var(--linha); color: #fff; }
+.sssp-stat-card[id$="Wrap"] .sssp-stat-card__value strong { color: var(--linha); }
+.sssp-stat-card[id$="Wrap"]::before { color: var(--linha); border-color: color-mix(in srgb, var(--linha) 35%, #fff); background: #fff; }
+
+.credito-grafico { color: var(--sp-gray); font-size: .8rem; }

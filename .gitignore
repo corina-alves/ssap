@@ -1,0 +1,46 @@
+node_modules/
+.next/
+out/
+next-env.d.ts
+*.tsbuildinfo
+coverage/
+.vercel
+
+# Variáveis de ambiente: nenhum .env vai para o repositório, só os exemplos
+.env*
+!.env.example
+!.env.docker.example
+
+# Docker: senhas, certificados e backups ficam fora do repositório
+secrets/
+backups/
+deploy/certs/
+
+# Certificados e chaves em qualquer pasta
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+
+# Cache das integrações externas (descartável)
+.cache/
+
+# Arquivos enviados e PDFs gerados (fora da pasta pública)
+storage/
+
+# Build antigo, guardado porque foi a fonte da recuperação do código (pode apagar)
+.next-antigo/
+
+# Logs e arquivos do sistema
+*.log
+npm-debug.log*
+.DS_Store
+Thumbs.db
+
+# Configurações locais de ferramentas
+.claude/settings.local.json
+
+# Arquivos internos de planejamento (sem segredo, mas não precisam ser públicos)
+db/prompt.txt
+.azure/

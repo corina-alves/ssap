@@ -1,0 +1,9 @@
+/* Trecho de assets/css/estilo.css usado pela página inicial do PHP (cartão de
+   previsão do hero). O arquivo original tem regras globais (body, footer,
+   .hero, .breadcrumb) que vazariam para as outras páginas; aqui fica só o
+   necessário, preso ao cartão com :where() para não mudar a especificidade. */
+:where(.hero-weather-card) .temperaturas { margin-top: 25px; display: flex; justify-content: space-between; }
+:where(.hero-weather-card) .temp-box { background: rgba(255,255,255,0.04); padding: 5px; border-radius: 18px; width: 48%; text-align: center; }
+:where(.hero-weather-card) .temp-box small { display: block; color: #8ca3b5; margin-bottom: 8px; }
+:where(.hero-weather-card) .temp-box strong { font-size: 1.4rem; }
+:where(.hero-weather-card) .valor-chuva { font-size: 2rem; font-weight: bold; color: #34d3ff; line-height: 1; }

@@ -1,0 +1,31 @@
+# Fora da imagem: dependências e builds locais, dados, segredos e o que só serve fora do contêiner.
+node_modules
+.next
+.next-antigo
+.cache
+*.tsbuildinfo
+
+# dados e segredos — nunca entram na imagem
+storage
+backups
+secrets
+deploy/certs
+.env
+.env.local
+.env.*.local
+.env.docker
+
+.git
+.azure
+.claude
+.vscode
+
+Dockerfile
+compose.yaml
+compose.dev.yaml
+deploy
+docker/backup.sh
+docker/restaurar.sh
+*.md
+**/*.pdf
+!public/**/*.pdf

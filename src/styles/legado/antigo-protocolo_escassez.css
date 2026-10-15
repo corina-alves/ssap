@@ -1,0 +1,106 @@
+/* protocolo_escassez.css do PHP, restrito a .doc-legado (gerado por scripts/capturar-legado.mjs). */
+.doc-legado {
+.hero-protocolo{
+    background:linear-gradient(135deg,#0f172a,#0b3b66);
+    color:#fff;
+    padding:80px 0;
+}
+
+.card-protocolo{
+    background:#04376b;
+    color:#fff;
+    border-radius:22px;
+    padding:25px;
+    height:100%;
+    border:1px solid rgba(255,255,255,.10);
+    box-shadow:0 10px 25px rgba(0,0,0,.25);
+    transition:.3s;
+}
+
+.card-protocolo:hover{
+    transform:translateY(-5px);
+    border-color:#38bdf8;
+}
+
+.estagio{
+    border-radius:18px;
+    padding:22px;
+    color:#fff;
+    height:100%;
+    text-align:center;
+}
+
+.e0{background:#16a34a;}
+.e1{background:#facc15;color:#111827;}
+.e2{background:#f97316;}
+.e3{background:#dc2626;}
+.e4{background:#7f1d1d;}
+
+.info-box{
+    background:#04376b;
+    color:#fff;
+    border-radius:18px;
+    padding:22px;
+    height:100%;
+    border-left:5px solid #38bdf8;
+}
+
+.timeline-item{
+    border-left:3px solid #38bdf8;
+    padding-left:18px;
+    margin-bottom:25px;
+}
+
+.estagio-mini{
+    padding:10px;
+    border-radius:12px;
+    color:#fff;
+    font-size:.85rem;
+    font-weight:600;
+}
+
+.estagio-mini.e0{
+    background:#16a34a;
+}
+
+.estagio-mini.e1{
+    background:#eab308;
+    color:#000;
+}
+
+.estagio-mini.e2{
+    background:#f97316;
+}
+
+.estagio-mini.e3{
+    background:#dc2626;
+}
+
+.estagio-mini.e4{
+    background:#9e19d6;
+}
+.escassez-declarada{
+    width:22px;
+    height:22px;
+    display:inline-block;
+    border:1px solid #000;
+
+    background:
+        repeating-linear-gradient(
+            -45deg,
+            #b91c1c,
+            #121212 1px,
+            #f7f7f7 2px,
+            #fffefe 12px
+        );
+}
+/* Tabelas dos estágios: mesmo padrão visual da tabela de reservatórios. */
+.tabela-estagio { width: 100%; border-collapse: collapse; background: #fff; }
+.tabela-estagio > tbody > tr > td { padding: 10px 12px; vertical-align: middle;
+    background: #fff; color: #12263a; border-color: #e2eaf2; }
+.tabela-estagio > tbody > tr:first-child > td { background: #0b4f8a; color: #fff;
+    font-weight: 700; border-color: #0b4f8a; }
+.tabela-estagio > tbody > tr:not(:first-child):nth-child(even) > td { background: #d6e6f5; }
+.tabela-estagio > tbody > tr:not(:first-child):hover > td { background: #bcd5ec; }
+
+}

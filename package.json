@@ -1,0 +1,44 @@
+{
+  "name": "ssap",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Sala de Situação Alfredo Pisani — Next.js + PostgreSQL",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit",
+    "test": "node --import tsx --test tests/*.test.ts",
+    "integracoes:testar": "tsx scripts/testar-integracoes.ts",
+    "db:migrar": "tsx scripts/migrar.ts",
+    "arquivos:banco": "tsx scripts/arquivos-banco.ts",
+    "admin:criar": "tsx scripts/criar-admin.ts",
+    "senha:link": "tsx scripts/link-senha.ts"
+  },
+  "dependencies": {
+    "@node-rs/argon2": "^2.2.1",
+    "bootstrap": "^5.3.3",
+    "bootstrap-icons": "^1.13.1",
+    "chart.js": "^4.5.1",
+    "chartjs-plugin-annotation": "^3.1.0",
+    "chartjs-plugin-datalabels": "^2.2.0",
+    "next": "^16.3.8",
+    "pg": "^8.23.1",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "server-only": "^0.0.1",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@types/node": "^24.19.0",
+    "@types/pg": "^8.23.1",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "tsx": "^4.23.15",
+    "typescript": "^5.9.3"
+  }
+}

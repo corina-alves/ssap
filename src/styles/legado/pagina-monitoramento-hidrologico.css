@@ -1,0 +1,173 @@
+/* Página: Monitoramento Hidrológico (monitoramento_hidrologico.php)
+   Estilos específicos da página. O layout base vem de header.css /
+   paginas_publicas.css / system-v2.css (sssp_public_head).
+
+   Cards sem preenchimento colorido / gradiente: fundo branco, borda suave
+   e sombra leve, seguindo o restante do design system. */
+
+:root {
+  --mh-card-bg: #fff;
+  --mh-card-border: #e6edf4;
+  --mh-card-shadow: 0 4px 14px rgba(15, 23, 42, .05);
+  --mh-accent: #0b4f8a;
+  --mh-muted: #5a6b7b;
+  --mh-soft: #f4f8fc;
+
+  /* paleta da logo SP Águas + versões suaves para preenchimento dos cards */
+  --mh-green: #1e9d55;
+  --mh-blue-deep: #12309e;
+  --mh-blue: #1560e8;
+  --mh-green-soft: #eef7f1;
+  --mh-blue-deep-soft: #eceffb;
+  --mh-blue-soft: #eaf2fe;
+}
+
+/* ---------------------------------------------------------------- títulos */
+.section-title { margin-bottom: 30px; }
+.section-title h2 { font-weight: 700; }
+.section-title p { max-width: 760px; margin-inline: auto; }
+
+/* ------------------------------------------------------ cartões da página */
+.monitor-card {
+  background: var(--mh-blue-soft);
+  color: inherit;
+  border-radius: 18px;
+  padding: 24px;
+  height: 100%;
+  border: 1px solid #d7e6fc;
+  box-shadow: var(--mh-card-shadow);
+  transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease;
+}
+.monitor-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--mh-blue);
+  box-shadow: 0 10px 24px rgba(21, 96, 232, .12);
+}
+.monitor-card img { width: 100%; height: 220px; object-fit: cover; border-radius: 14px; margin-bottom: 18px; }
+.monitor-card h3, .monitor-card h4 { color: #17344e; }
+
+.icon-box { font-size: 2.6rem; margin-bottom: 12px; }
+
+/* Principais Informações Monitoradas — verde suave da logo */
+.info-box {
+  background: var(--mh-green-soft);
+  border-radius: 16px;
+  padding: 20px;
+  height: 100%;
+  border: 1px solid #d5ecdf;
+  border-left: 4px solid var(--mh-green);
+  box-shadow: var(--mh-card-shadow);
+  color: inherit;
+}
+.info-box h5 { color: #14532d; }
+.info-box p { color: #35564a !important; }
+
+.link-monitor { text-decoration: none; color: inherit; }
+
+/* Estudos e Publicações — azul-marinho suave da logo */
+.status-card {
+  background: var(--mh-blue-deep-soft);
+  border-radius: 16px;
+  padding: 22px;
+  color: inherit;
+  height: 100%;
+  text-align: center;
+  border: 1px solid #d7ddf6;
+  border-top: 4px solid var(--mh-blue-deep);
+  box-shadow: var(--mh-card-shadow);
+  transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease;
+}
+.link-monitor:hover .status-card {
+  transform: translateY(-3px);
+  border-color: var(--mh-blue-deep);
+  box-shadow: 0 10px 24px rgba(18, 48, 158, .14);
+}
+.status-card > i { font-size: 1.7rem; color: var(--mh-blue-deep); }
+.status-card .card-title { color: #10225f; margin-top: 8px; }
+.status-card .card-subtitle { color: #3a4a8a !important; }
+.status-card p, .status-card small { color: #3c4667 !important; }
+
+.timeline-item { border-left: 3px solid var(--mh-blue); padding-left: 18px; margin-bottom: 24px; }
+.timeline-item h5 { color: #17344e; }
+
+/* ===================================================== seção de mapas === */
+.mapa-section {
+  position: relative;
+  border-radius: 18px;
+  padding: 32px;
+  background: var(--mh-card-bg);
+  border: 1px solid var(--mh-card-border);
+  box-shadow: var(--mh-card-shadow);
+}
+.mapa-kicker {
+  display: inline-flex; align-items: center; gap: 8px; padding: 7px 14px; border-radius: 999px;
+  background: #eef4fb; color: var(--mh-accent); font-size: .88rem; font-weight: 600; margin-bottom: 12px;
+}
+.mapa-card {
+  height: 100%; background: var(--mh-card-bg); color: inherit; border-radius: 16px;
+  overflow: hidden; border: 1px solid var(--mh-card-border);
+  box-shadow: var(--mh-card-shadow); transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease;
+}
+.mapa-card:hover { transform: translateY(-3px); border-color: #cdddec; box-shadow: 0 10px 24px rgba(15, 23, 42, .08); }
+.mapa-img-wrap { position: relative; height: 220px; background: #e5eef7; overflow: hidden; }
+.mapa-img-wrap img { width: 100%; height: 100%; object-fit: cover; transition: .35s ease; }
+.mapa-card:hover .mapa-img-wrap img { transform: scale(1.04); }
+.mapa-tag {
+  position: absolute; left: 14px; top: 14px; display: inline-flex; gap: 6px; align-items: center;
+  padding: 6px 12px; border-radius: 999px; color: #fff; font-size: .8rem; font-weight: 700;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, .18);
+}
+.mapa-tag.chuva { background: #0284c7; }
+.mapa-tag.rio { background: #1d4ed8; }
+.mapa-tag.sub { background: #15803d; }
+.mapa-body { padding: 22px; }
+.mapa-body h4 { font-weight: 800; margin-bottom: 10px; color: #17344e; }
+.mapa-body p { color: var(--mh-muted); text-align: justify; }
+.mapa-acoes { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; }
+.btn-mapa { border-radius: 999px; padding: 9px 14px; font-weight: 700; }
+.mapa-indicador {
+  background: var(--mh-blue-soft); border: 1px solid #d7e6fc;
+  border-radius: 16px; padding: 18px; height: 100%; color: inherit;
+}
+.mapa-indicador i { font-size: 1.7rem; }
+.mapa-indicador h5 { margin-top: 10px; margin-bottom: 4px; color: #17344e; }
+.mapa-indicador small { color: var(--mh-muted); }
+.modal-mapa-img { width: 100%; border-radius: 14px; }
+@media (max-width: 768px) {
+  .mapa-section { padding: 22px; }
+  .mapa-img-wrap { height: 190px; }
+}
+
+/* ======================================= portal da hidrologia / entidades */
+.portal-hidro-box {
+  position: relative;
+  border-radius: 18px;
+  padding: 32px;
+  background: var(--mh-card-bg);
+  border: 1px solid var(--mh-card-border);
+  box-shadow: var(--mh-card-shadow);
+}
+.portal-btn { min-width: 180px; border-radius: 14px; font-weight: 700; padding: 14px 18px; }
+.portal-mini-card {
+  height: 100%; padding: 18px; border-radius: 16px; background: var(--mh-green-soft); color: inherit;
+  border: 1px solid #d5ecdf; border-top: 4px solid var(--mh-green);
+}
+.portal-mini-card h4 { margin: 0; font-weight: 800; color: var(--mh-green); }
+.portal-mini-card small { color: var(--mh-muted); }
+
+.entidade-link { text-decoration: none; display: block; height: 100%; }
+.entidade-card {
+  min-height: 74px; border-radius: 16px; display: flex; align-items: center; justify-content: center;
+  font-weight: 800; letter-spacing: .3px; background: var(--mh-card-bg);
+  border: 1px solid var(--mh-card-border); box-shadow: var(--mh-card-shadow);
+  transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease;
+}
+.entidade-card:hover { transform: translateY(-3px); box-shadow: 0 10px 24px rgba(15, 23, 42, .08); }
+/* cor apenas no texto e numa borda suave à esquerda, sem preenchimento */
+.entidade-saisp   { color: #dc3545; border-left: 3px solid #dc3545; }
+.entidade-ana     { color: #0d6efd; border-left: 3px solid #0d6efd; }
+.entidade-ciiagro { color: #198754; border-left: 3px solid #198754; }
+.entidade-cemaden { color: #d98207; border-left: 3px solid #f59e0b; }
+.entidade-inmet   { color: #0891b2; border-left: 3px solid #06b6d4; }
+.entidade-inpe    { color: #495057; border-left: 3px solid #495057; }
+.entidade-iac     { color: #111827; border-left: 3px solid #111827; }

@@ -1,0 +1,93 @@
+/* Início — Acompanhamento de Volume (app/(site)/acompanhamento-volume.tsx). */
+.vol-sistemas .dashboard-card-title h3 { font-size: .86rem; }
+.vol-sistemas .dashboard-card-body { display: flex; flex-direction: column; height: calc(100% - 58px); }
+.vol-sistemas .resumo-chart-intro strong { font-size: 1rem; }
+.vol-sistemas .resumo-chart-intro small { font-size: .76rem; }
+.vol-sistemas .grafico-resumo-wrapper { flex: 1; }
+.vol-sistemas .resumo-atualizacao { font-size: .76rem; padding: 10px; }
+
+.vol-cantareira {
+    height: 100%; display: flex; flex-direction: column; overflow: hidden;
+    border: 1px solid #1565c0; border-radius: 20px; background: #fff;
+    box-shadow: 0 12px 30px rgba(21, 101, 192, .14);
+}
+.vol-cantareira__cabeca {
+    display: flex; align-items: center; gap: 14px; padding: 16px 20px;
+    background: linear-gradient(120deg, #1a56b8, #0d3f8f); color: #fff;
+}
+.vol-cantareira__cabeca > i {
+    flex: none; width: 44px; height: 44px; display: grid; place-items: center;
+    border-radius: 12px; background: #2f7df0; font-size: 1.3rem;
+}
+.vol-cantareira__cabeca h3 { margin: 0; font-size: 1.15rem; font-weight: 800; text-transform: uppercase; color: #fff; }
+.vol-cantareira__cabeca p { margin: 2px 0 0; font-size: .82rem; color: rgba(255, 255, 255, .85); }
+.vol-cantareira__cabeca > span {
+    margin-left: auto; flex: none; padding: 6px 14px; border-radius: 999px;
+    background: rgba(6, 30, 74, .55); font-size: .8rem; font-weight: 700;
+}
+
+.vol-cantareira__corpo { flex: 1; display: grid; grid-template-columns: minmax(0, 1fr) 320px; }
+.vol-cantareira__grafico { display: flex; flex-direction: column; gap: 14px; padding: 20px; background: #f3f8ff; }
+.vol-grafico { position: relative; flex: 1; min-height: 340px; padding: 14px; border-radius: 14px; background: #fff; }
+
+.vol-rodape {
+    display: flex; flex-wrap: wrap; gap: 12px 28px; align-items: center; justify-content: space-between;
+    list-style: none; margin: 0; padding: 4px 12px;
+}
+.vol-rodape li { display: flex; align-items: center; gap: 12px; }
+.vol-rodape i { font-size: 1.4rem; color: #1565c0; }
+.vol-rodape small { display: block; max-width: 210px; color: #687b8e; font-size: .76rem; line-height: 1.35; }
+.vol-rodape strong { display: block; color: #142d50; font-size: 1rem; }
+
+/* Painel de indicadores. */
+.vol-indicadores { display: flex; flex-direction: column; gap: 10px; padding: 20px; border-left: 1px solid #1565c0; }
+.vol-indicadores h4 { margin: 0; font-size: 1.1rem; font-weight: 800; color: #142d50; }
+.vol-indicadores > p { margin: -6px 0 4px; font-size: .78rem; color: #24364b; }
+
+.vol-ind { display: flex; align-items: center; gap: 14px; padding: 12px 14px; border-radius: 12px; background: #f7fafd; }
+.vol-ind > i {
+    flex: none; width: 40px; height: 40px; display: grid; place-items: center;
+    border-radius: 10px; background: #e9f3ff; color: #1565c0; font-size: 1.25rem;
+}
+.vol-ind small { display: block; color: #24364b; font-size: .76rem; }
+.vol-ind strong { display: block; color: #142d50; font-size: 1.25rem; font-weight: 800; line-height: 1.2; }
+.vol-ind span { display: block; color: #687b8e; font-size: .74rem; }
+.vol-ind--sobe > i { background: #e6f6ee; color: #12924f; }
+.vol-ind--desce > i { background: #fdeaea; color: #dc2626; }
+.vol-ind--variacao.vol-ind--sobe strong { color: #12924f; }
+.vol-ind--variacao.vol-ind--desce strong { color: #dc2626; }
+
+/* Situação atual: cor do estágio do Protocolo de Escassez. */
+.vol-ind--situacao { --vol-cor: #c2570c; --vol-fundo: #fff6dd; background: var(--vol-fundo); }
+.vol-ind--situacao > i { background: none; color: var(--vol-icone, var(--vol-cor)); font-size: 2rem; }
+.vol-ind--situacao strong { color: var(--vol-cor); font-size: 1.45rem; text-transform: uppercase; }
+.vol-ind--normal { --vol-cor: #12924f; --vol-fundo: #e8f7ee; }
+.vol-ind--atencao { --vol-cor: #c2570c; --vol-fundo: #fff6dd; --vol-icone: #f5a700; }
+.vol-ind--alerta { --vol-cor: #c2410c; --vol-fundo: #ffeedd; }
+.vol-ind--critico { --vol-cor: #b91c1c; --vol-fundo: #fdeaea; }
+.vol-ind--emergencia { --vol-cor: #800080; --vol-fundo: #f3def3; }
+
+.vol-ind-par { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.vol-ind-par .vol-ind { align-items: flex-start; gap: 10px; padding: 12px 10px; }
+.vol-ind-par .vol-ind > i { width: 32px; height: 32px; font-size: 1rem; }
+.vol-ind-par .vol-ind small { font-size: .72rem; }
+
+.vol-botao {
+    margin-top: auto; align-self: flex-end; display: inline-flex; align-items: center; gap: 10px;
+    padding: 9px 20px; border: 1px solid #1565c0; border-radius: 12px;
+    color: #1565c0; font-weight: 700; font-size: .9rem; text-decoration: none;
+}
+.vol-botao:hover { background: #1565c0; color: #fff; }
+
+@media (max-width: 1199.98px) {
+    .vol-cantareira__corpo { grid-template-columns: 1fr; }
+    .vol-indicadores { border-left: 0; border-top: 1px solid #1565c0; }
+}
+@media (max-width: 575.98px) {
+    .vol-cantareira__cabeca { flex-wrap: wrap; }
+    .vol-cantareira__cabeca > span { margin-left: 58px; }
+    .vol-grafico { min-height: 280px; }
+}
+
+/* O canvas fora do fluxo: a altura do quadro vem do cartão, não do gráfico. */
+.vol-grafico canvas { position: absolute; top: 14px; left: 14px; }

@@ -1,0 +1,31 @@
+/* Página Nota Informativa — documentos em destaque. */
+
+.nota-docs { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+
+.nota-doc {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 20px;
+    background: #fff;
+    border: 1px solid var(--sp-border);
+    border-top: 4px solid var(--sp-blue);
+    border-radius: var(--sp-radius);
+    box-shadow: var(--sp-shadow);
+}
+.nota-doc__tag {
+    align-self: flex-start;
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 10px; border-radius: 999px;
+    background: var(--sp-blue-light); color: var(--sp-blue);
+    font-size: .74rem; font-weight: 800; text-transform: uppercase; letter-spacing: .04em;
+}
+.nota-doc__data { font-size: .82rem; color: var(--sp-gray); font-weight: 700; }
+.nota-doc__assunto { font-size: 1.05rem; font-weight: 800; color: var(--sp-ink); line-height: 1.35; }
+.nota-doc__desc { color: var(--sp-gray); font-size: .9rem; margin: 0; flex: 1; }
+.nota-doc__acoes { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.nota-meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
+.nota-meta div { padding: 14px 16px; background: var(--sp-blue-light); border-radius: var(--sp-radius-sm); }
+.nota-meta small { display: block; color: var(--sp-gray); font-weight: 700; text-transform: uppercase; letter-spacing: .04em; font-size: .72rem; }
+.nota-meta strong { color: var(--sp-ink); }

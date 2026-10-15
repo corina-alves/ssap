@@ -1,0 +1,29 @@
+/* Página de Precipitação — estilos sobre o design system. */
+
+.pcp-cards { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+@media (max-width: 991px) { .pcp-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 520px) { .pcp-cards { grid-template-columns: 1fr; } }
+
+.pcp-card {
+    background: #fff;
+    border: 1px solid var(--sp-border);
+    border-left: 5px solid var(--sp-blue);
+    border-radius: var(--sp-radius);
+    box-shadow: var(--sp-shadow);
+    padding: 18px;
+    text-align: center;
+}
+.pcp-card i { font-size: 1.6rem; color: var(--sp-blue); }
+.pcp-card h5 { margin: 8px 0 6px; font-weight: 800; color: var(--sp-ink); font-size: .98rem; }
+.pcp-card .pcp-valor { font-size: 1.75rem; font-weight: 800; color: var(--sp-ink); line-height: 1.1; }
+.pcp-card small { display: block; color: var(--sp-gray); margin-top: 4px; }
+
+.pcp-grafico-wrap { position: relative; min-height: 620px; }
+@media (max-width: 767px) { .pcp-grafico-wrap { min-height: 480px; } }
+
+.pcp-tabela { width: 100%; }
+.pcp-tabela th, .pcp-tabela td { text-align: center; vertical-align: middle; font-size: .84rem; }
+.pcp-tabela th:first-child, .pcp-tabela td:first-child { text-align: left; }
+.pcp-tabela thead .pcp-titulo th {
+    background: var(--sp-blue); color: #fff; font-weight: 800;
+}

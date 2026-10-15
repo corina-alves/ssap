@@ -1,0 +1,27 @@
+/* Página de Vazão — estilos sobre o design system. */
+
+.vzo-cards { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; }
+@media (max-width: 1100px) { .vzo-cards { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 640px) { .vzo-cards { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 420px) { .vzo-cards { grid-template-columns: 1fr; } }
+
+.vzo-card {
+    background: #fff;
+    border: 1px solid var(--sp-border);
+    border-left: 5px solid var(--sp-blue);
+    border-radius: var(--sp-radius);
+    box-shadow: var(--sp-shadow);
+    padding: 16px;
+    text-align: center;
+}
+.vzo-card i { font-size: 1.45rem; color: var(--sp-blue); }
+.vzo-card h5 { margin: 7px 0 5px; font-weight: 800; color: var(--sp-ink); font-size: .92rem; }
+.vzo-card .vzo-valor { font-size: 1.5rem; font-weight: 800; color: var(--sp-ink); line-height: 1.15; }
+.vzo-card small { display: block; color: var(--sp-gray); margin-top: 4px; font-size: .74rem; }
+
+.vzo-grafico-wrap { position: relative; min-height: 620px; }
+@media (max-width: 767px) { .vzo-grafico-wrap { min-height: 480px; } }
+
+.vzo-tabela { width: 100%; }
+.vzo-tabela th, .vzo-tabela td { text-align: center; vertical-align: middle; font-size: .84rem; }
+.vzo-tabela th:first-child, .vzo-tabela td:first-child { text-align: left; }

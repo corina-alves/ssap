@@ -1,0 +1,130 @@
+/* Boletim Diário — Sala de Situação Alfredo Pisani (SSAP). Páginas A4 deitadas (1123 × 794 px). */
+.bd-area { --bd-texto: #111; --bd-borda: #cfd4da; --bd-azul: #0b4f8a; }
+
+.bd-barra { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.bd-barra .bd-status { font-size: .875rem; color: #4b5d68; }
+.bd-barra .bd-status.erro { color: #b42318; }
+.bd-dica { margin: 8px 0 0; font-size: .875rem; color: #4b5d68; }
+
+.bd-folhas { overflow-x: auto; padding-bottom: 8px; }
+.bd-pagina {
+  position: relative; display: flex; flex-direction: column; flex: none;
+  width: 1123px; height: 793px; margin: 16px auto; padding: 26px 40px 22px; overflow: hidden;
+  background: #fff; color: var(--bd-texto); font-family: Arial, Helvetica, sans-serif; font-size: 13px; line-height: 1.35;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, .15);
+}
+.bd-pagina * { box-sizing: border-box; }
+
+/* ---- capa */
+.bd-capa { padding: 0; justify-content: center; }
+.bd-capa svg.bd-ondas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.bd-capa-texto { position: relative; padding-left: 42px; margin-top: -20px; }
+.bd-capa-texto h1 { margin: 0 0 6px; font-size: 40px; font-weight: 700; }
+.bd-capa-texto p { margin: 0; font-size: 19px; font-weight: 700; line-height: 1.45; }
+.bd-capa-logos { position: absolute; right: 26px; bottom: 18px; display: flex; align-items: center; gap: 14px; }
+.bd-capa-logos img { height: 40px; width: auto; }
+
+/* ---- cabeçalho de cada folha */
+.bd-topo { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px; min-height: 52px; margin-bottom: 14px; }
+.bd-topo small { font-size: 11.5px; }
+.bd-topo h2 { margin: 0; font-size: 18px; font-weight: 700; text-align: center; max-width: 640px; }
+.bd-topo img { justify-self: end; height: 46px; width: auto; }
+
+.bd-duas { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; min-height: 0; }
+.bd-col { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+.bd-titulo { margin: 0 0 4px; font-size: 14.5px; font-weight: 700; text-align: center; }
+.bd-fonte { margin: 4px 0 0; font-size: 10px; font-style: italic; text-align: center; }
+.bd-rotulo { margin: 10px 0 4px; font-size: 13.5px; font-weight: 700; }
+.bd-caixa { padding: 10px 14px; border: 1px solid var(--bd-borda); font-size: 14px; line-height: 1.6; text-align: justify; min-height: 60px; white-space: pre-wrap; }
+.bd-notas { margin: 14px 0 0; font-size: 11.5px; line-height: 1.5; white-space: pre-wrap; }
+
+/* ---- mapas */
+.bd-mapa { position: relative; background: #eef1f4; border: 1px solid #e1e5ea; }
+.bd-mapa svg { display: block; width: 100%; height: auto; }
+.bd-mapa .estado { fill: #c9ccd1; stroke: #222; stroke-width: 1; }
+.bd-mapa .mun { stroke: #1b1b1b; stroke-width: .35; }
+.bd-mapa .rot { font-size: 7.5px; font-weight: 700; fill: #fff; text-anchor: middle; dominant-baseline: central; pointer-events: none; }
+.bd-legenda { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; margin-top: 6px; }
+.bd-legenda span { padding: 2px 10px; border-radius: 4px; font-size: 9.5px; color: #fff; }
+.bd-escala { display: grid; grid-template-columns: repeat(15, 1fr); margin: 6px 12px 0; font-size: 9px; }
+.bd-escala i { display: block; height: 12px; }
+.bd-escala b { font-weight: 400; }
+
+/* ---- tabelas */
+.bd-tab { width: 100%; border-collapse: separate; border-spacing: 2px 1px; font-family: Georgia, 'Times New Roman', serif; font-size: 12.5px; text-align: center; }
+.bd-tab th { padding: 6px 8px; background: #ececec; font-size: 12px; font-weight: 700; }
+.bd-tab td { padding: 3px 6px; background: #f8f8f8; }
+.bd-tab--alta td { padding: 9px 6px; }
+.bd-tab--cinza th { background: #d3d3d3; }
+.bd-tab--cinza td { background: #fff; font-size: 11.5px; }
+.bd-barra-ppdc { position: relative; height: 20px; background: transparent; text-align: right; }
+.bd-barra-ppdc i { position: absolute; inset: 0 auto 0 0; background: linear-gradient(90deg, #e6f56a, #ffe600 35%, #ffb300 70%, #ff7a00); }
+.bd-barra-ppdc b { position: relative; padding-right: 6px; font-weight: 400; line-height: 20px; }
+
+/* ---- gráficos */
+.bd-grafico { position: relative; flex: 1; min-height: 0; }
+.bd-grafico--fixo { flex: none; }
+
+/* ---- imagens trocáveis */
+.bd-imagem { position: relative; display: flex; align-items: center; justify-content: center; flex: 1; min-height: 120px; overflow: hidden; }
+.bd-imagem img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.bd-imagem.vazia { border: 2px dashed #9aa8b6; background: #f6f8fa; color: #5b6b7b; text-align: center; font-size: 12.5px; }
+.bd-imagem .bd-trocar { position: absolute; top: 6px; right: 6px; display: flex; gap: 4px; }
+.bd-imagem .bd-trocar label, .bd-imagem .bd-trocar button { padding: 3px 8px; border: 1px solid #9aa8b6; border-radius: 4px; background: rgba(255, 255, 255, .92); font: inherit; font-size: 11px; color: #1f2f39; cursor: pointer; }
+.bd-imagem input[type="file"] { display: none; }
+.bd-imagem:focus { outline: 2px solid var(--bd-azul); }
+
+/* ---- extravasamento */
+.bd-cartoes { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; margin: 0 50px 10px; }
+.bd-cartoes div { padding: 26px 8px; border-radius: 6px; color: #fff; text-align: center; font-family: Georgia, 'Times New Roman', serif; font-size: 15px; }
+.bd-cartoes strong { display: block; font-size: 16.5px; }
+.bd-cartoes .extravasamento { background: #dc0714; }
+.bd-cartoes .emergencia { background: #8232b4; }
+.bd-cartoes .alerta { background: #fa500a; }
+.bd-cartoes .atencao { background: #f8d400; }
+.bd-cartoes .normal { background: #258a14; }
+
+/* ---- sistemas produtores */
+.bd-sistemas { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; flex: 1; align-content: center; padding: 14px; background: #f0f0f0; }
+.bd-sistema { padding: 12px 14px; border-radius: 10px; background: #fff; border-top: 6px solid var(--cor, #888); }
+.bd-sistema h3 { margin: 0 0 8px; font-size: 16px; font-weight: 800; color: var(--cor, #333); }
+.bd-sistema dl { margin: 0; }
+.bd-sistema dt { margin-top: 6px; font-size: 11.5px; font-weight: 400; color: #555; }
+.bd-sistema dd { margin: 0; font-size: 13px; font-weight: 700; }
+
+/* ---- dados de apoio (não saem no PDF) */
+.bd-apoio { max-width: 1123px; margin: 0 auto 8px; padding: 8px 12px; border: 1px dashed #9aa8b6; border-radius: 6px; background: #fff; font-size: .8125rem; }
+.bd-apoio summary { cursor: pointer; font-weight: 600; }
+.bd-apoio table { margin-top: 8px; border-collapse: collapse; }
+.bd-apoio th, .bd-apoio td { padding: 2px 8px; border: 1px solid var(--bd-borda); text-align: right; }
+.bd-apoio th:first-child, .bd-apoio td:first-child { text-align: left; }
+
+/* ---- edição */
+.bd-area [contenteditable="true"] { outline: none; }
+.bd-area [contenteditable="true"]:hover { box-shadow: inset 0 0 0 1px #8ab4d8; }
+.bd-area [contenteditable="true"]:focus { box-shadow: inset 0 0 0 2px var(--bd-azul); background-color: #fff; }
+.bd-area [contenteditable="true"]:empty::before { content: '—'; color: #9aa8b6; }
+.bd-area .editado { box-shadow: inset 0 -2px 0 #f4b400; }
+
+/* ---- impressão: só as folhas, sem a moldura da área administrativa */
+@page bd { size: A4 landscape; margin: 0; }
+@media print {
+  body:has(.bd-area) { background: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body:has(.bd-area) :is(.acesso-topo, .acesso-menu, .acesso-rodape, .acesso-cabecalho, .acesso-pular, .acesso-subir) { display: none !important; }
+  body:has(.bd-area) :is(.acesso-app, .acesso-corpo, .acesso-conteudo) { display: block; min-height: 0; max-width: none; margin: 0; padding: 0; background: #fff; }
+  .bd-area .sem-imprimir, .bd-area .bd-trocar { display: none !important; }
+  .bd-area .bd-folhas { overflow: visible; padding: 0; }
+  .bd-area .bd-pagina { page: bd; margin: 0; box-shadow: none; break-after: page; break-inside: avoid; }
+  .bd-area .bd-pagina:last-child { break-after: auto; }
+  .bd-area .bd-imagem.vazia { border: 0; background: none; color: transparent; }
+  .bd-area [contenteditable="true"]:empty::before { content: ''; }
+  .bd-area .editado, .bd-area [contenteditable="true"]:hover, .bd-area [contenteditable="true"]:focus { box-shadow: none; }
+}
+.bd-caixa--alta { min-height: 300px; }
+
+/* ---- radares */
+.bd-mapa--radar { background: #dfe9f1; }
+.bd-mapa--radar .contorno { fill: none; stroke: #222; stroke-width: 1; }
+.bd-mapa .bd-trocar { position: absolute; top: 6px; right: 6px; }
+.bd-mapa .bd-trocar label { padding: 3px 8px; border: 1px solid #9aa8b6; border-radius: 4px; background: rgba(255, 255, 255, .92); font-size: 11px; color: #1f2f39; cursor: pointer; }
+.bd-escala-img { display: block; height: 34px; width: auto; margin: 6px auto 0; }

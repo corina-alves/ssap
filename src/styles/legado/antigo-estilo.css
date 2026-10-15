@@ -1,0 +1,400 @@
+/* estilo.css do PHP, restrito a .doc-legado (gerado por scripts/capturar-legado.mjs). */
+.doc-legado {
+ * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #eeeeee;
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        /* .hero {
+            background:linear-gradient(rgba(2, 8, 20, 0.9), rgba(2, 8, 20, 0.9)),
+                url('https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=2070');
+            background-size: cover;
+            background-position: center;
+            padding: 80px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            color: #d7e2ec;
+        } */
+/* 
+        .hero{
+
+    background: linear-gradient(
+        135deg,
+        #0f172a,
+        #0b3b66
+    ) !important;
+
+    color:#fff;
+    padding:80px 0;
+} */
+
+.hero{
+
+    position:relative;
+
+    min-height:550px;
+
+    display:flex;
+
+    align-items:center;
+
+    color:#fff;
+
+    background-image:url('/SalaSituacao/assets/img/sssp.JPG');
+
+    background-size:cover;
+
+    background-position:center center;
+
+    background-repeat:no-repeat;
+
+    overflow:hidden;
+}
+
+.hero::before{
+
+    content:'';
+
+    position:absolute;
+
+    inset:0;
+
+    background:linear-gradient(
+        rgba(15,23,42, 0.9),
+        rgba(11,59,102, 0.9)
+    );
+
+    z-index:1;
+}
+
+.hero .container{
+
+    position:relative;
+
+    z-index:2;
+}
+
+.hero h1{
+    color:#fff;
+}
+
+.hero p{
+    color:#e2e8f0;
+}
+
+        .hero h1 {
+            font-size: 3.5rem;
+            font-weight: 700;
+        }
+
+        .card-monitoramento {
+            background: linear-gradient(12deg, #025c2f, #f3f3f3);
+            border: 0cm solid rgba(255,255,255,0.06);
+            border-radius: 5px;
+            padding: 25px;
+            transition: 0.3s;
+            height: 100%;
+        }
+
+        .card-monitoramento:hover {
+            transform: translateY(-5px);
+            border-color: rgba(52,211,255,0.5);
+        }
+      .card-monitoramento p{
+            font-size: 16px;
+        }
+        .volume {
+            font-size: 3rem;
+            font-weight: bold;
+            color: #34d3ff;
+        }
+
+        .barra {
+            width: 100%;
+            height: 10px;
+            background: #1d2d3f;
+            border-radius: 20px;
+            overflow: hidden;
+            margin-top: 15px;
+        }
+
+        .barra span {
+            display: block;
+            height: 100%;
+            /* background: linear-gradient(90deg, #00c6ff, #0072ff); */
+        }
+
+        .section-title {
+            margin-bottom: 30px;
+        }
+
+        .section-title h2 {
+            font-weight: 700;
+        }
+
+        .painel {
+            background: #ffffff;
+            /* background: rgb(0, 81, 253, 0.5); */
+            border-radius: 25px;
+            border: 1px solid rgba(255,255,255,0.05);
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        .painel-prev-municipio{
+             background: #011321;
+            border-radius: 25px;
+            border: 1px solid rgba(255,255,255,0.05);
+            padding: 20px;
+            margin-bottom: 30px; 
+}
+        .mapa {
+            height: 420px;
+            border-radius: 25px;
+            background: linear-gradient(135deg, #09131e, #0e2436);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #8ba3b8;
+            font-size: 1.2rem;
+        }
+
+        .status {
+            padding: 6px 14px;
+            border-radius: 30px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .normal {
+            background: rgba(0, 255, 170, 0.15);
+            color: #00ffae;
+        }
+
+        .atencao {
+            background: rgba(255, 193, 7, 0.15);
+            color: #ffc107;
+        }
+
+        .alerta {
+            background: rgba(255, 82, 82, 0.15);
+            color: #ff5252;
+        }
+
+        .previsao-card {
+            background: #08131d;
+            border-radius: 18px;
+            padding: 20px;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        footer {
+            padding: 40px 0;
+            text-align: center;
+            color: #8ca1b3;
+        }
+
+        .previsao-municipio {
+    background:
+        linear-gradient(180deg, rgba(14, 36, 54, 0.95), rgba(6, 15, 24, 0.98));
+    border: 1px solid rgba(255,255,255,0.06);
+    overflow: hidden;
+}
+
+.icone-tempo {
+    width: 70px;
+    height: 70px;
+    border-radius: 20px;
+    background: rgba(52,211,255,0.12);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+}
+
+.temperatura {
+    font-size: 5rem;
+    font-weight: 700;
+    line-height: 1;
+    color: #34d3ff;
+}
+
+.descricao-tempo {
+    font-size: 1.1rem;
+    color: #c6d2dd;
+    margin-top: 10px;
+}
+
+.mini-card {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 16px;
+    padding: 14px 10px;
+}
+
+.mini-card small {
+    display: block;
+    color: #91a5b8;
+    margin-bottom: 5px;
+}
+
+.mini-card h6 {
+    margin: 0;
+    color: #fff;
+    font-weight: 600;
+}
+
+.tendencia {
+    background: rgba(255,255,255,0.03);
+    border-radius: 18px;
+    padding: 15px;
+}
+
+.dia-previsao {
+    text-align: center;
+    color: #d7e2ec;
+}
+
+.dia-previsao span {
+    display: block;
+    font-size: 0.85rem;
+    color: #8fa5b8;
+    margin-bottom: 8px;
+}
+
+.dia-previsao div {
+    font-size: 1.5rem;
+    margin-bottom: 5px;
+}
+
+.dia-previsao strong {
+    font-size: 0.95rem;
+}
+
+        .card-chuva {
+            background:linear-gradient(180deg,#102334,#08131d);
+            border-radius: 25px;
+            padding: 20px;
+            max-width: 500px;
+            margin: auto;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .valor-chuva {
+
+            font-size: 2rem;
+
+            font-weight: bold;
+
+            color: #34d3ff;
+
+            line-height: 1;
+        }
+
+        .temperaturas {
+
+            margin-top: 25px;
+
+            display: flex;
+
+            justify-content: space-between;
+        }
+
+        .temp-box {
+
+            background: rgba(255,255,255,0.04);
+
+            padding: 5px;
+
+            border-radius: 18px;
+
+            width: 48%;
+
+            text-align: center;
+        }
+
+        .temp-box small {
+
+            display: block;
+
+            color: #8ca3b5;
+
+            margin-bottom: 8px;
+        }
+
+        .temp-box strong {
+
+            font-size: 1.4rem;
+        }
+  
+
+.normas a{
+    font-weight: 700;
+    text-decoration: none;
+
+}
+
+/* botão volta ao topo */
+   #btnTopo{
+    display:none;
+    position:fixed;
+    bottom:20px;
+    right:20px;
+    z-index:9999;
+
+    width:50px;
+    height:50px;
+
+    border:none;
+    border-radius:50%;
+
+    background:#02984E;
+    color:#fff;
+
+    font-size:24px;
+    cursor:pointer;
+
+    box-shadow:0 4px 10px rgba(0,0,0,.3);
+
+    transition:.3s;
+}
+
+#btnTopo:hover{
+    background:#0b5ed7;
+    transform:translateY(-3px);
+}
+.grafico-cantareira{
+    border:1px solid rgba(255,255,255,0.05);
+    border-radius:24px;
+    background:linear-gradient(135deg, #0f172a, #0b3b66);
+    padding:10px;
+    color:#f8f8f8;
+}
+
+.breadcrumb{
+    margin-bottom:0;
+    background:#eeeeee!important;
+    border:0px solid #e5e7eb;
+}
+
+.breadcrumb-item a{
+    text-decoration:none;
+    color:#0d6efd;
+    font-weight:500;
+}
+
+.breadcrumb-item.active{
+    color:#6c757d;
+    font-weight:600;
+}
+
+.breadcrumb-item + .breadcrumb-item::before{
+    content: ">";
+    color:#94a3b8;
+}
+}

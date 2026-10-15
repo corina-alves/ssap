@@ -1,0 +1,120 @@
+/* Página de Reservatórios — estilos específicos sobre o design system. */
+
+/* Todos os cards de comparativo na mesma linha; em telas estreitas, rolagem horizontal. */
+.rsv-cards {
+    display: grid; grid-auto-flow: column; grid-auto-columns: minmax(140px, 1fr);
+    gap: 12px; overflow-x: auto; padding: 4px 2px 8px; scroll-snap-type: x proximity;
+}
+.rsv-cards > * { scroll-snap-align: start; }
+.rsv-cards .rsv-card { padding: 14px 10px 12px !important; }
+.rsv-cards .rsv-card h5 { font-size: .9rem; }
+.rsv-cards .rsv-card .rsv-valor { font-size: 1.5rem; }
+.rsv-cards .rsv-card .rsv-dif { font-size: .82rem; }
+.rsv-cards .sssp-component-error { grid-column: 1 / -1; }
+
+/* Card de volume: fundo neutro; situação pela cor da borda (protocolo de escassez). */
+.rsv-card {
+    --rsv-cor: var(--sp-gray);
+    background: #fff !important;
+    border: 2px solid var(--rsv-cor) !important;
+    border-left-width: 6px !important;
+    border-radius: var(--sp-radius) !important;
+    box-shadow: var(--sp-shadow) !important;
+    padding: 18px 18px 16px !important;
+    text-align: center;
+    transition: transform .18s ease, box-shadow .18s ease;
+}
+.rsv-card:hover { transform: translateY(-3px); box-shadow: var(--sp-shadow-lg); }
+.rsv-card h5 { margin: 0 0 10px; color: var(--sp-ink); font-weight: 800; font-size: 1rem; }
+.rsv-card .rsv-valor { font-size: 1.9rem; font-weight: 800; color: var(--sp-ink); line-height: 1.1; }
+.rsv-card .rsv-fonte { display: block; margin-top: 3px; font-size: .72rem; font-weight: 700; color: var(--sp-gray); text-transform: uppercase; letter-spacing: .04em; }
+.rsv-card .rsv-estagio {
+    display: inline-block; margin-top: 8px; padding: 2px 10px;
+    font-size: .76rem; font-weight: 800; color: #fff;
+    background: var(--rsv-cor); border-radius: 999px;
+}
+.rsv-card .rsv-dif { margin-top: 8px; font-weight: 700; font-size: .9rem; }
+.rsv-card .rsv-dif small { display: block; font-weight: 500; color: var(--sp-gray); font-size: .72rem; }
+
+/* Situação -> cor da borda do card, conforme o protocolo de escassez. */
+.rsv-card.is-normal     { --rsv-cor: var(--sp-green); }
+.rsv-card.is-atencao    { --rsv-cor: var(--sp-warning); }
+.rsv-card.is-alerta     { --rsv-cor: var(--sp-orange); }
+.rsv-card.is-critico    { --rsv-cor: var(--sp-danger); }
+.rsv-card.is-emergencia { --rsv-cor: var(--sp-danger-dark); }
+/* Atenção usa amarelo: texto escuro no badge para contraste. */
+.rsv-card.is-atencao .rsv-estagio { color: var(--sp-ink); }
+
+.rsv-dif.pos { color: var(--sp-green); }
+.rsv-dif.neg { color: var(--sp-danger); }
+
+/* Mini-cards do resumo (SIM, Cantareira, Alto Tietê, Transposição). */
+.rsv-resumo-card {
+    background: #fff;
+    border: 1px solid var(--sp-border);
+    border-left: 5px solid var(--sp-blue);
+    border-radius: var(--sp-radius);
+    box-shadow: var(--sp-shadow);
+    padding: 20px;
+    text-align: center;
+    height: 100%;
+}
+.rsv-resumo-card i { font-size: 1.7rem; color: var(--sp-blue); }
+.rsv-resumo-card h5 { margin: 10px 0 6px; font-weight: 800; color: var(--sp-ink); font-size: 1rem; }
+.rsv-resumo-card .rsv-valor { font-size: 1.55rem; font-weight: 800; color: var(--sp-ink); }
+.rsv-resumo-card small { display: block; color: var(--sp-gray); margin-top: 4px; }
+.rsv-resumo-card .rsv-fonte { font-weight: 700; text-transform: uppercase; letter-spacing: .04em; font-size: .7rem; }
+
+/* Legenda de estágios. */
+.rsv-estagios { display: grid; gap: 8px; }
+.rsv-estagios li { display: flex; gap: 12px; align-items: baseline; list-style: none; }
+.rsv-estagios .cor { width: 14px; height: 14px; border-radius: 4px; flex: none; align-self: center; }
+.rsv-estagios .cor.is-normal { background: var(--sp-green); }
+.rsv-estagios .cor.is-atencao { background: var(--sp-warning); }
+.rsv-estagios .cor.is-alerta { background: var(--sp-orange); }
+.rsv-estagios .cor.is-critico { background: var(--sp-danger); }
+.rsv-estagios .cor.is-emergencia { background: var(--sp-danger-dark); }
+.rsv-estagios strong { color: var(--sp-ink); min-width: 128px; display: inline-block; }
+.rsv-estagios span { color: var(--sp-gray); font-size: .9rem; }
+
+.rsv-tabela { width: 100%; }
+.rsv-tabela th, .rsv-tabela td { text-align: center; vertical-align: middle; font-size: .86rem; }
+.rsv-tabela th:first-child, .rsv-tabela td:first-child { text-align: left; }
+.rsv-pos { color: var(--sp-green); font-weight: 700; }
+.rsv-neg { color: var(--sp-danger); font-weight: 700; }
+
+.rsv-grafico-wrap { position: relative; min-height: 360px; }
+.rsv-paraiba .rsv-valor { font-size: 1.35rem; font-weight: 800; }
+.rsv-paraiba canvas { max-height: 300px; }
+/* Cards compactos (coluna estreita): Volume UHE Jaguari e Transposição. */
+.rsv-paraiba-card { padding: 12px 8px; }
+.rsv-paraiba-card i { font-size: 1.3rem; }
+.rsv-paraiba-card h5 { font-size: .8rem; margin: 6px 0 4px; }
+.rsv-paraiba .rsv-paraiba-card .rsv-valor { font-size: 1.15rem; }
+
+/* Transposição da Bacia do rio Paraíba do Sul */
+.rsv-transp .rsv-grafico-wrap { height: 260px; min-height: 0; }
+.rsv-transp-gauge { position: relative; max-width: 280px; height: 160px; margin: 0 auto; }
+.rsv-transp-gauge-num {
+  position: absolute; left: 0; right: 0; bottom: 4px; text-align: center;
+  font-size: 1.7rem; font-weight: 800; color: #0b4f8a; line-height: 1;
+}
+.rsv-transp-situacao { font-size: .85rem; }
+.rsv-transp-situacao.is-ok {
+  background: #e8f6ec; border: 1px solid #bfe6c9; color: #1a7a33;
+  border-radius: 8px; padding: 8px 10px;
+}
+.rsv-transp-situacao.is-alerta {
+  background: #fdecec; border: 1px solid #f5c2c0; color: #b02a24;
+  border-radius: 8px; padding: 8px 10px;
+}
+
+/* legenda do protocolo abaixo do gráfico de volume — bem compacta */
+.legenda-protocolo {
+  margin-top: .5rem !important;
+  gap: .35rem .8rem !important;
+  font-size: .66rem;
+  line-height: 1.2;
+}
+.legenda-protocolo li { display: inline-flex; align-items: center; gap: 4px; }
+.legenda-protocolo .cor { width: 9px !important; height: 9px !important; border-radius: 3px !important; }

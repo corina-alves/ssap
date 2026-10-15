@@ -1,0 +1,6 @@
+# Scripts de shell e SQL rodam em Linux (Docker): sempre LF.
+*.sh text eol=lf
+*.sql text eol=lf
+Dockerfile text eol=lf
+*.template text eol=lf
+*.yaml text eol=lf

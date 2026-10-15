@@ -1,0 +1,298 @@
+/* =========================================================================
+   SALA DE SITUAÇÃO SP — DESIGN SYSTEM ÚNICO
+   Base compartilhada por todas as páginas públicas.
+   Consolidação incremental: componentes e regras de cada página migram
+   para cá conforme a página é padronizada.
+   ========================================================================= */
+
+:root {
+    /* Paleta institucional (fonte única de cores) */
+    --sp-blue:        #0b4f8a;   /* azul institucional principal */
+    --sp-blue-dark:   #062d52;   /* topo de gradientes / hover */
+    --sp-blue-light:  #eaf4fb;   /* fundo suave azul */
+    --sp-cyan:        #0d7ea4;
+    --sp-green:       #198754;   /* situação normal */
+    --sp-warning:     #f4b400;   /* situação atenção */
+    --sp-orange:      #e08600;   /* situação alerta */
+    --sp-danger:      #dc3545;   /* situação crítica */
+    --sp-danger-dark: #8c1c24;   /* situação emergência */
+    --sp-gray:        #6c7f91;
+    --sp-ink:         #12263a;   /* texto principal */
+    --sp-bg:          #f4f7fb;   /* fundo de página */
+    --sp-border:      #e2eaf2;
+    --sp-shadow:      0 12px 34px rgba(15, 46, 77, .08);
+    --sp-shadow-lg:   0 18px 40px rgba(15, 46, 77, .14);
+    --sp-radius:      18px;
+    --sp-radius-sm:   12px;
+
+    /* Aliases para o design system V2 já em uso (mantém compatibilidade) */
+    --sssp-blue:   var(--sp-blue);
+    --sssp-ink:    var(--sp-ink);
+    --sssp-muted:  var(--sp-gray);
+    --sssp-bg:     var(--sp-bg);
+    --sssp-border: var(--sp-border);
+    --sssp-shadow: var(--sp-shadow);
+    --sssp-radius: var(--sp-radius);
+}
+
+/* ------------------------------------------------------------------ Rodapé */
+
+.sssp-footer {
+    background: var(--sp-blue-dark);
+    color: rgba(255, 255, 255, .82);
+    font-size: .88rem;
+    line-height: 1.6;
+}
+.sssp-footer a { color: #dcedf8; text-decoration: none; }
+.sssp-footer a:hover { color: #fff; text-decoration: underline; }
+.sssp-footer__main { padding: 34px 0 26px; }
+.sssp-footer__grid {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr 1fr;
+    gap: 28px;
+    align-items: start;
+}
+.sssp-footer__brand img { height: 40px; width: auto; margin-bottom: 10px; display: block; }
+.sssp-footer__brand strong { display: block; color: #fff; font-size: 1rem; font-weight: 800; }
+.sssp-footer__brand span { display: block; color: rgba(255, 255, 255, .72); font-size: .82rem; }
+.sssp-footer h4 {
+    color: #fff;
+    font-size: .82rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    margin: 0 0 12px;
+}
+.sssp-footer ul { list-style: none; margin: 0; padding: 0; }
+.sssp-footer li { margin-bottom: 7px; display: flex; gap: 8px; align-items: flex-start; }
+.sssp-footer li i { color: #8fc7e6; margin-top: 3px; flex: none; }
+.sssp-footer__bottom {
+    border-top: 1px solid rgba(255, 255, 255, .12);
+    padding: 14px 0;
+    font-size: .8rem;
+    color: rgba(255, 255, 255, .68);
+    text-align: center;
+}
+@media (max-width: 767px) {
+    .sssp-footer__grid { grid-template-columns: 1fr; gap: 22px; }
+}
+
+/* ------------------------------------------------------- Botão voltar ao topo */
+
+.sssp-topo {
+    position: fixed;
+    right: 22px;
+    bottom: 22px;
+    z-index: 1040;
+    width: 46px;
+    height: 46px;
+    display: grid;
+    place-items: center;
+    border: 0;
+    border-radius: 50%;
+    background: var(--sp-blue);
+    color: #fff;
+    font-size: 1.25rem;
+    line-height: 1;
+    cursor: pointer;
+    box-shadow: 0 6px 18px rgba(11, 79, 138, .38);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(12px);
+    transition: opacity .25s ease, transform .25s ease, background .2s ease, visibility .25s;
+}
+.sssp-topo.is-visible { opacity: 1; visibility: visible; transform: translateY(0); }
+.sssp-topo:hover { background: var(--sp-blue-dark); transform: translateY(-3px); }
+.sssp-topo:focus-visible { outline: 3px solid rgba(11, 79, 138, .35); outline-offset: 2px; }
+@media (max-width: 575px) {
+    .sssp-topo { right: 14px; bottom: 14px; width: 42px; height: 42px; font-size: 1.1rem; }
+}
+/* Botão legado: substituído pelo #sssp-topo padronizado. */
+#btnTopo { display: none !important; }
+
+/* ------------------------------------------------- Skeleton / erro de componente */
+
+.sssp-skeleton {
+    border-radius: var(--sp-radius-sm);
+    background: linear-gradient(90deg, #eef2f6 25%, #e3e9ef 37%, #eef2f6 63%);
+    background-size: 400% 100%;
+    animation: sssp-shimmer 1.3s ease infinite;
+    min-height: 84px;
+}
+@keyframes sssp-shimmer { 0% { background-position: 100% 0; } 100% { background-position: -100% 0; } }
+
+.sssp-component-error {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 16px;
+    border: 1px solid #e6c9c9;
+    border-radius: var(--sp-radius-sm);
+    background: #fdf2f2;
+    color: #8c2b2b;
+    font-size: .88rem;
+}
+.sssp-component-error i { font-size: 1.1rem; flex: none; }
+
+/* ------------------------------------------------ Cards padrão (seção 34)
+   Fundo branco, borda/ícone coloridos por natureza da informação.
+   Reutilizável em qualquer página pública. */
+.card-spagua {
+    background: #fff;
+    border: 1px solid var(--sp-border);
+    border-left: 4px solid var(--sp-blue);
+    border-radius: var(--sp-radius-sm);
+    padding: 16px 18px;
+    box-shadow: var(--sp-shadow);
+    height: 100%;
+}
+.card-spagua > i {
+    font-size: 1.35rem;
+    color: var(--sp-blue);
+    display: block;
+    margin-bottom: 6px;
+}
+.card-spagua__rot {
+    font-size: .78rem;
+    text-transform: uppercase;
+    letter-spacing: .03em;
+    color: var(--sp-gray);
+    font-weight: 600;
+}
+.card-spagua__val {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--sp-ink);
+    line-height: 1.15;
+    margin-top: 2px;
+}
+.card-spagua small { color: var(--sp-gray); }
+
+.card-spagua.card-primary { border-left-color: var(--sp-blue); }
+.card-spagua.card-primary > i { color: var(--sp-blue); }
+.card-spagua.card-success { border-left-color: var(--sp-green); }
+.card-spagua.card-success > i { color: var(--sp-green); }
+.card-spagua.card-warning { border-left-color: var(--sp-warning); }
+.card-spagua.card-warning > i { color: var(--sp-orange, #e08600); }
+.card-spagua.card-danger { border-left-color: var(--sp-danger); }
+.card-spagua.card-danger > i { color: var(--sp-danger); }
+
+/* ---------------------------------------------------- Spinners / progresso */
+
+.sssp-spinner {
+    display: inline-block;
+    width: 1em;
+    height: 1em;
+    border: 2px solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: sssp-spin .7s linear infinite;
+    vertical-align: -0.15em;
+}
+
+/* Barra de progresso fina no topo da janela. */
+.sssp-topbar-progress {
+    position: fixed;
+    inset: 0 0 auto 0;
+    height: 3px;
+    z-index: 2000;
+    background: transparent;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity .2s ease;
+}
+.sssp-topbar-progress.is-active { opacity: 1; }
+.sssp-topbar-progress > span {
+    display: block;
+    height: 100%;
+    width: 30%;
+    background: linear-gradient(90deg, var(--sp-blue), var(--sp-cyan));
+    border-radius: 0 3px 3px 0;
+    animation: sssp-progress 1.1s ease-in-out infinite;
+}
+@keyframes sssp-progress {
+    0%   { margin-left: -35%; width: 30%; }
+    50%  { width: 45%; }
+    100% { margin-left: 100%; width: 30%; }
+}
+
+/* Status com spinner enquanto carrega. */
+.sssp-status.is-loading { color: var(--sp-blue); font-weight: 600; }
+.sssp-status.is-loading::before {
+    content: "";
+    display: inline-block;
+    width: 14px; height: 14px;
+    margin-right: 8px;
+    border: 2px solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    vertical-align: -0.2em;
+    animation: sssp-spin .7s linear infinite;
+}
+
+/* Overlay giratório sobre um componente (gráfico, tabela) durante a carga. */
+.sssp-loading-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, .72);
+    backdrop-filter: blur(1px);
+    color: var(--sp-blue);
+    font-size: .85rem;
+    font-weight: 600;
+    border-radius: var(--sp-radius-sm);
+}
+.sssp-loading-overlay .sssp-spinner { width: 30px; height: 30px; border-width: 3px; }
+
+/* ------------------------------------------------------------ Tom Select */
+
+.ts-wrapper.form-control,
+.ts-wrapper.form-select { padding: 0; height: auto; }
+.ts-wrapper .ts-control {
+    min-height: 44px;
+    border: 1px solid #d8e3ed;
+    border-radius: var(--sp-radius-sm);
+    padding: 6px 12px;
+    background: #fff;
+    color: var(--sp-ink);
+    box-shadow: none;
+}
+.ts-wrapper.focus .ts-control {
+    border-color: #6cb5df;
+    box-shadow: 0 0 0 4px rgba(11, 79, 138, .10);
+}
+.ts-dropdown {
+    border: 1px solid #d8e3ed;
+    border-radius: var(--sp-radius-sm);
+    box-shadow: var(--sp-shadow);
+    margin-top: 4px;
+}
+.ts-dropdown .active { background: var(--sp-blue-light); color: var(--sp-blue-dark); }
+.ts-dropdown .option { padding: 9px 12px; }
+
+/* ------------------------------------------------------------- Utilitários */
+
+.sssp-visually-hidden {
+    position: absolute !important;
+    width: 1px; height: 1px;
+    padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0, 0, 0, 0);
+    white-space: nowrap; border: 0;
+}
+
+/* ------------------------------------------------- Alinhamento menu/conteúdo */
+/* O menu e o conteúdo de todas as páginas compartilham a mesma largura e o
+   mesmo recuo lateral, para que a logo e o último item do menu fiquem
+   alinhados às bordas do conteúdo em qualquer página. */
+.sssp-nav-shell,
+body:has(.sssp-nav-shell) .container { max-width: 1400px; }
+@media (min-width: 1400px) {
+    .sssp-nav-shell,
+    body:has(.sssp-nav-shell) .container { padding-left: 32px; padding-right: 32px; }
+    body:has(.sssp-nav-shell) .container .container { padding-left: 0; padding-right: 0; }
+}

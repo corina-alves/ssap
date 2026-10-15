@@ -1,0 +1,50 @@
+/* Previsão para os Sistemas Produtores — estilos sobre o design system. */
+
+.prevrsv-mapa-wrap { position: relative; }
+#prevRsvMapa {
+    height: 460px;
+    border-radius: var(--sp-radius-sm);
+    border: 1px solid var(--sp-border);
+    z-index: 0;
+}
+@media (max-width: 600px) { #prevRsvMapa { height: 360px; } }
+/* Next: o SVG fica no lugar até o Leaflet carregar (mapa-sistemas.tsx). */
+.prevrsv-mapa-wrap:not(.is-leaflet) #prevRsvMapa,
+.prevrsv-mapa-wrap.is-leaflet .dica-area { display: none; }
+.prevrsv-mapa-wrap.is-leaflet .legenda { margin: 12px 0 0; }
+
+.prevrsv-grafico-wrap { position: relative; height: 460px; }
+@media (max-width: 600px) { .prevrsv-grafico-wrap { height: 360px; } }
+
+.prevrsv-tip {
+    background: rgba(17, 34, 51, .9);
+    color: #fff;
+    border: 0;
+    font-weight: 600;
+    font-size: .74rem;
+    padding: 2px 6px;
+    box-shadow: none;
+}
+.prevrsv-tip::before { display: none; }
+
+.prevrsv-legenda {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 14px;
+    margin-top: 12px;
+    font-size: .82rem;
+    color: var(--sp-gray);
+}
+.prevrsv-legenda span { display: inline-flex; align-items: center; gap: 6px; }
+.prevrsv-legenda i {
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+    display: inline-block;
+    border: 1px solid rgba(0, 0, 0, .15);
+    flex: none;
+}
+.prevrsv-legenda b { color: var(--sp-ink); font-weight: 700; }
+
+.prevrsv-tabela th:first-child, .prevrsv-tabela td:first-child { text-align: left; }
+.prevrsv-tabela th, .prevrsv-tabela td { text-align: right; white-space: nowrap; }

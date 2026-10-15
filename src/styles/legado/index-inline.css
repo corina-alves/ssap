@@ -1,0 +1,76 @@
+/* Bloco <style> do index.php (resumo dos sistemas, faixas e Chuva Agora - SIBH). */
+.resumo-chart-intro{margin-bottom:14px}
+.resumo-chart-intro strong{display:block;color:#063669;font-size:.84rem;font-weight:800}
+.resumo-chart-intro small{display:block;margin-top:4px;color:#687b8e;font-size:.64rem;line-height:1.45}
+.grafico-resumo-wrapper{position:relative;min-height:300px;padding:12px 2px 0}
+.grafico-resumo-wrapper canvas{max-height:300px}
+.resumo-atualizacao{margin-top:12px;padding:8px 10px;border-radius:10px;background:#f5f8fc;color:#687b8e;font-size:.62rem;text-align:center}
+
+.highlight-card-faixas {
+    position: relative;
+    min-height: 230px;
+   /* 100% da largura disponível */
+    width: 100%;
+    background-image:
+        linear-gradient(
+            90deg,
+            rgba(3, 40, 92, 0.92) 0%,
+            /* rgba(8, 76, 150, 0.76) 38%,
+            rgba(8, 76, 150, 0.25) 70%, */
+            rgba(8, 76, 150, 0.08) 100%
+        ),
+        url('/legado/img/curva_contingencia.png');
+
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+
+    border-radius: 18px;
+    overflow: hidden;
+    text-decoration: none;
+
+    display: flex;
+    align-items: flex-end;
+
+    padding: 24px;
+
+    transition:
+        transform .25s ease,
+        box-shadow .25s ease;
+}
+
+.highlight-card-faixas:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 35px rgba(0, 65, 130, 0.25);
+}
+
+.highlight-card-faixas .highlight-card-content {
+    position: relative;
+    z-index: 2;
+    max-width: 90%;
+}
+
+.highlight-card-faixas h3 {
+    margin: 0 0 8px;
+    color: #fff;
+    font-size: 1.25rem;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.highlight-card-faixas p {
+    margin: 0;
+    color: rgba(255, 255, 255, 0.92);
+    font-size: .92rem;
+    line-height: 1.45;
+}
+
+
+/* CHUVA AGORA - SIBH */
+.sibh-now-section{position:relative}
+.sibh-now-panel{border:1px solid #d9e8f2;border-radius:24px;background:linear-gradient(135deg,#ffffff 0%,#f3fbff 62%,#eef8f4 100%);box-shadow:0 16px 38px rgba(10,70,110,.08);overflow:hidden}
+.sibh-now-head{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:20px 22px;border-bottom:1px solid #e2edf4;background:linear-gradient(90deg,rgba(0,91,168,.06),rgba(0,145,110,.05))}
+.sibh-now-title{display:flex;align-items:center;gap:12px}.sibh-now-icon{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;background:#e8f5ff;color:#0668b7;font-size:1.25rem}.sibh-now-title h3{margin:0;color:#07355f;font-size:1.08rem;font-weight:800}.sibh-now-title p{margin:2px 0 0;color:#6c7f91;font-size:.78rem}.sibh-live{display:inline-flex;align-items:center;gap:7px;padding:7px 10px;border-radius:999px;background:#eaf8f2;color:#087657;font-size:.72rem;font-weight:800;white-space:nowrap}.sibh-live::before{content:"";width:7px;height:7px;border-radius:50%;background:#0aa574;box-shadow:0 0 0 4px rgba(10,165,116,.12)}
+.sibh-now-body{padding:20px 22px}.sibh-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.sibh-metric{padding:15px;border:1px solid #dfebf3;border-radius:16px;background:#fff}.sibh-metric small{display:block;color:#718396;font-size:.7rem;font-weight:700;margin-bottom:5px}.sibh-metric strong{display:block;color:#083b69;font-size:1.45rem;font-weight:800;line-height:1}.sibh-metric span{display:block;margin-top:6px;color:#7a8b9b;font-size:.66rem}.sibh-metric.is-rain strong{color:#056dbb}.sibh-metric.is-green strong{color:#09815f}
+.sibh-detail-grid{display:grid;grid-template-columns:1.2fr .8fr;gap:16px;margin-top:16px}.sibh-top{border:1px solid #e0ebf3;border-radius:18px;background:#fff;overflow:hidden}.sibh-top-head{display:flex;justify-content:space-between;align-items:center;padding:13px 15px;background:#f7fafc;border-bottom:1px solid #e5edf3}.sibh-top-head strong{font-size:.78rem;color:#153b62}.sibh-top-list{margin:0;padding:0;list-style:none}.sibh-top-list li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px 15px;border-bottom:1px solid #eef3f6}.sibh-top-list li:last-child{border-bottom:0}.sibh-station{min-width:0}.sibh-station strong{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#193a5b;font-size:.76rem}.sibh-station small{display:block;color:#8291a0;font-size:.64rem}.sibh-rain-value{font-size:.8rem;font-weight:800;color:#0669b5;white-space:nowrap}.sibh-summary{border:1px solid #d9eae4;border-radius:18px;padding:16px;background:linear-gradient(145deg,#f8fffc,#eef9f5);display:flex;flex-direction:column;justify-content:space-between}.sibh-summary-icon{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;background:#dff5eb;color:#08795a}.sibh-summary h4{font-size:.96rem;margin:12px 0 6px;color:#143d34;font-weight:800}.sibh-summary p{margin:0;color:#627c74;font-size:.75rem;line-height:1.5}.sibh-summary .btn{margin-top:14px;align-self:flex-start}.sibh-updated{margin-top:12px;color:#80909f;font-size:.66rem}.sibh-error{padding:24px;text-align:center;color:#6b7c8c}.sibh-skeleton{height:96px;border-radius:16px;background:linear-gradient(90deg,#f2f5f7 25%,#e8eef2 37%,#f2f5f7 63%);background-size:400% 100%;animation:sibhShimmer 1.3s infinite}@keyframes sibhShimmer{0%{background-position:100% 0}100%{background-position:-100% 0}}
+@media(max-width:992px){.sibh-metrics{grid-template-columns:repeat(2,1fr)}.sibh-detail-grid{grid-template-columns:1fr}}@media(max-width:576px){.sibh-now-head{align-items:flex-start;flex-direction:column}.sibh-metrics{grid-template-columns:1fr 1fr}.sibh-now-body{padding:16px}.sibh-now-head{padding:16px}.sibh-metric strong{font-size:1.2rem}}

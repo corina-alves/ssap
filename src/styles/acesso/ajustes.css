@@ -1,0 +1,83 @@
+/* Ajustes da área /acesso no Next, por cima do acesso.css copiado do PHP.
+   As telas de cadastro (usuários, boletins, documentos...) usam as classes
+   próprias do projeto (globals.css); aqui elas ganham a identidade do PHP. */
+
+/* A área administrativa é sempre clara, mesmo com o sistema operacional em modo
+   escuro: as variáveis de globals.css (que escurecem com prefers-color-scheme)
+   ficam presas aos valores claros enquanto uma tela de /acesso está aberta. */
+:root:has(.acesso-app, .acesso-auth) {
+    color-scheme: light;
+    --fundo: #ffffff;
+    --superficie: #ffffff;
+    --texto: var(--ac-tinta);
+    --suave: var(--ac-cinza);
+    --borda: var(--ac-borda);
+    --primaria: var(--ac-azul);
+    --primaria-texto: #ffffff;
+    --erro-fundo: #fdecec;
+    --erro-texto: #9b1c1c;
+    --aviso-fundo: #fff6e0;
+    --aviso-texto: #7a5300;
+    --ok-fundo: #e8f6ee;
+    --ok-texto: #17603a;
+    /* gráficos e mapas */
+    --serie-1: #2a78d6;
+    --serie-1-claro: #cde2fb;
+    --serie-2: #eb6834;
+    --grade: #e1e0d9;
+    --eixo-linha: #c3c2b7;
+    --texto-mudo: #6b6a65;
+    --superficie-grafico: #fcfcfb;
+    --est-emergencia: #800080;
+    --seq-0: #cde2fb;
+    --seq-1: #9ec5f4;
+    --seq-2: #6da7ec;
+    --seq-3: #3987e5;
+    --seq-4: #256abf;
+    --seq-5: #184f95;
+    --seq-6: #0d366b;
+    --seq-tinta-clara: #0b0b0b;
+    --seq-tinta-escura: #ffffff;
+    /* fundo da área: branco */
+    --ac-fundo: #ffffff;
+}
+
+.acesso-app,
+.acesso-auth {
+    /* mesma fonte do site público (Inter, carregada em src/app/acesso/layout.tsx) */
+    font-family: var(--font-inter), Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    color: var(--ac-tinta);
+}
+
+/* O PHP não tinha margem zerada nos títulos dos cartões de login. */
+.acesso-auth__card h1 { font-size: 1.5rem; }
+.acesso-cabecalho h1 { margin: 0; }
+
+/* Cartões, botões e tabelas das telas de cadastro com o visual do acesso-card. */
+.acesso-conteudo .cartao {
+    border: 1px solid var(--ac-borda);
+    border-radius: var(--ac-raio);
+    box-shadow: var(--ac-sombra);
+    padding: 24px;
+}
+.acesso-conteudo > h1 { font-weight: 800; font-size: 1.5rem; }
+.acesso-conteudo .botao { background: var(--ac-azul); border-radius: 8px; padding: 8px 14px; text-decoration: none; display: inline-block; }
+.acesso-conteudo .botao:hover { background: #073457; color: #fff; }
+.acesso-conteudo .tabela th { font-size: .8rem; color: var(--ac-cinza); }
+.acesso-conteudo .rolagem,
+.acesso-conteudo .tabela { background: #fff; border-radius: var(--ac-raio); }
+.acesso-conteudo .formulario input,
+.acesso-conteudo .formulario select,
+.acesso-conteudo .formulario textarea,
+.acesso-conteudo .filtros input,
+.acesso-conteudo .filtros select { background: #fff; border-radius: 8px; }
+
+/* Módulo ainda não migrado do PHP: mesmo cartão, sem link. */
+.acesso-modulo--em-breve { cursor: default; }
+
+/* Botões de contorno (Filtrar, Cancelar, Excluir): a regra acima pintava o fundo de
+   azul e o texto, também azul, sumia. */
+.acesso-conteudo .botao-secundario { background: #fff; color: var(--ac-azul); border: 1px solid var(--ac-azul); }
+.acesso-conteudo .botao-secundario:hover { background: var(--ac-azul); color: #fff; }
+.acesso-conteudo .botao-perigo { background: #fff; color: #9b1c1c; border: 1px solid #9b1c1c; }
+.acesso-conteudo .botao-perigo:hover { background: #9b1c1c; color: #fff; }

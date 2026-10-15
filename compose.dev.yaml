@@ -1,0 +1,44 @@
+# Sala de Situação — ajustes para DESENVOLVIMENTO (não use em produção).
+#
+#   docker compose -f compose.yaml -f compose.dev.yaml up --build
+#
+# O que muda em relação ao compose.yaml:
+#   - a aplicação roda com "next dev" e lê o código desta pasta (alterou, recarregou);
+#   - o banco fica acessível em 127.0.0.1:5433, para psql/DBeaver ou para rodar
+#     "npm run dev" fora do Docker com
+#     DATABASE_URL=postgres://ssap_app:<senha>@127.0.0.1:5433/ssap
+# Os volumes (banco, arquivos) são os mesmos do compose.yaml.
+
+services:
+  db:
+    ports:
+      - '127.0.0.1:${DB_PORTA_LOCAL:-5433}:5432'
+    networks:
+      - interna
+      - externa # porta publicada exige uma rede com saída
+
+  app:
+    build:
+      target: dev
+    image: sala-situacao-dev
+    environment:
+      NODE_ENV: development
+      WATCHPACK_POLLING: 'true' # pasta montada do Windows não avisa mudanças de arquivo
+      STORAGE_DIR: /dados/storage
+      CACHE_DIR: /dados/cache
+    volumes:
+      - .:/app
+      - dev_node_modules:/app/node_modules # dependências do Linux, não as do Windows
+      - dev_next:/app/.next
+    read_only: false
+    healthcheck:
+      disable: true
+    deploy:
+      resources:
+        limits:
+          cpus: '4.0'
+          memory: 4g
+
+volumes:
+  dev_node_modules:
+  dev_next:
