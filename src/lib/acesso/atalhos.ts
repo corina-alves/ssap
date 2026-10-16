@@ -72,6 +72,14 @@ export const ATALHOS: Record<string, Atalho[]> = {
     },
     {
       modulo: 'graficos',
+      titulo: 'Médias mensais dos sistemas produtores',
+      descricao: 'Vazão natural do mês × MLT e chuva do mês × média climatológica nos últimos 6 a 24 meses, em tabela e gráfico (dados da SABESP).',
+      href: '/acesso/graficos/medias-mensais?s=alfredo-pisani',
+      icone: 'bi-calendar3',
+      permissao: 'visualizar_graficos',
+    },
+    {
+      modulo: 'graficos',
       titulo: 'Sistemas produtores — volume, chuva e vazões',
       descricao: 'Gráfico de cada sistema com os 12 últimos meses completos: volume útil (barras), chuva, vazão afluente e defluente (dados do SSD). Para o boletim mensal: baixa o gráfico e a tabela de cada sistema em PNG e copia a tabela.',
       href: '/acesso/sistemas_produtores?s=alfredo-pisani',
