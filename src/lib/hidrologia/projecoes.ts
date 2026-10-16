@@ -40,10 +40,9 @@ export const CONFIG = {
     '2027-03': [10.7, 20.7, 28.7, 36.7, 44.7, 52.7, 60.7],
     '2027-04': [10.9, 20.9, 28.9, 36.9, 44.9, 52.9, 60.9],
   } as Record<string, number[]>,
-  // Cenários padrão da grade de envio (podem ser alterados na tela).
-  esi_padrao: [29, 30, 31],
-  qn_padrao: [100, 70, 50],
-  cores_qn: { 100: '#255C8D', 70: '#E8912D', 50: '#B33A3A' } as Record<number, string>,
+  // Cor de cada QN pela posição dentro da retirada (maior QN primeiro): cada retirada
+  // pode ter os seus QNs; com 100/70/50 ficam azul, laranja e vermelho, como no kit.
+  cores_qn: ['#255C8D', '#E8912D', '#B33A3A', '#3A8B4F', '#7B4FA3', '#8C6D31', '#2E9CB0', '#C2185B'],
   cenario_rotulo: 'Retirada na ESI',
   cenario_unidade: 'm³/s',
   rodape: 'Fonte: Sala de Situação Alfredo Pisani / SP-Águas.',
@@ -154,18 +153,6 @@ export function formatarEsi(e: number): string {
   return String(Number(e.toFixed(2)));
 }
 
-/** "29, 30, 31", "29;30;31" ou "29,5 30" → lista sem repetição (ESIs formatadas ou QNs inteiros). */
-export function listaNumeros(texto: string, inteiro: boolean): string[] {
-  // vírgula como separador só entre inteiros; senão é vírgula decimal
-  const t = /^\s*\d+(\s*,\s*\d+)+\s*$/.test(texto) ? texto.replace(/,/g, ' ') : texto.replace(/, /g, ' ');
-  const r: string[] = [];
-  for (const p of t.split(/[\s;]+/)) {
-    const n = numero(p.trim());
-    if (n !== null && n > 0 && n < 1000) r.push(inteiro ? String(Math.round(n)) : formatarEsi(n));
-  }
-  return [...new Set(r)];
-}
-
 function separador(linhas: string[]): string {
   const amostra = linhas.filter((l) => l.trim() !== '').slice(0, 20).join('\n');
   const conta = (c: string) => amostra.split(c).length - 1;
@@ -207,11 +194,11 @@ function coluna(cab: string[], nomes: string[]): number | null {
 }
 
 const esiDoNome = (nome: string) => {
-  const m = /esi[\s_-]*(\d{1,2}(?:[.,]\d+)?)/i.exec(nome);
+  const m = /esi[\s:_-]*(\d{1,2}(?:[.,]\d+)?)/i.exec(nome);
   return m ? formatarEsi(Number(m[1]!.replace(',', '.'))) : null;
 };
 const qnDoNome = (nome: string) => {
-  const m = /qn[\s_-]*(\d{2,3})/i.exec(nome);
+  const m = /qn[\s:_-]*(\d{2,3})/i.exec(nome);
   return m ? Number(m[1]) : null;
 };
 
@@ -226,8 +213,141 @@ function achatar(mensal: Map<string, Map<string, number>>, nomeArquivo: string):
   return r;
 }
 
+/** Data como o Excel grava (dias desde 30/12/1899, ex.: 46295.125) → AAAA-MM-DD. */
+export function dataExcel(s: string): string | null {
+  if (!/^\d{5}(\.\d+)?$/.test(s.trim())) return null;
+  const n = Math.floor(Number(s));
+  if (n < 20_000 || n > 80_000) return null;
+  return new Date(Date.UTC(1899, 11, 30) + n * 86_400_000).toISOString().slice(0, 10);
+}
+
+const ehData = (c: string | undefined) => /^(data|date)\b/.test(semAcento(c ?? '').toLowerCase().trim());
+
+const dataCelula = (c: string | undefined) => data(c ?? '') ?? dataExcel(c ?? '');
+
+/** Rótulo achado acima dos dados: ESI ou QN e a coluna onde está. */
+type Rotulo = { col: number; valor: string };
+
+/** ESIs e QNs escritos nas linhas `linhas`, entre as colunas `ini` e `fim` (inclusive). */
+function rotulos(linhas: string[][], ini: number, fim: number) {
+  const esi: Rotulo[] = [];
+  const qn: Rotulo[] = [];
+  const soNumero: Rotulo[] = [];
+  for (const l of linhas) {
+    for (let j = ini; j <= fim; j++) {
+      const c = (l[j] ?? '').trim();
+      if (!c) continue;
+      const q = qnDoNome(c);
+      if (q !== null) qn.push({ col: j, valor: String(q) });
+      // "ESI 29" numa célula ou "ESI" | "29" em duas
+      const e = esiDoNome(c) ?? (/^esi:?$/i.test(c) ? esiDoNome(`ESI ${l[j + 1] ?? ''}`) : null);
+      if (e !== null) esi.push({ col: j, valor: e });
+      else if (q === null && /^\d{1,2}([.,]\d+)?$/.test(c) && Number(c.replace(',', '.')) >= 1) soNumero.push({ col: j, valor: formatarEsi(Number(c.replace(',', '.'))) });
+    }
+  }
+  return { esi, qn, soNumero };
+}
+
+/** O rótulo da coluna `j`: o último à esquerda (célula mesclada) ou, sem nenhum, o mais próximo. */
+const daColuna = (rs: Rotulo[], j: number) =>
+  rs.filter((r) => r.col <= j).at(-1)?.valor ?? [...rs].sort((a, b) => Math.abs(a.col - j) - Math.abs(b.col - j))[0]?.valor ?? null;
+/** O rótulo mais próximo da coluna `j`. */
+const maisProximo = (rs: Rotulo[], j: number) => [...rs].sort((a, b) => Math.abs(a.col - j) - Math.abs(b.col - j) || b.col - a.col)[0]?.valor ?? null;
+
+/**
+ * Planilha (ou aba) de simulações, em qualquer arrumação parecida com estas,
+ * com quantas datas houver:
+ *
+ *   uma tabela só                         blocos lado a lado (uma aba por QN, ex.: "Cantareira 70")
+ *   ESI 29       |      | ESI 30 | …      QN 70
+ *   data | QN100 | QN70 | QN100  | …          ESI 29           ESI 30
+ *   30/09/2026 | 37,32 | 36,76 | …        Data | Volume útil  Data | Volume útil
+ *                                         30/09/2026 | 42,51  30/09/2026 | 42,37
+ *
+ * Cada coluna de data abre um bloco; as colunas numéricas à direita dela (até a
+ * próxima data) são volumes. A ESI e o QN de cada coluna de volume vêm do
+ * cabeçalho dela ("QN100", "ESI29 QN70"), do rótulo mais próximo acima do bloco
+ * ("ESI 29", "ESI" + "29", só "29", "QN 70", "QN: 82%") ou, para o QN, do título
+ * ou do nome da aba ("Cantareira 50"). Datas do Excel (número de série) e
+ * AAAA-MM-DD / DD/MM/AAAA são aceitas; dados diários viram o fechamento do mês.
+ * Devolve null se a tabela não tiver datas com volumes rotulados por ESI e QN.
+ */
+export function lerGrade(tabela: string[][], nomeArquivo = '', nomeAba = ''): Registro[] | null {
+  const largura = Math.max(0, ...tabela.map((l) => l.length));
+  const colunasData: number[] = [];
+  for (let j = 0; j < largura; j++) if (tabela.some((l) => dataCelula(l[j]) !== null)) colunasData.push(j);
+  if (!colunasData.length) return null;
+
+  // QN que vale para a aba inteira: um só QN no título, ou o número no fim do nome da aba.
+  const primeiraData = Math.min(...colunasData.map((d) => tabela.findIndex((l) => dataCelula(l[d]) !== null)));
+  const qnsAba = [...new Set(rotulos(tabela.slice(0, primeiraData), 0, largura - 1).qn.map((r) => r.valor))];
+  const qnNome = qnDoNome(nomeAba)?.toString() ?? /(\d{2,3})\s*%?\s*$/.exec(nomeAba)?.[1] ?? null;
+  const qnAba = qnsAba.length === 1 ? qnsAba[0]! : qnNome;
+
+  const mensal = new Map<string, Map<string, number>>();
+  const faltando: string[] = [];
+  let rotuladas = 0;
+  colunasData.forEach((d, b) => {
+    const proxima = colunasData[b + 1] ?? largura;
+    const linhasDados = tabela.flatMap((l, i) => (dataCelula(l[d]) !== null ? [i] : []));
+    const valores: number[] = [];
+    for (let j = d + 1; j < proxima; j++) {
+      const n = linhasDados.filter((i) => numero(tabela[i]![j]) !== null).length;
+      if (n > 0 && n * 2 >= linhasDados.length) valores.push(j);
+    }
+    if (!valores.length) return;
+
+    const cabecalho = tabela.slice(0, linhasDados[0]);
+    // Rótulos do bloco: da coluna antes da data até a anterior à próxima data
+    // (e sempre até a última coluna de volume, quando os blocos vêm colados).
+    const bloco = rotulos(cabecalho, Math.max(0, d - 1), b + 1 < colunasData.length ? Math.max(proxima - 2, valores.at(-1)!) : largura - 1);
+    for (const j of valores) {
+      const proprio = rotulos(cabecalho, j, j);
+      const qn = proprio.qn.at(-1)?.valor ?? (valores.length === 1 ? maisProximo(bloco.qn, j) : null) ?? qnAba;
+      const esi =
+        proprio.esi.at(-1)?.valor ?? daColuna(bloco.esi, j) ?? (valores.length === 1 && !bloco.esi.length ? maisProximo(bloco.soNumero, j) : null);
+      if (esi === null || qn === null) {
+        if (esi !== null || qn !== null) faltando.push(`${nomeAba ? `aba "${nomeAba}", ` : ''}coluna ${colunaExcel(j)}: sem ${esi === null ? 'a ESI' : 'o QN'}`);
+        continue;
+      }
+      rotuladas++;
+      const chave = `${esi}|${qn}`;
+      if (!mensal.has(chave)) mensal.set(chave, new Map());
+      for (const i of linhasDados) {
+        const v = numero(tabela[i]![j]);
+        if (v !== null) mensal.get(chave)!.set(dataCelula(tabela[i]![d])!.slice(0, 7), v); // em ordem de data: a última do mês fica
+      }
+    }
+  });
+  if (faltando.length) throw new ErroValidacao(faltando.map((f) => `${nomeArquivo}: ${f} (escreva "ESI 29" / "QN 70" acima da coluna).`));
+  if (!rotuladas) return null;
+  return achatar(mensal, nomeArquivo);
+}
+
+/** 0 → "A", 26 → "AA" */
+function colunaExcel(j: number): string {
+  let s = '';
+  for (j++; j > 0; j = Math.floor((j - 1) / 26)) s = String.fromCharCode(65 + ((j - 1) % 26)) + s;
+  return s;
+}
+
+/**
+ * Sistema citado no título da planilha (linhas acima do cabeçalho ou nome da
+ * aba), para recusar a planilha de um sistema enviada na página de outro.
+ */
+export function sistemaCitado(tabela: string[][], nomeAba = ''): string | null {
+  const iCab = tabela.findIndex((l) => l.some(ehData));
+  const textos = [nomeAba, ...tabela.slice(0, Math.max(iCab, 0)).flat()].map((t) => ` ${semAcento(t ?? '').toLowerCase().replace(/[^a-z0-9]+/g, ' ')} `);
+  for (const [slug, s] of Object.entries(SISTEMAS)) {
+    const nome = ` ${semAcento(s.nome).toLowerCase().replace(/^sistema /, '')} `;
+    if (textos.some((t) => t.includes(nome))) return slug;
+  }
+  return null;
+}
+
 /**
  * Lê um CSV enviado. Formatos aceitos:
+ *  - planilha única com todas as simulações (veja lerGrade), salva como CSV;
  *  - consolidado do kit: colunas data, esi, qn, volume (cabeçalho com "esi" e "qn");
  *  - simulação do SSD: uma coluna de data e o volume útil (ESI e QN vêm do
  *    formulário ou do nome do arquivo, ex.: "QN70_ESI29.csv").
@@ -240,6 +360,8 @@ export function lerCsv(texto: string, nomeArquivo = '', esi: string | null = nul
   const sep = separador(linhas);
   const tabela = linhas.filter((l) => l.trim() !== '').map((l) => celulas(l, sep));
   if (!tabela.length) throw new ErroValidacao([`${nomeArquivo}: arquivo vazio.`]);
+  const grade = lerGrade(tabela, nomeArquivo);
+  if (grade) return grade;
 
   const mensal = new Map<string, Map<string, number>>();
   const guardar = (chave: string, d: string, v: number) => {
@@ -335,15 +457,88 @@ export type GraficoProjecao = {
   arquivo: string;
 };
 
-/** Um gráfico por ESI e os avisos de conferência. */
+/** Meses (AAAA-MM) presentes na rodada, em ordem. */
+export function mesesDa(registros: Registro[]): string[] {
+  return [...new Set(registros.map((r) => r.mes))].sort();
+}
+
+/** Retiradas da rodada (ESI crescente), cada uma com os seus QNs (decrescente). */
+export function simulacoesDa(registros: Registro[]): [string, number[]][] {
+  return agrupar(registros).map(([esi, porQn]) => [esi, [...porQn.keys()]]);
+}
+
+/** Chave de uma simulação no filtro da tela: "29:100", "29.5:70". */
+export const chaveSimulacao = (esi: string, qn: number) => `${esi}:${qn}`;
+
+/** Só as simulações escolhidas (chaves de chaveSimulacao); conjunto vazio = todas. */
+export function filtrarSimulacoes(registros: Registro[], escolhidas: Set<string>): Registro[] {
+  return escolhidas.size ? registros.filter((r) => escolhidas.has(chaveSimulacao(r.esi, r.qn))) : registros;
+}
+
+/**
+ * Só os fechamentos entre `de` e `ate` (AAAA-MM, inclusive; vazio = sem limite).
+ * A marcação da GDN passa a considerar só esse período.
+ */
+export function filtrarPeriodo(registros: Registro[], de: string, ate: string): Registro[] {
+  return registros.filter((r) => (!de || r.mes >= de) && (!ate || r.mes <= ate));
+}
+
+/** Meses seguidos com volumes iguais, a partir dos quais duas retiradas são acusadas como cópia. */
+const MESES_IGUAIS = 3;
+
+/**
+ * Retiradas diferentes dão volumes diferentes: se duas ESIs tiverem os mesmos
+ * volumes em todos os QNs por MESES_IGUAIS meses seguidos ou mais, é quase
+ * certo que a planilha foi montada com valores copiados de uma para a outra.
+ */
+export function retiradasIguais(registros: Registro[]): string[] {
+  const grupos = agrupar(registros);
+  const avisos: string[] = [];
+  for (let i = 0; i < grupos.length; i++) {
+    for (let k = i + 1; k < grupos.length; k++) {
+      const [esiA, a] = grupos[i]!;
+      const [esiB, b] = grupos[k]!;
+      const qns = [...a.keys()].filter((qn) => b.has(qn));
+      if (!qns.length) continue;
+      const meses = [...new Set(qns.flatMap((qn) => [...a.get(qn)!.keys()]))].sort();
+      const igual = (m: string) =>
+        qns.every((qn) => {
+          const x = a.get(qn)!.get(m);
+          const y = b.get(qn)!.get(m);
+          return x !== undefined && y !== undefined && Math.abs(x - y) < 0.005;
+        });
+      let inicio = -1;
+      for (let j = 0; j <= meses.length; j++) {
+        if (j < meses.length && igual(meses[j]!)) {
+          if (inicio < 0) inicio = j;
+          continue;
+        }
+        if (inicio >= 0 && j - inicio >= MESES_IGUAIS) {
+          avisos.push(
+            `ESI ${esiA.replace('.', ',')} e ESI ${esiB.replace('.', ',')} têm os mesmos volumes em todos os QNs de ${rotuloMes(meses[inicio]!)} a ${rotuloMes(meses[j - 1]!)} (${j - inicio} meses). Retiradas diferentes deveriam dar volumes diferentes: confira se os valores foram copiados na planilha.`,
+          );
+        }
+        inicio = -1;
+      }
+    }
+  }
+  return avisos;
+}
+
+/**
+ * Um gráfico por ESI e os avisos de conferência. A planilha pode ter quantos
+ * meses for; só avisa a simulação que tem menos meses que as outras da rodada.
+ */
 export function graficos(sistema: string, registros: Registro[]): { graficos: GraficoProjecao[]; avisos: string[] } {
   const sis = SISTEMAS[sistema];
   if (!sis) throw new Error('Sistema inválido.');
   const avisos: string[] = [];
   const lista: GraficoProjecao[] = [];
+  const todosMeses = mesesDa(registros);
   for (const [esi, porQn] of agrupar(registros)) {
     for (const [qn, ms] of porQn) {
-      if (ms.size !== 13) avisos.push(`ESI ${esi} / QN ${qn}%: ${ms.size} meses (o kit espera 13).`);
+      const faltam = todosMeses.filter((m) => !ms.has(m));
+      if (faltam.length) avisos.push(`ESI ${esi.replace('.', ',')} / QN ${qn}%: sem valor em ${faltam.map(rotuloMes).join(', ')} (as outras simulações têm).`);
     }
     const meses = [...new Set([...porQn.values()].flatMap((ms) => [...ms.keys()]))].sort();
     const indice = new Map(meses.map((m, i) => [m, i]));
@@ -372,9 +567,9 @@ export function graficos(sistema: string, registros: Registro[]): { graficos: Gr
       titulo: sis.titulo,
       subtitulo: `${CONFIG.cenario_rotulo}: ${esi.replace('.', ',')} ${CONFIG.cenario_unidade}`,
       rotulos: meses.map(rotuloMes),
-      series: [...porQn].map(([qn, ms]) => ({
+      series: [...porQn].map(([qn, ms], i) => ({
         nome: `QN ${qn}%`,
-        cor: CONFIG.cores_qn[qn] ?? null,
+        cor: CONFIG.cores_qn[i % CONFIG.cores_qn.length]!,
         valores: meses.map((m) => (ms.has(m) ? Math.round(ms.get(m)! * 100) / 100 : null)),
       })),
       limite: sis.gdn ? { nome: `Limite da Faixa ${CONFIG.faixa_gdn}`, valores: meses.map((m) => limiteFaixa(m)) } : null,
@@ -385,7 +580,7 @@ export function graficos(sistema: string, registros: Registro[]): { graficos: Gr
       arquivo: `projecao_${semAcento(sis.nome).replace(/[^A-Za-z0-9]+/g, '_')}_ESI_${esi.replace('.', '_')}.png`,
     });
   }
-  return { graficos: lista, avisos };
+  return { graficos: lista, avisos: [...retiradasIguais(registros), ...avisos] };
 }
 
 /** Resumo da marcação da GDN (mesmo texto do resumo_marcacao_GDN.txt do kit). */

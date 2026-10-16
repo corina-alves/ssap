@@ -3,7 +3,8 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { ErroValidacao } from '../src/lib/graficos-tabela';
-import { csvConsolidado, data, decodificar, formatarEsi, graficos, lerCsv, limiteFaixa, listaNumeros, numero, resumo, retomadas } from '../src/lib/hidrologia/projecoes';
+import { csvConsolidado, data, dataExcel, decodificar, formatarEsi, graficos, lerCsv, lerGrade, limiteFaixa, mesesDa, numero, resumo, retomadas, sistemaCitado, filtrarPeriodo, filtrarSimulacoes, simulacoesDa, chaveSimulacao, retiradasIguais } from '../src/lib/hidrologia/projecoes';
+import { lerXlsx } from '../src/lib/planilha-xlsx';
 
 // dados_consolidados.csv do Kit_Atualizar_Graficos (Cantareira, 3 ESIs × 3 QNs × 13 meses)
 const KIT = readFileSync(join(import.meta.dirname, 'dados', 'projecao_consolidado.csv'));
@@ -21,10 +22,6 @@ test('números, datas, ESI e listas da grade', () => {
     '2026-09-30', '2026-09-30', '2026-09-30', '2026-02-01', null, null,
   ]);
   assert.deepEqual([29, 29.5, 29.25, 30.004].map(formatarEsi), ['29', '29.5', '29.25', '30']);
-  assert.deepEqual(listaNumeros('29, 30, 31', false), ['29', '30', '31']);
-  assert.deepEqual(listaNumeros('29,5; 30; 30', false), ['29.5', '30']);
-  assert.deepEqual(listaNumeros('100,70,50', true), ['100', '70', '50']);
-  assert.deepEqual(listaNumeros('abc 0 1000', true), []);
 });
 
 test('CSV consolidado do kit: 117 fechamentos e o mesmo resumo da marcação da GDN', () => {
@@ -68,11 +65,11 @@ test('gráficos: um por ESI, QNs em ordem decrescente, limite e blocos da retoma
   assert.ok(g.y_max >= 80 && g.y_max % 10 === 0);
 });
 
-test('retomadas no mesmo mês viram um bloco só; série curta gera aviso', () => {
+test('retomadas no mesmo mês viram um bloco só; simulação com menos meses que as outras gera aviso', () => {
   const linhas = ['data;esi;qn;volume', '30/11/2026;29;70;29', '31/12/2026;29;70;40', '30/11/2026;29;50;25'];
   const { graficos: gs, avisos } = graficos('sim', lerCsv(linhas.join('\n')));
   assert.deepEqual(gs[0]!.marcas, [{ de: 0, ate: 1, texto: 'Retomada da GDN: dez/26', cenarios: '(QN 70% e QN 50%)' }]);
-  assert.deepEqual(avisos, ['ESI 29 / QN 70%: 2 meses (o kit espera 13).', 'ESI 29 / QN 50%: 1 meses (o kit espera 13).']);
+  assert.deepEqual(avisos, ['ESI 29 / QN 50%: sem valor em dez/26 (as outras simulações têm).']);
   assert.equal(retomadas(new Map([[100, new Map([['2026-11', 30]])]])).size, 0); // igual ao limite não é abaixo
 });
 
@@ -101,4 +98,134 @@ test('arquivo em Windows-1252 é lido; rodada gravada e relida dá os mesmos reg
   const ordenar = (l: typeof registros) => [...l].sort((a, b) => chave(a).localeCompare(chave(b)));
   assert.deepEqual(ordenar(lerCsv(csv)), ordenar(registros));
   assert.deepEqual(lerCsv(csv).slice(13, 15).map((r) => [r.esi, r.qn, r.mes]), [['29', 70, '2026-09'], ['29', 70, '2026-10']]);
+});
+
+// "Simulações Cantareira 16-10-2026.xlsx": planilha única (ESI 29/30/31 × QN 100/70/50, set/26 a set/27)
+const PLANILHA = readFileSync(join(import.meta.dirname, 'dados', 'projecao_planilha.xlsx'));
+
+test('data do Excel: número de série → AAAA-MM-DD; fora da faixa ou texto → null', () => {
+  assert.equal(dataExcel('46295.125'), '2026-09-30');
+  assert.equal(dataExcel('46660'), '2027-09-30');
+  assert.equal(dataExcel('37.32'), null);
+  assert.equal(dataExcel('2026-09-30'), null);
+});
+
+test('planilha .xlsx única: 9 simulações × 13 meses, ESI da célula mesclada acima do cabeçalho', () => {
+  const [aba] = lerXlsx(PLANILHA);
+  assert.equal(aba!.nome, 'Cantareira');
+  assert.equal(sistemaCitado(aba!.linhas, aba!.nome), 'cantareira');
+  const r = lerGrade(aba!.linhas, 'planilha.xlsx')!;
+  assert.equal(r.length, 9 * 13);
+  const v = (esi: string, qn: number, mes: string) => r.find((x) => x.esi === esi && x.qn === qn && x.mes === mes)?.valor;
+  assert.equal(v('29', 100, '2026-09'), 37.32);
+  assert.equal(v('30', 70, '2026-10'), 30.68);
+  assert.equal(v('31', 50, '2027-09'), 15);
+  assert.deepEqual(graficos('cantareira', r).graficos.map((g) => g.esi), ['29', '30', '31']);
+});
+
+test('mesma planilha salva como CSV (datas DD/MM/AAAA, vírgula decimal) e ESI no cabeçalho', () => {
+  const csv = 'Cantareira;;;\nESI 29;;ESI 30;\ndata;QN100;QN70;QN100\n30/09/2026;37,32;36,76;37,24\n31/10/2026;33,94;31,03;33,58\n';
+  const r = lerCsv(csv, 'simulacoes.csv');
+  assert.equal(r.length, 6);
+  assert.equal(r.find((x) => x.esi === '30' && x.qn === 100 && x.mes === '2026-10')?.valor, 33.58);
+  const noCabecalho = lerGrade([['data', 'ESI29 QN70'], ['2026-09-30', '36,76']], 'x')!;
+  assert.deepEqual(noCabecalho, [{ mes: '2026-09', esi: '29', qn: 70, valor: 36.76 }]);
+  assert.equal(sistemaCitado([['Simulações Alto Tietê'], ['data', 'QN100']]), 'alto-tiete');
+  assert.equal(sistemaCitado([['Simulações'], ['data', 'QN100']]), null);
+});
+
+test('planilha sem a linha de ESI: erro claro; tabela sem cabeçalho de QN não é desse formato', () => {
+  assert.throws(() => lerGrade([['data', 'QN100'], ['2026-09-30', '37']], 'x.xlsx'), ErroValidacao);
+  assert.equal(lerGrade([['data', 'volume'], ['2026-09-30', '37']], 'x'), null);
+});
+
+test('período: recorta os meses, sem aviso de meses faltando, e a GDN olha só o recorte', () => {
+  const [aba] = lerXlsx(PLANILHA);
+  const todos = lerGrade(aba!.linhas, 'planilha.xlsx')!;
+  assert.equal(mesesDa(todos).length, 13);
+  const r = filtrarPeriodo(todos, '2027-01', '2027-06');
+  assert.deepEqual(mesesDa(r), ['2027-01', '2027-02', '2027-03', '2027-04', '2027-05', '2027-06']);
+  const g = graficos('cantareira', r);
+  assert.deepEqual(g.avisos.filter((a) => a.includes('sem valor')), []); // qualquer quantidade de meses vale
+  assert.equal(g.graficos[0]!.rotulos.length, 6);
+  assert.deepEqual(mesesDa(filtrarPeriodo(todos, '', '2026-10')), ['2026-09', '2026-10']);
+  assert.equal(filtrarPeriodo(todos, '', '').length, todos.length);
+});
+
+test('simulações: cada retirada com os seus QNs; filtro por retirada/QN (vazio = todas)', () => {
+  const [aba] = lerXlsx(PLANILHA);
+  const todos = lerGrade(aba!.linhas, 'planilha.xlsx')!;
+  assert.deepEqual(simulacoesDa(todos), [['29', [100, 70, 50]], ['30', [100, 70, 50]], ['31', [100, 70, 50]]]);
+  const r = filtrarSimulacoes(todos, new Set([chaveSimulacao('29', 100), chaveSimulacao('29', 70), chaveSimulacao('31', 50)]));
+  assert.deepEqual(simulacoesDa(r), [['29', [100, 70]], ['31', [50]]]);
+  assert.deepEqual(graficos('cantareira', r).graficos.map((g) => [g.esi, g.series.map((s) => s.nome)]), [['29', ['QN 100%', 'QN 70%']], ['31', ['QN 50%']]]);
+  assert.equal(filtrarSimulacoes(todos, new Set()).length, todos.length);
+  // retiradas com QNs diferentes entre si
+  const misto = lerGrade([['ESI 29', '', 'ESI 30'], ['data', 'QN100', 'QN80', 'QN60'], ['2026-09-30', '40', '30', '20']], 'x')!;
+  assert.deepEqual(simulacoesDa(misto), [['29', [100]], ['30', [80, 60]]]);
+});
+
+test('retiradas com volumes copiados: acusa o par e o intervalo; retiradas diferentes não geram aviso', () => {
+  const [aba] = lerXlsx(PLANILHA);
+  const avisos = retiradasIguais(lerGrade(aba!.linhas, 'planilha.xlsx')!);
+  assert.equal(avisos.length, 3);
+  assert.match(avisos[0]!, /^ESI 29 e ESI 30 .* de jan\/27 a set\/27 \(9 meses\)/);
+  assert.match(avisos[2]!, /^ESI 30 e ESI 31 .* de dez\/26 a set\/27 \(10 meses\)/);
+  const tabela = [['ESI 29', '', 'ESI 30', ''], ['data', 'QN100', 'QN70', 'QN100', 'QN70']];
+  const diferentes = ['2026-09-30', '2026-10-31', '2026-11-30', '2026-12-31'].map((d, i) => [d, `${40 - i}`, `${35 - i}`, `${39 - i}`, `${34 - i}`]);
+  assert.deepEqual(retiradasIguais(lerGrade([...tabela, ...diferentes], 'x')!), []);
+  // dois meses iguais seguidos ainda não bastam
+  const doisIguais = diferentes.map((l, i) => (i >= 2 ? [l[0]!, l[1]!, l[2]!, l[1]!, l[2]!] : l));
+  assert.deepEqual(retiradasIguais(lerGrade([...tabela, ...doisIguais], 'x')!), []);
+});
+
+test('cada retirada com os seus QNs: séries, cores pela posição e resumo da GDN', () => {
+  const tabela = [
+    ['Cantareira'],
+    ['ESI 29', '', '', '', 'ESI 30'],
+    ['data', 'QN100', 'QN70', 'QN50', 'QN90', 'QN60'],
+    ...['2026-09-30', '2026-10-31', '2026-11-30'].map((d, i) => [d, `${40 - i}`, `${35 - 2 * i}`, `${33 - 3 * i}`, `${39 - i}`, `${34 - 3 * i}`]),
+  ];
+  const r = lerGrade(tabela, 'x')!;
+  assert.deepEqual(simulacoesDa(r), [['29', [100, 70, 50]], ['30', [90, 60]]]);
+  const g = graficos('cantareira', r).graficos;
+  assert.deepEqual(g.map((x) => x.series.map((s) => [s.nome, s.cor])), [
+    [['QN 100%', '#255C8D'], ['QN 70%', '#E8912D'], ['QN 50%', '#B33A3A']],
+    [['QN 90%', '#255C8D'], ['QN 60%', '#E8912D']],
+  ]);
+  const txt = resumo('cantareira', r);
+  assert.match(txt, /ESI 30 m³\/s:\n  QN 90%/);
+  assert.deepEqual(retiradasIguais(r), []); // sem QN em comum, nada a comparar
+});
+
+test('blocos lado a lado (uma aba por QN), rótulos em células separadas, só números e QN pelo nome da aba', () => {
+  // como "Cantareira 70": QN no título, "ESI 29" acima de cada bloco Data | Volume útil
+  const qn70 = [
+    ['', 'QN 70'],
+    ['', '', 'ESI 29', '', '', 'ESI 30'],
+    ['', 'Data', 'Volume útil final (%)', '', '', 'Data', 'Volume útil final (%)'],
+    ['', '46326.125', '42.51', '', '', '46326.125', '42.37'],
+    ['', '46356.125', '39.52', '', '', '46356.125', '39.11'],
+  ];
+  assert.deepEqual(lerGrade(qn70, 'x', 'Cantareira 70'), [
+    { mes: '2026-10', esi: '29', qn: 70, valor: 42.51 },
+    { mes: '2026-11', esi: '29', qn: 70, valor: 39.52 },
+    { mes: '2026-10', esi: '30', qn: 70, valor: 42.37 },
+    { mes: '2026-11', esi: '30', qn: 70, valor: 39.11 },
+  ]);
+  // como "Cantareira 50": "ESI" | "29" em células separadas, título "0.5", QN pelo nome da aba
+  const qn50 = [['', '0.5'], ['', 'ESI', '29', '', '', 'ESI', '30'], ['', 'Data', 'Volume'], ['', '46326.125', '41.71', '', '', '46326.125', '41.57']];
+  assert.deepEqual(simulacoesDa(lerGrade(qn50, 'x', 'Cantareira 50')!), [['29', [50]], ['30', [50]]]);
+  // como "SIM - 70": só números acima dos blocos
+  const so = [['', '', 'QN 70'], ['', '', '29', '', '30'], ['', 'Data', 'Vol', 'Data', 'Vol'], ['', '46295.125', '51.62', '46295.125', '51.54']];
+  assert.deepEqual(simulacoesDa(lerGrade(so, 'x', 'SIM - 70')!), [['29', [70]], ['30', [70]]]);
+  // como "El Niño": um QN diferente em cada bloco, todos na mesma ESI
+  const nino = [['QN: 82%', 'ESI', '31', '', 'QN:79%', 'ESI', '31'], ['', 'Data', 'Volume', '', '', 'Data', 'Volume'], ['', '46326.125', '42.72', '', '', '46326.125', '42.6']];
+  assert.deepEqual(simulacoesDa(lerGrade(nino, 'x', 'Cantareira El Niño')!), [['31', [82, 79]]]);
+});
+
+test('quantidade de meses livre: menos ou mais datas não gera aviso; só falta de mês entre simulações', () => {
+  const curta = lerGrade([['ESI 29'], ['data', 'QN100', 'QN70'], ['2026-10-31', '40', '38'], ['2026-11-30', '39', '36']], 'x')!;
+  assert.deepEqual(graficos('cantareira', curta).avisos, []);
+  assert.equal(graficos('cantareira', curta).graficos[0]!.rotulos.length, 2);
 });
