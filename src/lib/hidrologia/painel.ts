@@ -1,15 +1,14 @@
 import { hojeSp, somarDias } from '../integracoes/comum';
 import { arred } from '../integracoes/http';
 import { ID_CANTAREIRA, resumosPeriodo } from '../integracoes/sabesp';
-import { serie, transposicaoAno } from '../integracoes/ssd';
+import { serie } from '../integracoes/ssd';
 import { OUTORGAS } from './outorgas';
-import { painelReservatorios } from './reservatorios';
-import { chuvasSistemas, vazoesSistemas } from './sistemas';
 
 /**
  * Painel de Situação Hídrica — RMSP (porte de painel/index.php?ajax=dados):
  * volume, chuva, vazão natural, transposição do Paraíba do Sul e captação do
- * mês × outorga dos sistemas produtores, numa única chamada.
+ * mês × outorga dos sistemas produtores. A página (app/painel) dispara as
+ * fontes juntas e cada cartão espera só as que usa.
  */
 
 /** SSD: captação mensal do Cantareira (E.E. Santa Inês), m³/s. */
@@ -45,15 +44,4 @@ export async function captacaoMensal(dataRef = hojeSp()): Promise<CaptacaoMensal
       pctOutorga: captadoMes === null ? null : arred((100 * captadoMes) / o.outorga, 1),
     };
   });
-}
-
-export async function painelSituacao(dataRef = hojeSp()) {
-  const [volume, chuva, vazao, transposicao, captacao] = await Promise.all([
-    painelReservatorios(dataRef),
-    chuvasSistemas(dataRef),
-    vazoesSistemas(dataRef),
-    transposicaoAno(dataRef),
-    captacaoMensal(dataRef),
-  ]);
-  return { volume, chuva, vazao, transposicao, captacao };
 }

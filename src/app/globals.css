@@ -1060,3 +1060,33 @@ td.seq-3, td.seq-4, td.seq-5, td.seq-6 { color: var(--seq-tinta-escura); }
   background: var(--primaria);
   color: var(--primaria-texto);
 }
+
+/*
+ * Esqueleto de carregamento (components/carregamento.tsx): ocupa o lugar do dado
+ * que ainda está chegando, com o tamanho final, para a página não "pular".
+ * Mesmas cores e brilho do .sibh-skeleton da página inicial.
+ */
+.esq {
+  display: block;
+  border-radius: 8px;
+  background: linear-gradient(90deg, #f2f5f7 25%, #e8eef2 37%, #f2f5f7 63%);
+  background-size: 400% 100%;
+  animation: esq-brilho 1.3s ease infinite;
+}
+.esq-linha { height: 0.85rem; margin: 0.3rem 0; }
+.esq-valor { height: 1.9rem; width: 70%; margin: 0.35rem 0; }
+.esq-grafico { width: 100%; border-radius: 12px; }
+.esq-centro { margin-left: auto; margin-right: auto; }
+@keyframes esq-brilho {
+  0% { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .esq { animation: none; }
+}
+/* Sobre fundo escuro (painel de parede e banner das faixas na página inicial). */
+.pnl .esq,
+.fx-banner .esq {
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.05) 25%, rgba(255, 255, 255, 0.12) 37%, rgba(255, 255, 255, 0.05) 63%);
+  background-size: 400% 100%;
+}

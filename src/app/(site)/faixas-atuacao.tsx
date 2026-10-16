@@ -1,9 +1,12 @@
+import { Suspense } from 'react';
+import { Esqueleto } from '@/components/carregamento';
 import { centroArea } from '@/components/graficos/mapa-pontos';
 import areas from '@/conteudo/sistemas-produtores-areas.json';
 import { dataBr } from '@/lib/formato';
-import { ESTAGIOS, painelReservatorios } from '@/lib/hidrologia/reservatorios';
+import { ESTAGIOS } from '@/lib/hidrologia/reservatorios';
 import { contornoSP, type Contorno } from '@/lib/integracoes/ibge';
 import { ID_SIM } from '@/lib/integracoes/sabesp';
+import { painelHoje } from './dados-inicio';
 
 const PAINEL =
   'https://app.powerbi.com/view?r=eyJrIjoiNzE3NGY2ZGQtYjc1OC00ZThiLTgxZDgtMDhlZDQ1OTM0YmI2IiwidCI6IjNhNzhiMGNkLTdjOGUtNDkyOS04M2Q1LTE5MGE2Y2MwMTM2NSJ9';
@@ -60,12 +63,50 @@ function MapaSistemas({ contorno, classes }: { contorno: Contorno | null; classe
   );
 }
 
-/** Página inicial — "Acompanhamento das FAIXAS de atuação": chamada do painel e situação dos sistemas. */
-export async function FaixasAtuacao() {
-  const [r, c] = await Promise.all([painelReservatorios(), contornoSP()]);
+/** Estágio de cada produtor (sem o SIM), pelo nome. */
+async function situacao() {
+  const r = await painelHoje();
   const sistemas = r.ok ? r.dados.sistemas.filter((s) => s.id !== ID_SIM) : [];
-  const classes = new Map(sistemas.map((s) => [s.nome, s.estagio.classe]));
+  return { r, sistemas, classes: new Map(sistemas.map((s) => [s.nome, s.estagio.classe])) };
+}
 
+/** Mapa colorido: espera a SABESP (cores) e o IBGE (contorno do Estado), em paralelo. */
+async function MapaColorido() {
+  const [{ classes }, c] = await Promise.all([situacao(), contornoSP()]);
+  return <MapaSistemas contorno={c.ok ? c.dados : null} classes={classes} />;
+}
+
+async function DataSituacao() {
+  const { r } = await situacao();
+  return r.ok ? <small>Atualizado em {dataBr(r.dados.dataUsada)}</small> : null;
+}
+
+async function Contagem() {
+  const { r, sistemas } = await situacao();
+  if (!r.ok) return <p className="fx-situacao__erro">{r.mensagem}</p>;
+  return <ContagemFaixas contar={(codigo) => sistemas.filter((s) => s.estagio.codigo === codigo).length} />;
+}
+
+/** Quantos sistemas há em cada faixa; sem `contar`, os números em esqueleto. */
+function ContagemFaixas({ contar }: { contar?: (codigo: string) => number }) {
+  return (
+    <div className="fx-contagem">
+      {ESTAGIOS.map((e) => (
+        <div key={e.codigo} className={`fx-contagem__item fx-cor--${e.classe}`}>
+          <strong>{contar ? contar(e.codigo) : <Esqueleto className="esq-valor esq-centro" largura="1.5rem" />}</strong>
+          <span>{e.nome}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/**
+ * Página inicial — "Acompanhamento das FAIXAS de atuação": chamada do painel e
+ * situação dos sistemas. Texto e escala aparecem na hora; o mapa surge sem cores
+ * e é pintado, e a contagem preenchida, quando a SABESP responder.
+ */
+export function FaixasAtuacao() {
   return (
     <div className="fx-banner">
       <div className="fx-banner__texto">
@@ -84,26 +125,21 @@ export async function FaixasAtuacao() {
         </a>
       </div>
 
-      <MapaSistemas contorno={c.ok ? c.dados : null} classes={classes} />
+      <Suspense fallback={<MapaSistemas contorno={null} classes={new Map()} />}>
+        <MapaColorido />
+      </Suspense>
 
       <div className="fx-situacao">
         <div className="fx-situacao__cabeca">
           <i className="bi bi-calendar3" />
           <h4>Situação dos Sistemas</h4>
-          {r.ok && <small>Atualizado em {dataBr(r.dados.dataUsada)}</small>}
+          <Suspense fallback={null}>
+            <DataSituacao />
+          </Suspense>
         </div>
-        {r.ok ? (
-          <div className="fx-contagem">
-            {ESTAGIOS.map((e) => (
-              <div key={e.codigo} className={`fx-contagem__item fx-cor--${e.classe}`}>
-                <strong>{sistemas.filter((s) => s.estagio.codigo === e.codigo).length}</strong>
-                <span>{e.nome}</span>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className="fx-situacao__erro">{r.mensagem}</p>
-        )}
+        <Suspense fallback={<ContagemFaixas />}>
+          <Contagem />
+        </Suspense>
         <h5>Faixas de atuação dos sistemas (volume útil)</h5>
         <ol className="fx-escala">
           {ESTAGIOS.map((e) => (

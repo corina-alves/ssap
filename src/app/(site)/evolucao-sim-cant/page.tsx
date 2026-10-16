@@ -1,4 +1,6 @@
 import type { Metadata } from 'next';
+import { cache, Suspense } from 'react';
+import { Consultando, EsqueletoGrafico } from '@/components/carregamento';
 import { GraficoSerieAnual } from '@/components/graficos-php';
 import { dataDaUrl } from '@/components/hidrologia/filtro-data';
 import { Hero, Principal, Secao } from '@/components/site/layout';
@@ -18,6 +20,38 @@ function ano(v: string | string[] | undefined, padrao: number, min: number, max:
   return Number.isInteger(n) ? Math.min(max, Math.max(min, n)) : padrao;
 }
 
+// Uma consulta por série e requisição, dividida entre o gráfico e o status.
+const serie = cache(serieAnual);
+
+const SERIES = [
+  { id: 'graficoCantareira', titulo: 'Sistema Cantareira', label: 'Cantareira', icone: 'bi-droplet-half', sistema: ID_CANTAREIRA, cor: '#0a4677' },
+  { id: 'graficoSIM', titulo: 'Sistema Integrado Metropolitano — SIM', label: 'SIM', icone: 'bi-water', sistema: ID_SIM, cor: '#087ca4' },
+];
+
+type Consulta = { base: string; anoInicial: number };
+
+async function Grafico({ s, base, anoInicial }: Consulta & { s: (typeof SERIES)[number] }) {
+  const pontos = await serie(base, s.sistema, anoInicial);
+  return (
+    <div style={{ height: 430, position: 'relative' }}>
+      <GraficoSerieAnual id={s.id} label={s.label} anos={pontos.map((p) => p.ano)} valores={pontos.map((p) => p.volume)} cor={s.cor} />
+    </div>
+  );
+}
+
+async function Status({ base, anoInicial, referencia }: Consulta & { referencia: string }) {
+  const [cantareira, sim] = await Promise.all([serie(base, ID_CANTAREIRA, anoInicial), serie(base, ID_SIM, anoInicial)]);
+  const semDado = cantareira.filter((p, i) => p.volume === null && sim[i]?.volume == null).map((p) => p.ano);
+  const falhou = semDado.length === cantareira.length;
+  return (
+    <div className={`sssp-status ${falhou ? 'is-error' : 'is-ok'}`}>
+      {falhou
+        ? 'Não foi possível consultar a série histórica (SABESP indisponível).'
+        : `Atualizado para ${referencia}. ${semDado.length ? `${semDado.length} ano(s) sem dado: ${semDado.join(', ')}.` : 'Série disponível.'}`}
+    </div>
+  );
+}
+
 /** Mesma consulta de api/evolucao_historica.php: o dia/mês escolhido em cada ano do intervalo. */
 export default async function EvolucaoHistorica({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const sp = await searchParams;
@@ -28,14 +62,7 @@ export default async function EvolucaoHistorica({ searchParams }: { searchParams
   const anoFinal = ano(sp.ano_final, anoAtual, anoInicial, anoAtual);
 
   const base = `${anoFinal}${data.slice(4)}`;
-  const [cantareira, sim] = await Promise.all([serieAnual(base, ID_CANTAREIRA, anoInicial), serieAnual(base, ID_SIM, anoInicial)]);
-  const semDado = cantareira.filter((p, i) => p.volume === null && sim[i]?.volume == null).map((p) => p.ano);
   const referencia = `${data.slice(8)}/${data.slice(5, 7)}`;
-
-  const series = [
-    { id: 'graficoCantareira', titulo: 'Sistema Cantareira', label: 'Cantareira', icone: 'bi-droplet-half', pontos: cantareira, cor: '#0a4677' },
-    { id: 'graficoSIM', titulo: 'Sistema Integrado Metropolitano — SIM', label: 'SIM', icone: 'bi-water', pontos: sim, cor: '#087ca4' },
-  ];
 
   return (
     <>
@@ -65,21 +92,19 @@ export default async function EvolucaoHistorica({ searchParams }: { searchParams
                 <i className="bi bi-arrow-repeat me-1" /> Atualizar
               </button>
             </div>
-            <div className={`sssp-status ${semDado.length === cantareira.length ? 'is-error' : 'is-ok'}`}>
-              {semDado.length === cantareira.length
-                ? 'Não foi possível consultar a série histórica (SABESP indisponível).'
-                : `Atualizado para ${referencia}. ${semDado.length ? `${semDado.length} ano(s) sem dado: ${semDado.join(', ')}.` : 'Série disponível.'}`}
-            </div>
+            <Suspense fallback={<Consultando>Consultando a série histórica…</Consultando>}>
+              <Status base={base} anoInicial={anoInicial} referencia={referencia} />
+            </Suspense>
           </form>
         </Secao>
 
         <div className="row g-4">
-          {series.map((s) => (
+          {SERIES.map((s) => (
             <div key={s.id} className="col-xl-6">
               <Secao titulo={s.titulo} subtitulo="Volume útil na data de referência de cada ano." icone={s.icone}>
-                <div style={{ height: 430, position: 'relative' }}>
-                  <GraficoSerieAnual id={s.id} label={s.label} anos={s.pontos.map((p) => p.ano)} valores={s.pontos.map((p) => p.volume)} cor={s.cor} />
-                </div>
+                <Suspense fallback={<EsqueletoGrafico altura={430} rotulo={`Carregando a série do ${s.label}…`} />}>
+                  <Grafico s={s} base={base} anoInicial={anoInicial} />
+                </Suspense>
               </Secao>
             </div>
           ))}

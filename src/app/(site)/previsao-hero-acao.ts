@@ -2,8 +2,10 @@
 
 import { localizarMunicipio } from '@/lib/hidrologia/previsao';
 import { previsaoMunicipio } from '@/lib/integracoes/openmeteo';
+import { textoReserva } from '@/lib/integracoes/comum';
 
-export type PrevisaoHero = { ok: true; nome: string; chuva: string; tmax: string; tmin: string } | { ok: false; mensagem: string };
+/** `aviso`: a Open-Meteo não respondeu agora e a previsão é a última obtida (com data e hora). */
+export type PrevisaoHero = { ok: true; nome: string; chuva: string; tmax: string; tmin: string; aviso?: string } | { ok: false; mensagem: string };
 
 const fmt = (v: number | null | undefined, suf: string) =>
   v === null || v === undefined ? '—' : `${v.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}${suf}`;
@@ -18,5 +20,12 @@ export async function previsaoHero(municipio: string): Promise<PrevisaoHero> {
   const r = await previsaoMunicipio(local.local.lat, local.local.lon);
   if (!r.ok) return { ok: false, mensagem: 'Não foi possível carregar a previsão deste município.' };
   const hoje = r.dados.dias[0];
-  return { ok: true, nome: local.local.nome, chuva: fmt(hoje?.chuvaMm, ' mm'), tmax: fmt(hoje?.tmax, '°C'), tmin: fmt(hoje?.tmin, '°C') };
+  return {
+    ok: true,
+    nome: local.local.nome,
+    chuva: fmt(hoje?.chuvaMm, ' mm'),
+    tmax: fmt(hoje?.tmax, '°C'),
+    tmin: fmt(hoje?.tmin, '°C'),
+    ...(r.desatualizado ? { aviso: textoReserva(r.fonte, r.obtidoEm) } : {}),
+  };
 }

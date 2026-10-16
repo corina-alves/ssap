@@ -1,5 +1,6 @@
 import { GraficoSistemas } from '@/components/graficos-php';
-import type { Resumo } from '@/lib/hidrologia/sistemas';
+import { EsqueletoGrafico, EsqueletoTabela } from '@/components/carregamento';
+import { anosDeReferencia, type Resumo } from '@/lib/hidrologia/sistemas';
 
 const num = (v: number | null, casas = 1) =>
   v === null ? '--' : v.toLocaleString('pt-BR', { minimumFractionDigits: casas, maximumFractionDigits: casas });
@@ -67,4 +68,19 @@ export function TabelaSistemas({ d, classe, rotuloDia }: { d: Resumo; classe: st
       </table>
     </div>
   );
+}
+
+/** Colunas da tabela "Acompanhamento …" para um ano (as mesmas de TabelaSistemas). */
+function colunas(ano: number, rotuloDia: string): string[] {
+  return ['Sistema', rotuloDia, 'Últimos 7 dias', `Mês ${ano}`, ...anosDeReferencia(ano).map((a) => `Mês ${a}`), 'Média histórica', 'MLT (%)'];
+}
+
+/** Lugar do gráfico enquanto a SABESP responde (mesma altura do gráfico). */
+export function EsqueletoGraficosSistemas({ tipo }: { tipo: 'chuva' | 'vazao' }) {
+  return <EsqueletoGrafico className={tipo === 'chuva' ? 'pcp-grafico-wrap' : 'vzo-grafico-wrap'} altura="auto" rotulo="Carregando gráfico por sistema…" />;
+}
+
+/** Tabela com os cabeçalhos do ano pedido e as 8 linhas (7 sistemas + SIM) em esqueleto. */
+export function EsqueletoTabelaSistemas({ ano, classe, rotuloDia }: { ano: number; classe: string; rotuloDia: string }) {
+  return <EsqueletoTabela colunas={colunas(ano, rotuloDia)} linhas={8} className={`table table-striped ${classe}`} />;
 }

@@ -73,6 +73,7 @@ export function PrevisaoHero({ municipios, municipio, inicial }: { municipios: s
                 <small>Temperatura mínima</small>
               </div>
             </div>
+            {previsao.aviso && <small className="d-block text-secondary mt-2">{previsao.aviso}</small>}
           </>
         ) : (
           <div className="alert alert-warning mt-3 mb-0">{previsao.mensagem}</div>

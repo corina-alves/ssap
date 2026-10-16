@@ -7,11 +7,12 @@ import '@/styles/legado/pagina-inicio-volume.css';
 import '@/styles/legado/pagina-inicio-faixas.css';
 import '@/styles/legado/pagina-inicio-salas.css';
 import '@/styles/legado/pagina-inicio-hero.css';
+import { Esqueleto } from '@/components/carregamento';
 import { texto } from '@/components/paginacao';
 import { dataBr, dataHora } from '@/lib/formato';
-import { hojeSp } from '@/lib/integracoes/comum';
+import { hojeSp, textoReserva } from '@/lib/integracoes/comum';
 import { municipiosSP } from '@/lib/integracoes/ibge';
-import { previsaoSistemas } from '@/lib/integracoes/openmeteo';
+import { CENTROIDES_SISTEMAS, previsaoSistemas } from '@/lib/integracoes/openmeteo';
 import { chuvaAgora } from '@/lib/integracoes/sibh';
 import { AcompanhamentoVolume } from './acompanhamento-volume';
 import { FaixasAtuacao } from './faixas-atuacao';
@@ -59,6 +60,51 @@ function Atalho({ href, externo, className, style, children }: { href: string; e
 async function CartaoPrevisao({ municipio }: { municipio: string }) {
   const [lista, inicial] = await Promise.all([municipiosSP(), previsaoHero(municipio)]);
   return <PrevisaoHero municipios={lista.ok ? lista.dados.map((m) => m.nome) : ['São Paulo']} municipio={municipio} inicial={inicial} />;
+}
+
+/** O cartão de previsão como vai ficar, com os números em esqueleto. */
+function CartaoPrevisaoEsqueleto({ municipio }: { municipio: string }) {
+  return (
+    <div role="status" aria-label="Carregando a previsão…">
+      <label htmlFor="municipioSelectHero" className="form-label">
+        Selecione o município
+      </label>
+      <select id="municipioSelectHero" className="form-select hero-municipio-select" disabled defaultValue={municipio}>
+        <option value={municipio}>{municipio}</option>
+      </select>
+      <h2>{municipio}</h2>
+      <div className="hp-previsao">
+        {['Chuva prevista para o dia', 'Temperatura máxima', 'Temperatura mínima'].map((t) => (
+          <div key={t}>
+            <Esqueleto className="esq-valor esq-centro" />
+            <small>{t}</small>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** Cartões dos sistemas produtores com os nomes e os números em esqueleto. */
+function PrevisaoSistemasEsqueleto() {
+  return (
+    <>
+      {CENTROIDES_SISTEMAS.map(({ sistema }) => (
+        <div className="col-lg-3 col-md-4 col-sm-6" key={sistema}>
+          <div className={`previsao-card text-center${sistema === 'Cantareira' ? ' cantareira' : ''}`} role="status" aria-label={`Carregando a previsão de ${sistema}…`}>
+            <h5>{sistema}</h5>
+            <Esqueleto className="esq-centro my-3" altura="3.5rem" largura="3.5rem" style={{ borderRadius: '50%' }} />
+            <Esqueleto className="esq-valor esq-centro" largura="50%" />
+            <small className="text-secondary">Chuva hoje</small>
+            <hr />
+            <Esqueleto largura="80%" className="esq-linha esq-centro" />
+            <Esqueleto largura="70%" className="esq-linha esq-centro" />
+            <Esqueleto largura="75%" className="esq-linha esq-centro" />
+          </div>
+        </div>
+      ))}
+    </>
+  );
 }
 
 async function ChuvaAgora() {
@@ -180,6 +226,7 @@ async function PrevisaoSistemas() {
   if (!r.ok) return <div className="col-12 text-center text-secondary py-4">{r.mensagem}</div>;
   return (
     <>
+      {r.desatualizado && <div className="col-12 small text-secondary">{textoReserva(r.fonte, r.obtidoEm)}</div>}
       {r.dados.map((s) => {
         const hoje = s.chuvaMm[0] ?? null;
         return (
@@ -266,7 +313,7 @@ export default async function Inicio({ searchParams }: { searchParams: Promise<R
                     {dataBr(hojeSp())}
                   </span>
                 </div>
-                <Suspense fallback={<div className="text-secondary py-4 text-center">Carregando previsão...</div>}>
+                <Suspense fallback={<CartaoPrevisaoEsqueleto municipio={municipio} />}>
                   <CartaoPrevisao municipio={municipio} />
                 </Suspense>
               </div>
@@ -321,9 +368,7 @@ export default async function Inicio({ searchParams }: { searchParams: Promise<R
                 <p>Evolução do Cantareira e documentos de referência.</p>
               </div>
             </div>
-            <Suspense fallback={<div className="text-secondary py-4 text-center">Carregando dados...</div>}>
-              <AcompanhamentoVolume />
-            </Suspense>
+            <AcompanhamentoVolume />
           </section>
 
           <section className="systems-wrap" id="sistemas">
@@ -338,7 +383,7 @@ export default async function Inicio({ searchParams }: { searchParams: Promise<R
               </a>
             </div>
             <div className="row g-3">
-              <Suspense fallback={<div className="col-12 text-center text-secondary py-4">Carregando previsão dos sistemas produtores...</div>}>
+              <Suspense fallback={<PrevisaoSistemasEsqueleto />}>
                 <PrevisaoSistemas />
               </Suspense>
             </div>
@@ -363,9 +408,7 @@ export default async function Inicio({ searchParams }: { searchParams: Promise<R
                 </p>
               </div>
             </div>
-            <Suspense fallback={<div className="text-secondary py-4 text-center">Carregando dados...</div>}>
-              <FaixasAtuacao />
-            </Suspense>
+            <FaixasAtuacao />
           </section>
 
           <section className="mt-5">

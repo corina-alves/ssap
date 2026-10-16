@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { Suspense } from 'react';
+import { cache, Suspense } from 'react';
 import '@/styles/legado/pagina-previsao.css';
+import { Consultando, Esqueleto, EsqueletoGrafico } from '@/components/carregamento';
 import { GraficoPrevisaoMunicipio } from '@/components/graficos-php';
 import { MapaGrade } from '@/components/graficos/mapa-grade';
 import { texto } from '@/components/paginacao';
@@ -24,6 +25,72 @@ const soma = (vs: (number | null)[], n: number) => vs.slice(0, n).reduce<number>
 const HORIZONTES = { '1': 'Hoje', '2': '48 h', '3': '72 h', '7': '7 dias' } as const;
 type Horizonte = keyof typeof HORIZONTES;
 
+// Uma consulta por requisição, dividida entre o status, a previsão e o mapa.
+const localizar = cache(localizarMunicipio);
+
+const CARTOES = [
+  { rot: 'Chuva hoje', ico: 'bi-cloud-rain', cls: 'card-primary' },
+  { rot: 'Chuva amanhã', ico: 'bi-cloud-drizzle', cls: 'card-primary' },
+  { rot: 'Acumulado 3 dias', ico: 'bi-cloud-rain-heavy', cls: 'card-primary' },
+  { rot: 'Acumulado 7 dias', ico: 'bi-calendar-week', cls: 'card-success' },
+  { rot: 'Temp. máxima (7 d)', ico: 'bi-thermometer-sun', cls: 'card-warning' },
+  { rot: 'Umidade do ar', ico: 'bi-droplet-half', cls: 'card-primary' },
+];
+
+/** Cartões do resumo; sem `valores`, os mesmos cartões com os números em esqueleto. */
+function Cartoes({ valores }: { valores?: { val: string; sub?: string }[] }) {
+  return (
+    <div className="row g-3">
+      {CARTOES.map((c, i) => (
+        <div className="col-6 col-md-4 col-xl-2" key={c.rot}>
+          <div className={`card-spagua ${c.cls}`}>
+            <i className={`bi ${c.ico}`} />
+            <div className="card-spagua__rot">{c.rot}</div>
+            {valores ? <div className="card-spagua__val">{valores[i]!.val}</div> : <Esqueleto className="esq-valor" />}
+            {valores?.[i]!.sub && <small>{valores[i]!.sub}</small>}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** A previsão do município como vai ficar, em esqueleto. */
+function PrevisaoEsqueleto({ nome }: { nome: string }) {
+  return (
+    <>
+      <Secao titulo="Resumo do município" subtitulo="Principais números da previsão para a localidade selecionada." icone="bi-clipboard-data">
+        <Cartoes />
+      </Secao>
+      <div className="prev-destaque mb-3">
+        <div className="weather-main">
+          <div className="text-secondary small">PREVISÃO PRINCIPAL</div>
+          <div className="weather-place">{nome}</div>
+          <Esqueleto largura="45%" />
+          <Esqueleto className="esq-valor mt-3" largura="35%" />
+          <Esqueleto className="esq-linha mt-3" />
+          <Esqueleto className="esq-linha" largura="80%" />
+        </div>
+        <Secao titulo="Chuva prevista" subtitulo="Acumulado diário para os próximos 7 dias." icone="bi-cloud-rain">
+          <EsqueletoGrafico className="weather-chart" altura="auto" />
+        </Secao>
+      </div>
+      <Secao titulo="Próximos 7 dias" subtitulo="Chuva, probabilidade e temperatura em cada dia." icone="bi-calendar-week">
+        <div className="weather-days">
+          {Array.from({ length: 7 }, (_, i) => (
+            <article className="weather-day" key={i}>
+              <Esqueleto largura="70%" />
+              <Esqueleto largura="50%" />
+              <Esqueleto className="esq-valor" largura="60%" />
+              <Esqueleto largura="80%" />
+            </article>
+          ))}
+        </div>
+      </Secao>
+    </>
+  );
+}
+
 async function PrevisaoMunicipio({ local }: { local: Local }) {
   const r = await previsaoMunicipio(local.lat, local.lon);
   if (!r.ok) return <div className="sssp-status is-error">{r.mensagem}</div>;
@@ -33,31 +100,20 @@ async function PrevisaoMunicipio({ local }: { local: Local }) {
   const chuvas = dias.map((d) => d.chuvaMm);
   const tmax = Math.max(...dias.map((d) => d.tmax ?? -99));
   const tmin = Math.min(...dias.map((d) => d.tmin ?? 99));
-  const cards = [
-    { rot: 'Chuva hoje', val: `${fmt(hoje?.chuvaMm)} mm`, sub: `${fmt(hoje?.probabilidade, 0)}% de prob.`, ico: 'bi-cloud-rain', cls: 'card-primary' },
-    { rot: 'Chuva amanhã', val: `${fmt(amanha?.chuvaMm)} mm`, sub: `${fmt(amanha?.probabilidade, 0)}% de prob.`, ico: 'bi-cloud-drizzle', cls: 'card-primary' },
-    { rot: 'Acumulado 3 dias', val: `${fmt(soma(chuvas, 3))} mm`, ico: 'bi-cloud-rain-heavy', cls: 'card-primary' },
-    { rot: 'Acumulado 7 dias', val: `${fmt(soma(chuvas, 7))} mm`, ico: 'bi-calendar-week', cls: 'card-success' },
-    { rot: 'Temp. máxima (7 d)', val: `${fmt(tmax, 0)}°C`, sub: `mín. ${fmt(tmin, 0)}°C`, ico: 'bi-thermometer-sun', cls: 'card-warning' },
-    { rot: 'Umidade do ar', val: `${fmt(umidadeAtual, 0)}%`, sub: 'agora', ico: 'bi-droplet-half', cls: 'card-primary' },
+  const valores = [
+    { val: `${fmt(hoje?.chuvaMm)} mm`, sub: `${fmt(hoje?.probabilidade, 0)}% de prob.` },
+    { val: `${fmt(amanha?.chuvaMm)} mm`, sub: `${fmt(amanha?.probabilidade, 0)}% de prob.` },
+    { val: `${fmt(soma(chuvas, 3))} mm` },
+    { val: `${fmt(soma(chuvas, 7))} mm` },
+    { val: `${fmt(tmax, 0)}°C`, sub: `mín. ${fmt(tmin, 0)}°C` },
+    { val: `${fmt(umidadeAtual, 0)}%`, sub: 'agora' },
   ];
 
   return (
     <>
       <Secao titulo="Resumo do município" subtitulo="Principais números da previsão para a localidade selecionada." icone="bi-clipboard-data">
         {r.desatualizado && <div className="sssp-status is-error mb-2">Open-Meteo indisponível agora; previsão de {dataHora(r.obtidoEm)}.</div>}
-        <div className="row g-3">
-          {cards.map((c) => (
-            <div className="col-6 col-md-4 col-xl-2" key={c.rot}>
-              <div className={`card-spagua ${c.cls}`}>
-                <i className={`bi ${c.ico}`} />
-                <div className="card-spagua__rot">{c.rot}</div>
-                <div className="card-spagua__val">{c.val}</div>
-                {c.sub && <small>{c.sub}</small>}
-              </div>
-            </div>
-          ))}
-        </div>
+        <Cartoes valores={valores} />
       </Secao>
 
       <div className="prev-destaque mb-3">
@@ -148,45 +204,61 @@ async function PrevisaoMunicipio({ local }: { local: Local }) {
   );
 }
 
-async function MapaEstado({ horizonte, municipio, local }: { horizonte: Horizonte; municipio: string; local: Local | null }) {
-  const [g, c] = await Promise.all([gradeEstado(Number(horizonte)), contornoSP()]);
-  const q = (h: string) => `/previsao?${new URLSearchParams({ ...(municipio ? { municipio } : {}), horizonte: h })}#mapa`;
+/** Localiza o município (IBGE + geocodificação) e então busca a previsão. */
+async function PrevisaoDoLocal({ municipio }: { municipio: string }) {
+  const local = await localizar(municipio);
+  return local.ok ? <PrevisaoMunicipio local={local.local} /> : null;
+}
+
+async function StatusLocal({ municipio }: { municipio: string }) {
+  const local = await localizar(municipio);
   return (
-    <>
-      <div className="prev-horizonte" role="group" aria-label="Horizonte de previsão">
-        {Object.entries(HORIZONTES).map(([h, rotulo]) => (
-          <Link key={h} href={q(h)} className={h === horizonte ? 'is-ativo' : undefined} aria-current={h === horizonte ? 'true' : undefined} scroll={false}>
-            {rotulo}
-          </Link>
-        ))}
-      </div>
-      {!g.ok ? (
-        <div className="sssp-status is-error">{g.mensagem}</div>
-      ) : (
-        <div className="prev-mapa-wrap">
-          <MapaGrade
-            titulo={`Chuva acumulada prevista no Estado de São Paulo — ${HORIZONTES[horizonte].toLowerCase()}`}
-            contorno={c.ok ? c.dados : null}
-            pontos={g.dados}
-            passoLat={0.55}
-            passoLon={0.65}
-            marcador={local}
-          />
-          <div className="sssp-status mt-2">
-            Grade de {g.dados.length} pontos (Open-Meteo), recortada pelo contorno do Estado (IBGE) · {dataHora(g.obtidoEm)}.
-          </div>
-        </div>
-      )}
-    </>
+    <div className={`sssp-status mt-3${local.ok ? '' : ' is-error'}`}>
+      {local.ok ? (municipio ? `${local.local.nome} selecionado.` : 'São Paulo selecionado como referência principal.') : local.mensagem}
+    </div>
   );
 }
 
+/** Sugestões do campo de município (lista do IBGE); chegam depois do formulário. */
+async function ListaMunicipios() {
+  const lista = await municipiosSP();
+  if (!lista.ok) return null;
+  return (
+    <datalist id="municipios-sp">
+      {lista.dados.map((m) => (
+        <option key={m.codigoIbge} value={m.nome} />
+      ))}
+    </datalist>
+  );
+}
+
+async function MapaEstado({ horizonte, municipio }: { horizonte: Horizonte; municipio: string }) {
+  const [g, c, local] = await Promise.all([gradeEstado(Number(horizonte)), contornoSP(), localizar(municipio)]);
+  if (!g.ok) return <div className="sssp-status is-error">{g.mensagem}</div>;
+  return (
+    <div className="prev-mapa-wrap">
+      <MapaGrade
+        titulo={`Chuva acumulada prevista no Estado de São Paulo — ${HORIZONTES[horizonte].toLowerCase()}`}
+        contorno={c.ok ? c.dados : null}
+        pontos={g.dados}
+        passoLat={0.55}
+        passoLon={0.65}
+        marcador={local.ok ? local.local : null}
+      />
+      <div className="sssp-status mt-2">
+        Grade de {g.dados.length} pontos (Open-Meteo), recortada pelo contorno do Estado (IBGE) · {dataHora(g.obtidoEm)}.
+      </div>
+    </div>
+  );
+}
+
+/** Formulário, títulos e horizontes na hora; previsão, sugestões e mapa chegam cada um quando a sua fonte responder. */
 export default async function Previsao({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const sp = await searchParams;
   const municipio = texto(sp.municipio, 80);
   const h = texto(sp.horizonte, 2);
   const horizonte: Horizonte = h in HORIZONTES ? (h as Horizonte) : '1';
-  const [local, lista] = await Promise.all([localizarMunicipio(municipio), municipiosSP()]);
+  const q = (hz: string) => `/previsao?${new URLSearchParams({ ...(municipio ? { municipio } : {}), horizonte: hz })}#mapa`;
 
   return (
     <>
@@ -205,18 +277,14 @@ export default async function Previsao({ searchParams }: { searchParams: Promise
                 id="buscaMunicipio"
                 name="municipio"
                 list="municipios-sp"
-                defaultValue={local.ok ? local.local.nome : municipio}
+                defaultValue={municipio || 'São Paulo'}
                 placeholder="Digite o nome"
                 autoComplete="off"
                 required
               />
-              {lista.ok && (
-                <datalist id="municipios-sp">
-                  {lista.dados.map((m) => (
-                    <option key={m.codigoIbge} value={m.nome} />
-                  ))}
-                </datalist>
-              )}
+              <Suspense fallback={null}>
+                <ListaMunicipios />
+              </Suspense>
             </div>
             {horizonte !== '1' && <input type="hidden" name="horizonte" value={horizonte} />}
             <button className="btn btn-primary" type="submit">
@@ -224,20 +292,14 @@ export default async function Previsao({ searchParams }: { searchParams: Promise
               Ver previsão
             </button>
           </form>
-          <div className={`sssp-status mt-3${local.ok ? '' : ' is-error'}`}>
-            {local.ok
-              ? municipio
-                ? `${local.local.nome} selecionado.`
-                : 'São Paulo selecionado como referência principal.'
-              : local.mensagem}
-          </div>
+          <Suspense fallback={<Consultando className="sssp-status mt-3">Localizando o município…</Consultando>}>
+            <StatusLocal municipio={municipio} />
+          </Suspense>
         </Secao>
 
-        {local.ok && (
-          <Suspense fallback={<div className="sssp-status">Consultando a previsão...</div>}>
-            <PrevisaoMunicipio local={local.local} />
-          </Suspense>
-        )}
+        <Suspense fallback={<PrevisaoEsqueleto nome={municipio || 'São Paulo'} />}>
+          <PrevisaoDoLocal municipio={municipio} />
+        </Suspense>
 
         <Secao
           id="mapa"
@@ -245,8 +307,15 @@ export default async function Previsao({ searchParams }: { searchParams: Promise
           subtitulo="Grade de precipitação acumulada, com dados reais da Open-Meteo. Escolha o horizonte de tempo."
           icone="bi-map"
         >
-          <Suspense fallback={<div className="sssp-status">Carregando mapa...</div>}>
-            <MapaEstado horizonte={horizonte} municipio={municipio} local={local.ok ? local.local : null} />
+          <div className="prev-horizonte" role="group" aria-label="Horizonte de previsão">
+            {Object.entries(HORIZONTES).map(([hz, rotulo]) => (
+              <Link key={hz} href={q(hz)} className={hz === horizonte ? 'is-ativo' : undefined} aria-current={hz === horizonte ? 'true' : undefined} scroll={false}>
+                {rotulo}
+              </Link>
+            ))}
+          </div>
+          <Suspense key={horizonte} fallback={<EsqueletoGrafico altura={420} rotulo="Carregando o mapa de chuva prevista…" />}>
+            <MapaEstado horizonte={horizonte} municipio={municipio} />
           </Suspense>
         </Secao>
       </Principal>

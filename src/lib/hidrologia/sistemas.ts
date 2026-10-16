@@ -16,6 +16,11 @@ import { ID_SIM, resumoRecente, resumosPeriodo, SISTEMAS, type SistemaSabesp } f
 /** Anos de crise hídrica usados como referência fixa (além do ano anterior). */
 export const ANOS_CRISE = [2021, 2014] as const;
 
+/** Anos de referência de uma data no ano `ano`: o anterior e os de crise (só os já passados). */
+export function anosDeReferencia(ano: number): number[] {
+  return [...new Set([ano - 1, ...ANOS_CRISE])].filter((a) => a < ano);
+}
+
 export type Linha = {
   id: number;
   nome: string;
@@ -79,7 +84,7 @@ async function janela(dataRef: string): Promise<Dado<Janela>> {
   const dataUsada = atual.dados.data;
   const ano = Number(dataUsada.slice(0, 4));
   const mes = Number(dataUsada.slice(5, 7));
-  const anos = [...new Set([ano - 1, ...ANOS_CRISE])].filter((a) => a < ano);
+  const anos = anosDeReferencia(ano);
   const datasDias = Array.from({ length: 7 }, (_, i) => somarDias(dataUsada, -i));
   const datasRefs = new Map(anos.map((a) => [a, fimDoMes(a, mes)]));
   const resumos = await resumosPeriodo([...datasDias, ...datasRefs.values()]);

@@ -1,4 +1,5 @@
 import type { Lembrado } from './cache';
+import { dataHora } from '../formato';
 
 /**
  * Resultado de uma integração para a tela: ou há dados (talvez desatualizados,
@@ -11,6 +12,11 @@ export type Dado<T> =
 export function comoDado<T>(fonte: string, l: Lembrado<T> | null, mensagem?: string): Dado<T> {
   if (!l) return { ok: false, fonte, mensagem: mensagem ?? `${fonte} indisponível no momento. Tente novamente em alguns minutos.` };
   return { ok: true, dados: l.valor, fonte, obtidoEm: l.obtidoEm, desatualizado: l.desatualizado };
+}
+
+/** Aviso de dado vindo da reserva do cache: a fonte não respondeu agora (com a data e a hora do dado). */
+export function textoReserva(fonte: string, obtidoEm: Date): string {
+  return `${fonte} indisponível agora: exibindo os últimos dados obtidos, de ${dataHora(obtidoEm)}.`;
 }
 
 const fmtYmd = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' });

@@ -1,3 +1,5 @@
+import { Suspense } from 'react';
+import { EsqueletoGrafico, EsqueletoTabela } from '@/components/carregamento';
 import { GraficoSerieAnual, GraficoTransposicaoGauge, GraficoTransposicaoMensal } from '@/components/graficos-php';
 import { Secao } from '@/components/site/layout';
 import { dataBr } from '@/lib/formato';
@@ -112,26 +114,65 @@ export async function TransposicaoNoAno({ ate }: { ate: string }) {
   );
 }
 
-/** Série anual (mesma data desde 2010) do Cantareira e do SIM, lado a lado. */
-export async function SeriesAnuais({ dataBase }: { dataBase: string }) {
-  const [cant, sim] = await Promise.all([serieAnual(dataBase, ID_CANTAREIRA), serieAnual(dataBase, ID_SIM)]);
+/** Esqueleto da transposição: as três colunas com os títulos, à espera do SSD. */
+export function EsqueletoTransposicao() {
+  return (
+    <div className="row g-3 rsv-transp">
+      <div className="col-lg-4">
+        <h3 className="h6 mb-2">
+          <i className="bi bi-bar-chart-line text-primary" /> Operação no ano atual
+        </h3>
+        <EsqueletoTabela colunas={['Mês', 'Vazão média bombeada (m³/s)']} linhas={6} className="table table-sm table-striped rsv-tabela mb-0" />
+      </div>
+      <div className="col-lg-4">
+        <h3 className="h6 mb-2">
+          <i className="bi bi-graph-up text-primary" /> Volume mensal transferido
+        </h3>
+        <EsqueletoGrafico className="rsv-grafico-wrap" altura="auto" />
+      </div>
+      <div className="col-lg-4">
+        <h3 className="h6 mb-2">
+          <i className="bi bi-speedometer2 text-primary" /> Volume transferido (hm³)
+        </h3>
+        <p className="text-secondary small mb-2">Volume acumulado da transposição no ano atual.</p>
+        <EsqueletoGrafico altura={180} />
+      </div>
+    </div>
+  );
+}
+
+const SERIES = [
+  { nome: 'Cantareira', idSistema: ID_CANTAREIRA, id: 'graficoCantareira', label: 'Sistema Cantareira (%)', cor: '#0b4f8a' },
+  { nome: 'SIM', idSistema: ID_SIM, id: 'graficoSIM', label: 'Sistema SIM (%)', cor: '#198754' },
+];
+
+async function GraficoSerie({ dataBase, s }: { dataBase: string; s: (typeof SERIES)[number] }) {
+  const pontos = await serieAnual(dataBase, s.idSistema);
+  return (
+    <div className="rsv-grafico-wrap">
+      <GraficoSerieAnual id={s.id} label={s.label} anos={pontos.map((p) => p.ano)} valores={pontos.map((p) => p.volume)} cor={s.cor} />
+    </div>
+  );
+}
+
+/**
+ * Série anual (mesma data desde 2010) do Cantareira e do SIM, lado a lado. Cada
+ * gráfico chega sozinho; sem `dataBase` (painel ainda carregando), só esqueletos.
+ */
+export function SeriesAnuais({ dataBase }: { dataBase: string | null }) {
+  const esqueleto = <EsqueletoGrafico className="rsv-grafico-wrap" altura="auto" rotulo="Carregando a série anual desde 2010…" />;
   return (
     <div className="row g-3">
-      {[
-        { nome: 'Cantareira', pontos: cant, id: 'graficoCantareira', label: 'Sistema Cantareira (%)', cor: '#0b4f8a' },
-        { nome: 'SIM', pontos: sim, id: 'graficoSIM', label: 'Sistema SIM (%)', cor: '#198754' },
-      ].map((s) => (
+      {SERIES.map((s) => (
         <div className="col-lg-6" key={s.nome}>
           <Secao titulo={`Acompanhamento do ${s.nome}`} subtitulo="Série anual desde 2010 para a mesma data de referência." icone="bi-clock-history">
-            <div className="rsv-grafico-wrap">
-              <GraficoSerieAnual
-                id={s.id}
-                label={s.label}
-                anos={s.pontos.map((p) => p.ano)}
-                valores={s.pontos.map((p) => p.volume)}
-                cor={s.cor}
-              />
-            </div>
+            {dataBase ? (
+              <Suspense fallback={esqueleto}>
+                <GraficoSerie dataBase={dataBase} s={s} />
+              </Suspense>
+            ) : (
+              esqueleto
+            )}
           </Secao>
         </div>
       ))}
