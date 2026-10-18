@@ -199,7 +199,15 @@ Limpeza de imagens antigas (não mexe em volumes): `docker image prune -f`.
 
 ### Rede da instituição
 
-- **Proxy de saída** para a internet: descomente `NODE_USE_ENV_PROXY`, `HTTPS_PROXY`, `HTTP_PROXY` e `NO_PROXY` no `.env.docker` (o `NO_PROXY` precisa conter `db`).
+- **Proxy de saída** para as APIs externas (como o `SSSP_PROXY` do site PHP publicado): no `.env.docker`, descomente e preencha
+
+  ```
+  SSSP_PROXY=10.200.12.140:80
+  SSSP_PROXY_AUTH=usuario:senha   (só se o proxy pedir login)
+  ```
+
+  e recrie a aplicação: `docker compose up -d app`. Ao subir, o log mostra `entrada: APIs externas via proxy http://…` (a senha aparece como `***`). O banco e a própria máquina nunca passam pelo proxy; outros hosts internos vão em `SSSP_NO_PROXY` (separados por vírgula). Só proxy **http** é aceito (`SSSP_PROXY_TYPE=socks5` faz a aplicação parar com um aviso). Quem preferir pode usar as variáveis padrão do Node (`NODE_USE_ENV_PROXY=1`, `HTTPS_PROXY`, `HTTP_PROXY`, `NO_PROXY` com `db`); com `HTTPS_PROXY` definida, o `SSSP_PROXY` é ignorado.
+  Para testar a saída pelo proxy: `docker compose exec app node -e "fetch('https://api.open-meteo.com/v1/forecast?latitude=-23.5&longitude=-46.6&current=temperature_2m').then(r=>console.log(r.status))"` deve mostrar `200`.
 - **Proxy que inspeciona HTTPS** (certificado próprio da instituição): a verificação de certificado nunca é desligada. Monte o certificado raiz no serviço `app` e aponte `NODE_EXTRA_CA_CERTS` para ele, num arquivo `compose.override.yaml`:
 
   ```yaml

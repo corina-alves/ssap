@@ -22,10 +22,10 @@
 .hp-estado strong::before { content: ''; width: 13px; height: 13px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 0 4px rgba(34, 197, 94, .25); }
 .hp-estado span { padding-left: 30px; border-left: 1px solid rgba(255, 255, 255, .4); color: rgba(255, 255, 255, .75); }
 
-.public-page .hero .hero-actions { display: flex; flex-wrap: wrap; gap: 18px; }
+.public-page .hero .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; }
 .public-page .hero .hero-actions .btn {
-    display: inline-flex; align-items: center; gap: 14px; padding: 16px 30px; border-radius: 999px;
-    font-size: 1.08rem; font-weight: 700; color: #fff;
+    display: inline-flex; align-items: center; gap: 8px; padding: 9px 20px; border-radius: 999px;
+    font-size: .92rem; font-weight: 700; color: #fff;
 }
 .public-page .hero .hero-actions .btn-primary { background: #12b356; border-color: #12b356; box-shadow: 0 10px 24px rgba(18, 179, 86, .35); }
 .public-page .hero .hero-actions .btn-primary:hover { background: #0e9a49; border-color: #0e9a49; }
@@ -65,7 +65,7 @@
 }
 @media (max-width: 575.98px) {
     .hp-estado span { padding-left: 0; border-left: 0; }
-    .public-page .hero .hero-actions .btn { padding: 13px 22px; font-size: 1rem; }
+    .public-page .hero .hero-actions .btn { padding: 8px 16px; font-size: .88rem; }
     .hp-previsao { grid-template-columns: 1fr 1fr; row-gap: 16px; }
     .hp-previsao__chuva { grid-column: 1 / -1; }
     .hp-previsao > div:nth-child(2) { border-left: 0; }
