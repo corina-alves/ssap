@@ -1,12 +1,14 @@
 import type { Metadata } from 'next';
+import Form from 'next/form';
 import { cache, Suspense } from 'react';
-import { Consultando, EsqueletoGrafico } from '@/components/carregamento';
+import { Consultando } from '@/components/carregamento';
 import { GraficoSerieAnual } from '@/components/graficos-php';
 import { dataDaUrl } from '@/components/hidrologia/filtro-data';
-import { Hero, Principal, Secao } from '@/components/site/layout';
+import { Principal } from '@/components/site/layout';
 import { serieAnual } from '@/lib/hidrologia/reservatorios';
 import { hojeSp } from '@/lib/integracoes/comum';
 import { ID_CANTAREIRA, ID_SIM } from '@/lib/integracoes/sabesp';
+import { esqueletoSerie, GradeSeries, Referencia, type Serie } from './series';
 
 export const metadata: Metadata = {
   title: 'Evolução Histórica do Volume',
@@ -23,14 +25,9 @@ function ano(v: string | string[] | undefined, padrao: number, min: number, max:
 // Uma consulta por série e requisição, dividida entre o gráfico e o status.
 const serie = cache(serieAnual);
 
-const SERIES = [
-  { id: 'graficoCantareira', titulo: 'Sistema Cantareira', label: 'Cantareira', icone: 'bi-droplet-half', sistema: ID_CANTAREIRA, cor: '#0a4677' },
-  { id: 'graficoSIM', titulo: 'Sistema Integrado Metropolitano — SIM', label: 'SIM', icone: 'bi-water', sistema: ID_SIM, cor: '#087ca4' },
-];
-
 type Consulta = { base: string; anoInicial: number };
 
-async function Grafico({ s, base, anoInicial }: Consulta & { s: (typeof SERIES)[number] }) {
+async function Grafico({ s, base, anoInicial }: Consulta & { s: Serie }) {
   const pontos = await serie(base, s.sistema, anoInicial);
   return (
     <div style={{ height: 430, position: 'relative' }}>
@@ -63,53 +60,43 @@ export default async function EvolucaoHistorica({ searchParams }: { searchParams
 
   const base = `${anoFinal}${data.slice(4)}`;
   const referencia = `${data.slice(8)}/${data.slice(5, 7)}`;
+  // Troca de filtro: os blocos voltam ao esqueleto até os novos dados chegarem.
+  const consulta = `${base}|${anoInicial}`;
 
   return (
-    <>
-      <Hero
-        kicker="Série histórica"
-        titulo="Evolução Histórica do Volume Armazenado"
-        texto="Compare, na mesma data de referência de cada ano, os volumes do Sistema Cantareira e do Sistema Integrado Metropolitano (SIM)."
-        icone="bi-clock-history"
-      />
-      <Principal>
-        <Secao titulo="Data de referência" subtitulo="Escolha o dia e o mês usados na comparação entre os anos." icone="bi-calendar3">
-          <form className="sssp-filter-grid" method="get">
-            <div className="sssp-field">
-              <label htmlFor="refData">Dia e mês</label>
-              <input id="refData" name="data" type="date" defaultValue={data} min={`${PRIMEIRO_ANO}-01-01`} max={hoje} />
-            </div>
-            <div className="sssp-field">
-              <label htmlFor="anoInicial">Ano inicial</label>
-              <input id="anoInicial" name="ano_inicial" type="number" min={PRIMEIRO_ANO} max={anoAtual} defaultValue={anoInicial} />
-            </div>
-            <div className="sssp-field">
-              <label htmlFor="anoFinal">Ano final</label>
-              <input id="anoFinal" name="ano_final" type="number" min={PRIMEIRO_ANO} max={anoAtual} defaultValue={anoFinal} />
-            </div>
-            <div className="sssp-field">
-              <button type="submit" className="btn btn-primary">
-                <i className="bi bi-arrow-repeat me-1" /> Atualizar
-              </button>
-            </div>
-            <Suspense fallback={<Consultando>Consultando a série histórica…</Consultando>}>
-              <Status base={base} anoInicial={anoInicial} referencia={referencia} />
-            </Suspense>
-          </form>
-        </Secao>
+    <Principal>
+      <Referencia>
+        <Form action="" scroll={false} className="sssp-filter-grid">
+          <div className="sssp-field">
+            <label htmlFor="refData">Dia e mês</label>
+            <input id="refData" name="data" type="date" defaultValue={data} min={`${PRIMEIRO_ANO}-01-01`} max={hoje} />
+          </div>
+          <div className="sssp-field">
+            <label htmlFor="anoInicial">Ano inicial</label>
+            <input id="anoInicial" name="ano_inicial" type="number" min={PRIMEIRO_ANO} max={anoAtual} defaultValue={anoInicial} />
+          </div>
+          <div className="sssp-field">
+            <label htmlFor="anoFinal">Ano final</label>
+            <input id="anoFinal" name="ano_final" type="number" min={PRIMEIRO_ANO} max={anoAtual} defaultValue={anoFinal} />
+          </div>
+          <div className="sssp-field">
+            <button type="submit" className="btn btn-primary">
+              <i className="bi bi-arrow-repeat me-1" /> Atualizar
+            </button>
+          </div>
+          <Suspense key={consulta} fallback={<Consultando>Consultando a série histórica…</Consultando>}>
+            <Status base={base} anoInicial={anoInicial} referencia={referencia} />
+          </Suspense>
+        </Form>
+      </Referencia>
 
-        <div className="row g-4">
-          {SERIES.map((s) => (
-            <div key={s.id} className="col-xl-6">
-              <Secao titulo={s.titulo} subtitulo="Volume útil na data de referência de cada ano." icone={s.icone}>
-                <Suspense fallback={<EsqueletoGrafico altura={430} rotulo={`Carregando a série do ${s.label}…`} />}>
-                  <Grafico s={s} base={base} anoInicial={anoInicial} />
-                </Suspense>
-              </Secao>
-            </div>
-          ))}
-        </div>
-      </Principal>
-    </>
+      <GradeSeries
+        grafico={(s) => (
+          <Suspense key={consulta} fallback={esqueletoSerie(s)}>
+            <Grafico s={s} base={base} anoInicial={anoInicial} />
+          </Suspense>
+        )}
+      />
+    </Principal>
   );
 }

@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Form from 'next/form';
 import Link from 'next/link';
 import { Cabecalho } from '@/components/acesso/pecas';
 import { idTipoBoletim } from '@/lib/acesso/api';
@@ -80,7 +81,7 @@ export default async function BoletimIntegrado({ searchParams }: { searchParams:
             </Link>
           ))}
         </nav>
-        <form method="get" action={`${BASE}/boletim`}>
+        <Form scroll={false} action={`${BASE}/boletim`}>
           <input type="hidden" name="tipo" value={tipo} />
           <div>
             <label htmlFor="mes">Mês</label>
@@ -113,7 +114,7 @@ export default async function BoletimIntegrado({ searchParams }: { searchParams:
               <i className="bi bi-upload me-1" /> Cadastrar PDF como boletim
             </Link>
           )}
-        </form>
+        </Form>
       </section>
 
       <TelaBoletim key={`${tipo}-${ano}-${mes}`} tipo={tipo} ano={ano} mes={mes} nome={NOMES[tipo]} competencia={comp} />

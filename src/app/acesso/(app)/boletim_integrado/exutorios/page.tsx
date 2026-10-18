@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Form from 'next/form';
 import Link from 'next/link';
 import { Cabecalho, Mensagem } from '@/components/acesso/pecas';
 import { acl, exigirSala } from '@/lib/auth/acl';
@@ -64,7 +65,7 @@ export default async function DadosExutorios({ searchParams }: { searchParams: P
         }
       />
 
-      <form method="get" className="acesso-card mb-3 row g-2 align-items-end mx-0">
+      <Form action="" scroll={false} className="acesso-card mb-3 row g-2 align-items-end mx-0">
         <div className="col-6 col-md-3">
           <label className="form-label small" htmlFor="mes">
             Mês de referência
@@ -92,7 +93,7 @@ export default async function DadosExutorios({ searchParams }: { searchParams: P
             Abrir mês
           </button>
         </div>
-      </form>
+      </Form>
 
       {RESERVATORIOS.map(([slug, nome], i) => {
         const dias = reservatorios[i]!;

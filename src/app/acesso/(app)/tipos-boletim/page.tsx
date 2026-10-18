@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Form from 'next/form';
 import Link from 'next/link';
 import { inteiro } from '@/components/paginacao';
 import { listarSalas } from '@/lib/admin/salas';
@@ -28,7 +29,7 @@ export default async function PaginaTipos({
         </Link>
       </div>
       <section className="cartao">
-        <form className="filtros" method="get">
+        <Form action="" scroll={false} className="filtros">
           <select name="sala" defaultValue={salaId || ''} aria-label="Sala">
             <option value="">Todas as salas</option>
             {salas.map((s) => (
@@ -40,7 +41,7 @@ export default async function PaginaTipos({
           <button type="submit" className="botao botao-secundario">
             Filtrar
           </button>
-        </form>
+        </Form>
         {tipos.length === 0 ? (
           <p className="suave">Nenhum tipo de boletim.</p>
         ) : (

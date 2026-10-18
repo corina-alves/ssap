@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Form from 'next/form';
 import Link from 'next/link';
 import { cache, Suspense, type CSSProperties, type ReactNode } from 'react';
 import { Esqueleto } from '@/components/carregamento';
@@ -406,7 +407,7 @@ export default async function Painel({ searchParams }: { searchParams: Promise<R
             <span>Região Metropolitana de São Paulo · Sala de Situação Alfredo Pisani</span>
           </div>
         </div>
-        <form className="pnl-busca" method="get" key={data}>
+        <Form action="" scroll={false} className="pnl-busca" key={data}>
           <label htmlFor="pnlDataInput">
             <i className="bi bi-calendar3" /> Data de referência
           </label>
@@ -416,7 +417,7 @@ export default async function Painel({ searchParams }: { searchParams: Promise<R
               <i className="bi bi-search" />
             </button>
           </div>
-        </form>
+        </Form>
 
         <div className="pnl-top-meta">
           <Relogio />

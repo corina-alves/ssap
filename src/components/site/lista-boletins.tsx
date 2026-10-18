@@ -1,3 +1,4 @@
+import Form from 'next/form';
 import Link from 'next/link';
 import { dataBr } from '@/lib/formato';
 import { contagemPorTipo, listarPublicados, sugestoesBoletins, type BoletimPublico } from '@/lib/publico';
@@ -82,7 +83,7 @@ export async function ListaBoletins({
         </div>
       </div>
       <div className="sssp-section-card__body">
-        <form className="blt-toolbar" method="get" action={base}>
+        <Form scroll={false} className="blt-toolbar" action={base}>
           <div className="blt-filtros">
             {comFiltroTipo && (
               <div className="sssp-field">
@@ -112,7 +113,7 @@ export async function ListaBoletins({
             <i className="bi bi-search" />
             <BuscaAutocompletar sugestoes={sugestoes} name="q" defaultValue={busca} placeholder="Buscar por título, data ou período..." rotulo="Buscar boletim" />
           </div>
-        </form>
+        </Form>
 
         {itens.length > 0 ? (
           <>

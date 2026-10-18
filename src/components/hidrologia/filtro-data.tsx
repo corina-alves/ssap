@@ -1,3 +1,4 @@
+import Form from 'next/form';
 import { dataBr } from '@/lib/formato';
 import { hojeSp, RE_DATA } from '@/lib/integracoes/comum';
 
@@ -11,14 +12,14 @@ export function dataDaUrl(v: string | string[] | undefined): string {
 /** Formulário GET de data (funciona sem JavaScript). */
 export function FiltroData({ data }: { data: string }) {
   return (
-    <form className="filtros" method="get">
+    <Form action="" scroll={false} className="filtros">
       <label className="inline">
         Data de referência <input type="date" name="data" defaultValue={data} min="2010-01-01" max={hojeSp()} />
       </label>
       <button type="submit" className="botao botao-secundario">
         Atualizar
       </button>
-    </form>
+    </Form>
   );
 }
 

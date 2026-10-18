@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Form from 'next/form';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { inteiro, Paginacao, texto } from '@/components/paginacao';
@@ -45,7 +46,7 @@ export default async function PaginaDocumentos({
       </div>
       {sp.excluido && <div className="alerta alerta-ok">Documento excluído.</div>}
       <section className="cartao">
-        <form className="filtros" method="get">
+        <Form action="" scroll={false} className="filtros">
           <BuscaAutocompletar sugestoes={await sugestoesTitulos(salas.map((s) => s.id))} name="busca" defaultValue={f.busca} placeholder="Buscar no título ou na descrição" rotulo="Buscar" />
           {salas.length > 1 && (
             <select name="sala" defaultValue={f.sala || ''} aria-label="Sala">
@@ -68,7 +69,7 @@ export default async function PaginaDocumentos({
           <button type="submit" className="botao botao-secundario">
             Filtrar
           </button>
-        </form>
+        </Form>
         {itens.length === 0 ? (
           <p className="suave">Nenhum documento encontrado.</p>
         ) : (
