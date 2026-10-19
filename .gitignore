@@ -44,3 +44,9 @@ Thumbs.db
 # Arquivos internos de planejamento (sem segredo, mas não precisam ser públicos)
 db/prompt.txt
 .azure/
+
+# Planilhas e páginas de rascunho soltas na raiz (as de exemplo dos testes ficam em tests/dados/)
+/*.xlsx
+/*.xls
+/*.csv
+/index.html

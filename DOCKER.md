@@ -217,7 +217,12 @@ Limpeza de imagens antigas (não mexe em volumes): `docker image prune -f`.
         - ./deploy/certs/ca-instituicao.pem:/certs/ca-instituicao.pem:ro
   ```
 
-- O servidor precisa alcançar por HTTPS: `mananciais.sabesp.com.br`, `www.ana.gov.br`, `apps.spaguas.sp.gov.br` (SIBH), `sssp.spaguas.sp.gov.br` (SSD), `api.open-meteo.com`, `servicodados.ibge.gov.br`, `www.saisp.br`, `saisp-temp.s3.amazonaws.com` e `www.ipmetradar.com.br`.
+- O servidor precisa alcançar por HTTPS: `mananciais.sabesp.com.br`, `www.ana.gov.br`, `apps.spaguas.sp.gov.br` (SIBH), `sssp.spaguas.sp.gov.br` (SSD), `api.open-meteo.com`, `geocoding-api.open-meteo.com` (localização dos municípios na previsão), `servicodados.ibge.gov.br`, `simqua.cetesb.sp.gov.br` (qualidade da água da CETESB, boletim integrado), `www.saisp.br`, `saisp-temp.s3.amazonaws.com` e `www.ipmetradar.com.br`.
+- Para testar todas de uma vez, de dentro do contêiner (cada linha deve mostrar `200` ou outro código HTTP; `ERRO` indica bloqueio na rede):
+
+  ```
+  docker compose exec app node -e "for (const h of ['mananciais.sabesp.com.br','www.ana.gov.br','apps.spaguas.sp.gov.br','sssp.spaguas.sp.gov.br','api.open-meteo.com','geocoding-api.open-meteo.com','servicodados.ibge.gov.br','simqua.cetesb.sp.gov.br','www.saisp.br','www.ipmetradar.com.br']) fetch('https://'+h+'/',{signal:AbortSignal.timeout(20000)}).then(r=>console.log(r.status,h),e=>console.log('ERRO',h,e.cause?.code||e.message))"
+  ```
 
 ## Desenvolvimento
 
