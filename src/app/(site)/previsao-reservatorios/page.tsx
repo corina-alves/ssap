@@ -1,17 +1,15 @@
 import type { Metadata } from 'next';
 import { connection } from 'next/server';
 import { cache, Suspense } from 'react';
-import '@/styles/legado/pagina-previsao-reservatorios.css';
-import { Consultando, Esqueleto, EsqueletoGrafico, EsqueletoTabela } from '@/components/carregamento';
 import { GraficoPrevisaoSistemas } from '@/components/graficos-php';
 import { centroArea, MapaPontos } from '@/components/graficos/mapa-pontos';
 import { MapaSistemas } from '@/components/graficos/mapa-sistemas';
-import { Hero, Principal, Secao } from '@/components/site/layout';
 import { dataBr, dataHora } from '@/lib/formato';
 import { classeChuva } from '@/lib/hidrologia/previsao';
 import areas from '@/conteudo/sistemas-produtores-areas.json';
 import { contornoSP, type Contorno } from '@/lib/integracoes/ibge';
 import { CENTROIDES_SISTEMAS, previsaoSistemas } from '@/lib/integracoes/openmeteo';
+import { Cartoes, COLUNAS, ESQUELETOS, Estrutura } from './estrutura';
 
 export const metadata: Metadata = {
   title: 'Previsão para os Sistemas Produtores',
@@ -23,32 +21,6 @@ const soma = (vs: (number | null)[], n: number) => vs.slice(0, n).reduce<number>
 
 // Uma consulta por requisição, dividida entre os blocos da página.
 const previsao = cache(() => previsaoSistemas(7));
-
-const COLUNAS = ['Sistema', 'Hoje', '48 h', '72 h', '7 dias'];
-const CARTOES = [
-  { rot: 'Chuva hoje (média)', ico: 'bi-cloud-rain', cls: 'card-primary' },
-  { rot: 'Acumulado 48 h (média)', ico: 'bi-cloud-drizzle', cls: 'card-primary' },
-  { rot: 'Acumulado 72 h (média)', ico: 'bi-cloud-rain-heavy', cls: 'card-primary' },
-  { rot: 'Acumulado 7 dias (média)', ico: 'bi-calendar-week', cls: 'card-success' },
-  { rot: 'Maior acumulado 7 dias', ico: 'bi-arrow-up-circle', cls: 'card-warning' },
-];
-
-function Cartoes({ valores }: { valores?: { val: string; sub?: string }[] }) {
-  return (
-    <div className="row g-3">
-      {CARTOES.map((x, i) => (
-        <div className="col-6 col-md-4 col-xl" key={x.rot}>
-          <div className={`card-spagua ${x.cls}`}>
-            <i className={`bi ${x.ico}`} />
-            <div className="card-spagua__rot">{x.rot}</div>
-            {valores ? <div className="card-spagua__val">{valores[i]!.val}</div> : <Esqueleto className="esq-valor" />}
-            {valores?.[i]!.sub && <small>{valores[i]!.sub}</small>}
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
 
 function Erro({ mensagem }: { mensagem: string }) {
   return <div className="sssp-status is-error">{mensagem}</div>;
@@ -168,55 +140,27 @@ export default async function PrevisaoReservatorios() {
   // Previsão é dado do momento: nunca gerar esta página estática no build.
   await connection();
   return (
-    <>
-      <Hero
-        kicker="Meteorologia"
-        titulo="Previsão para os Sistemas Produtores"
-        texto="Chuva prevista pela Open-Meteo para os sete sistemas produtores da Região Metropolitana de São Paulo, com horizonte de até sete dias. Somente dados reais da API."
-        icone="bi-cloud-rain-heavy"
-      />
-      <Principal>
-        <Secao titulo="Panorama da previsão" subtitulo="Chuva acumulada prevista para o conjunto dos sistemas produtores." icone="bi-clipboard-data">
-          <Suspense
-            fallback={
-              <>
-                <Consultando className="sssp-status mb-3">Consultando a previsão da Open-Meteo…</Consultando>
-                <Cartoes />
-              </>
-            }
-          >
-            <Panorama />
-          </Suspense>
-        </Secao>
-
-        <div className="row g-3">
-          <div className="col-lg-6">
-            <Secao titulo="Localização dos sistemas" subtitulo="Área de drenagem de cada sistema produtor, colorida pela chuva prevista em 7 dias. Passe o mouse para ver a chuva de hoje; clique para ver os demais horizontes." icone="bi-geo-alt">
-              <link rel="stylesheet" href="/acesso/vendor/leaflet/leaflet.css" precedence="default" />
-              <Suspense fallback={<EsqueletoGrafico altura={460} rotulo="Carregando o mapa…" />}>
-                <Mapa />
-              </Suspense>
-            </Secao>
-          </div>
-          <div className="col-lg-6">
-            <Secao titulo="Evolução diária" subtitulo="Chuva prevista por dia, para cada sistema produtor." icone="bi-graph-up">
-              <Suspense fallback={<EsqueletoGrafico className="prevrsv-grafico-wrap" altura="auto" />}>
-                <Evolucao />
-              </Suspense>
-            </Secao>
-          </div>
-        </div>
-
-        <Secao titulo="Chuva prevista por sistema" subtitulo="Acumulado por horizonte de tempo, em milímetros." icone="bi-table">
-          <Suspense fallback={<EsqueletoTabela colunas={COLUNAS} linhas={CENTROIDES_SISTEMAS.length} className="table table-striped prevrsv-tabela" />}>
-            <Tabela />
-          </Suspense>
-          <p className="text-secondary small mt-2 mb-0">
-            Fonte: Open-Meteo, no ponto central de cada sistema · atualizado a cada hora. Hoje = dia corrente; 48 h e 72 h = hoje
-            somado aos 1 ou 2 dias seguintes.
-          </p>
-        </Secao>
-      </Principal>
-    </>
+    <Estrutura
+      panorama={
+        <Suspense fallback={ESQUELETOS.panorama}>
+          <Panorama />
+        </Suspense>
+      }
+      mapa={
+        <Suspense fallback={ESQUELETOS.mapa}>
+          <Mapa />
+        </Suspense>
+      }
+      evolucao={
+        <Suspense fallback={ESQUELETOS.evolucao}>
+          <Evolucao />
+        </Suspense>
+      }
+      tabela={
+        <Suspense fallback={ESQUELETOS.tabela}>
+          <Tabela />
+        </Suspense>
+      }
+    />
   );
 }

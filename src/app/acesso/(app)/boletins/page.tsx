@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Form from 'next/form';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { Cabecalho, FerramentasBoletim, Mensagem, PaginacaoAcesso } from '@/components/acesso/pecas';
@@ -61,7 +62,7 @@ export default async function PaginaBoletins({ searchParams }: { searchParams: P
       <FerramentasBoletim atalhos={atalhos} />
 
       <div className="acesso-card">
-        <form className="row g-2 mb-3" method="get" action={base}>
+        <Form scroll={false} className="row g-2 mb-3" action={base}>
           <input type="hidden" name="sala" value={sala.id} />
           <div className="col-md-3">
             <label className="visually-hidden" htmlFor="busca">
@@ -125,7 +126,7 @@ export default async function PaginaBoletins({ searchParams }: { searchParams: P
               <i className="bi bi-search" />
             </button>
           </div>
-        </form>
+        </Form>
 
         {itens.length === 0 ? (
           <p className="text-secondary mb-0">Nenhum boletim encontrado.</p>

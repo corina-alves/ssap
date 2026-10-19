@@ -1,16 +1,17 @@
 import type { Metadata } from 'next';
+import Form from 'next/form';
 import Link from 'next/link';
 import { cache, Suspense } from 'react';
-import '@/styles/legado/pagina-previsao.css';
-import { Consultando, Esqueleto, EsqueletoGrafico } from '@/components/carregamento';
+import { Consultando, EsqueletoGrafico } from '@/components/carregamento';
 import { GraficoPrevisaoMunicipio } from '@/components/graficos-php';
 import { MapaGrade } from '@/components/graficos/mapa-grade';
 import { texto } from '@/components/paginacao';
-import { Hero, Principal, Secao } from '@/components/site/layout';
+import { Principal, Secao } from '@/components/site/layout';
 import { dataBr, dataHora } from '@/lib/formato';
 import { localizarMunicipio, type Local } from '@/lib/hidrologia/previsao';
 import { contornoSP, municipiosSP } from '@/lib/integracoes/ibge';
 import { condicao, gradeEstado, previsaoMunicipio } from '@/lib/integracoes/openmeteo';
+import { Cartoes, PrevisaoEsqueleto, SecaoBusca, SecaoMapa } from './esqueleto';
 
 export const metadata: Metadata = {
   title: 'Previsão para os Municípios',
@@ -27,69 +28,6 @@ type Horizonte = keyof typeof HORIZONTES;
 
 // Uma consulta por requisição, dividida entre o status, a previsão e o mapa.
 const localizar = cache(localizarMunicipio);
-
-const CARTOES = [
-  { rot: 'Chuva hoje', ico: 'bi-cloud-rain', cls: 'card-primary' },
-  { rot: 'Chuva amanhã', ico: 'bi-cloud-drizzle', cls: 'card-primary' },
-  { rot: 'Acumulado 3 dias', ico: 'bi-cloud-rain-heavy', cls: 'card-primary' },
-  { rot: 'Acumulado 7 dias', ico: 'bi-calendar-week', cls: 'card-success' },
-  { rot: 'Temp. máxima (7 d)', ico: 'bi-thermometer-sun', cls: 'card-warning' },
-  { rot: 'Umidade do ar', ico: 'bi-droplet-half', cls: 'card-primary' },
-];
-
-/** Cartões do resumo; sem `valores`, os mesmos cartões com os números em esqueleto. */
-function Cartoes({ valores }: { valores?: { val: string; sub?: string }[] }) {
-  return (
-    <div className="row g-3">
-      {CARTOES.map((c, i) => (
-        <div className="col-6 col-md-4 col-xl-2" key={c.rot}>
-          <div className={`card-spagua ${c.cls}`}>
-            <i className={`bi ${c.ico}`} />
-            <div className="card-spagua__rot">{c.rot}</div>
-            {valores ? <div className="card-spagua__val">{valores[i]!.val}</div> : <Esqueleto className="esq-valor" />}
-            {valores?.[i]!.sub && <small>{valores[i]!.sub}</small>}
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-/** A previsão do município como vai ficar, em esqueleto. */
-function PrevisaoEsqueleto({ nome }: { nome: string }) {
-  return (
-    <>
-      <Secao titulo="Resumo do município" subtitulo="Principais números da previsão para a localidade selecionada." icone="bi-clipboard-data">
-        <Cartoes />
-      </Secao>
-      <div className="prev-destaque mb-3">
-        <div className="weather-main">
-          <div className="text-secondary small">PREVISÃO PRINCIPAL</div>
-          <div className="weather-place">{nome}</div>
-          <Esqueleto largura="45%" />
-          <Esqueleto className="esq-valor mt-3" largura="35%" />
-          <Esqueleto className="esq-linha mt-3" />
-          <Esqueleto className="esq-linha" largura="80%" />
-        </div>
-        <Secao titulo="Chuva prevista" subtitulo="Acumulado diário para os próximos 7 dias." icone="bi-cloud-rain">
-          <EsqueletoGrafico className="weather-chart" altura="auto" />
-        </Secao>
-      </div>
-      <Secao titulo="Próximos 7 dias" subtitulo="Chuva, probabilidade e temperatura em cada dia." icone="bi-calendar-week">
-        <div className="weather-days">
-          {Array.from({ length: 7 }, (_, i) => (
-            <article className="weather-day" key={i}>
-              <Esqueleto largura="70%" />
-              <Esqueleto largura="50%" />
-              <Esqueleto className="esq-valor" largura="60%" />
-              <Esqueleto largura="80%" />
-            </article>
-          ))}
-        </div>
-      </Secao>
-    </>
-  );
-}
 
 async function PrevisaoMunicipio({ local }: { local: Local }) {
   const r = await previsaoMunicipio(local.lat, local.lon);
@@ -261,64 +199,51 @@ export default async function Previsao({ searchParams }: { searchParams: Promise
   const q = (hz: string) => `/previsao?${new URLSearchParams({ ...(municipio ? { municipio } : {}), horizonte: hz })}#mapa`;
 
   return (
-    <>
-      <Hero
-        kicker="Meteorologia"
-        titulo="Previsão para os Municípios de São Paulo"
-        texto="São Paulo é a referência principal. Pesquise qualquer município do Estado para consultar chuva, probabilidade de precipitação, temperatura, umidade do ar e vento nos próximos 7 dias."
-        icone="bi-cloud-sun"
-      />
-      <Principal>
-        <Secao titulo="Consultar município" subtitulo="Digite o nome ou escolha um município do Estado de São Paulo." icone="bi-search">
-          <form className="prev-busca" method="get">
-            <div className="sssp-field">
-              <label htmlFor="buscaMunicipio">Município</label>
-              <input
-                id="buscaMunicipio"
-                name="municipio"
-                list="municipios-sp"
-                defaultValue={municipio || 'São Paulo'}
-                placeholder="Digite o nome"
-                autoComplete="off"
-                required
-              />
-              <Suspense fallback={null}>
-                <ListaMunicipios />
-              </Suspense>
-            </div>
-            {horizonte !== '1' && <input type="hidden" name="horizonte" value={horizonte} />}
-            <button className="btn btn-primary" type="submit">
-              <i className="bi bi-cloud-sun me-2" />
-              Ver previsão
-            </button>
-          </form>
-          <Suspense fallback={<Consultando className="sssp-status mt-3">Localizando o município…</Consultando>}>
-            <StatusLocal municipio={municipio} />
-          </Suspense>
-        </Secao>
-
-        <Suspense fallback={<PrevisaoEsqueleto nome={municipio || 'São Paulo'} />}>
-          <PrevisaoDoLocal municipio={municipio} />
-        </Suspense>
-
-        <Secao
-          id="mapa"
-          titulo="Chuva prevista no Estado de São Paulo"
-          subtitulo="Grade de precipitação acumulada, com dados reais da Open-Meteo. Escolha o horizonte de tempo."
-          icone="bi-map"
-        >
-          <div className="prev-horizonte" role="group" aria-label="Horizonte de previsão">
-            {Object.entries(HORIZONTES).map(([hz, rotulo]) => (
-              <Link key={hz} href={q(hz)} className={hz === horizonte ? 'is-ativo' : undefined} aria-current={hz === horizonte ? 'true' : undefined} scroll={false}>
-                {rotulo}
-              </Link>
-            ))}
+    <Principal>
+      <SecaoBusca>
+        <Form action="" scroll={false} className="prev-busca">
+          <div className="sssp-field">
+            <label htmlFor="buscaMunicipio">Município</label>
+            <input
+              id="buscaMunicipio"
+              name="municipio"
+              list="municipios-sp"
+              defaultValue={municipio || 'São Paulo'}
+              placeholder="Digite o nome"
+              autoComplete="off"
+              required
+            />
+            <Suspense fallback={null}>
+              <ListaMunicipios />
+            </Suspense>
           </div>
-          <Suspense key={horizonte} fallback={<EsqueletoGrafico altura={420} rotulo="Carregando o mapa de chuva prevista…" />}>
-            <MapaEstado horizonte={horizonte} municipio={municipio} />
-          </Suspense>
-        </Secao>
-      </Principal>
-    </>
+          {horizonte !== '1' && <input type="hidden" name="horizonte" value={horizonte} />}
+          <button className="btn btn-primary" type="submit">
+            <i className="bi bi-cloud-sun me-2" />
+            Ver previsão
+          </button>
+        </Form>
+        <Suspense fallback={<Consultando className="sssp-status mt-3">Localizando o município…</Consultando>}>
+          <StatusLocal municipio={municipio} />
+        </Suspense>
+      </SecaoBusca>
+
+      <Suspense fallback={<PrevisaoEsqueleto nome={municipio || 'São Paulo'} />}>
+        <PrevisaoDoLocal municipio={municipio} />
+      </Suspense>
+
+      <SecaoMapa>
+        <div className="prev-horizonte" role="group" aria-label="Horizonte de previsão">
+          {Object.entries(HORIZONTES).map(([hz, rotulo]) => (
+            <Link key={hz} href={q(hz)} className={hz === horizonte ? 'is-ativo' : undefined} aria-current={hz === horizonte ? 'true' : undefined} scroll={false}>
+              {rotulo}
+            </Link>
+          ))}
+        </div>
+        <Suspense key={horizonte} fallback={<EsqueletoGrafico altura={420} rotulo="Carregando o mapa de chuva prevista…" />}>
+          <MapaEstado horizonte={horizonte} municipio={municipio} />
+        </Suspense>
+      </SecaoMapa>
+    </Principal>
   );
 }

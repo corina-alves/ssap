@@ -137,18 +137,13 @@ async function ChuvaAgora() {
   const c = r.dados;
   return (
     <div className="sibh-now-panel">
-      {cabeca('Monitoramento pluviométrico em tempo real', 'Última 1 hora · SIBH / SP-Águas', r.desatualizado ? 'Últimos dados obtidos' : 'Dados observados')}
+      {cabeca('Monitoramento pluviométrico em tempo real', 'Última 1 hora · SIBH / SP-Águas', r.desatualizado ? 'Últimos dados obtidos' : 'Dados telemétricos')}
       <div className="sibh-now-body">
         <div className="sibh-metrics">
           <div className="sibh-metric is-rain">
             <small>Maior chuva registrada</small>
             <strong>{fmt(c.maximaMm)} mm</strong>
             <span>maior valor entre os postos com leitura</span>
-          </div>
-          <div className="sibh-metric">
-            <small>Chuva média da rede</small>
-            <strong>{fmt(c.mediaMm)} mm</strong>
-            <span>média das leituras válidas</span>
           </div>
           <div className="sibh-metric is-green">
             <small>Postos com chuva</small>
@@ -356,7 +351,7 @@ export default async function Inicio({ searchParams }: { searchParams: Promise<R
                 <p>Leituras observadas na rede pluviométrica da SP-Águas na última hora.</p>
               </div>
             </div>
-            <Suspense fallback={<div className="sibh-now-panel"><div className="sibh-now-body"><div className="sibh-metrics"><div className="sibh-skeleton" /><div className="sibh-skeleton" /><div className="sibh-skeleton" /><div className="sibh-skeleton" /></div></div></div>}>
+            <Suspense fallback={<div className="sibh-now-panel"><div className="sibh-now-body"><div className="sibh-metrics"><div className="sibh-skeleton" /><div className="sibh-skeleton" /><div className="sibh-skeleton" /></div></div></div>}>
               <ChuvaAgora />
             </Suspense>
           </section>

@@ -47,6 +47,16 @@ export function EsqueletoTabela({ colunas, linhas = 6, className = 'table' }: { 
   );
 }
 
+/** Aviso genérico de página carregando, para rotas sem esqueleto próprio no loading.tsx. */
+export function CarregandoPagina() {
+  return (
+    <div className="d-flex align-items-center justify-content-center gap-2 text-secondary py-5" role="status" aria-live="polite">
+      <span className="spinner-border spinner-border-sm" aria-hidden />
+      <span>Carregando…</span>
+    </div>
+  );
+}
+
 /** Linha de status enquanto a fonte responde (mesmo visual de .sssp-status). */
 export function Consultando({ children = 'Consultando os dados…', className = 'sssp-status' }: { children?: ReactNode; className?: string }) {
   return (

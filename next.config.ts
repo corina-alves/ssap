@@ -19,6 +19,9 @@ const nextConfig: NextConfig = {
   experimental: {
     // Upload de PDF de boletim (até 30 MB) + folga do multipart.
     serverActions: { bodySizeLimit: '31mb' },
+    // Página já visitada há menos de 30 s abre direto do cache do navegador, sem
+    // nova ida ao servidor (os dados das fontes mudam em 10 min ou mais).
+    staleTimes: { dynamic: 30 },
   },
   // Endereços do site antigo (PHP) → páginas novas, para não quebrar links salvos.
   async redirects() {

@@ -37,6 +37,16 @@ export const UGRHIS: Record<number, string> = {
   20: 'Aguapeí', 21: 'Peixe', 22: 'Pontal do Paranapanema',
 };
 
+/** Filtro 'Tipo de ponto' da página da Defesa Civil (valor na URL → rótulo). */
+export const TIPOS_PONTO = { '': 'Rios, córregos e piscinões', rios: 'Somente rios e córregos', piscinoes: 'Somente piscinões' } as const;
+export type TipoPonto = keyof typeof TIPOS_PONTO;
+/** Título das mensagens conforme o tipo de ponto. */
+export const TITULO_TIPO: Record<TipoPonto, string> = { '': 'RIOS, CÓRREGOS E PISCINÕES', rios: 'RIOS E CÓRREGOS', piscinoes: 'PISCINÕES' };
+
+export function filtrarTipo(postos: Posto[], tipo: TipoPonto): Posto[] {
+  return tipo === '' ? postos : postos.filter((p) => p.piscinao === (tipo === 'piscinoes'));
+}
+
 /** Variação em 1 h (m) a partir da qual o nível é considerado subindo/descendo. */
 const LIMIAR_TENDENCIA = 0.01;
 
@@ -280,6 +290,17 @@ export function texto(postos: Posto[], destaque: (t: string) => string = (t) => 
   return par.join('\n\n');
 }
 
+const SETAS_ZAP: Record<Tendencia, string> = { elevacao: '⬆️ subindo', reducao: '⬇️ descendo', estavel: '➡️ estável' };
+
+/** Linhas de um ponto fora do normal na mensagem de WhatsApp: nome, nível e quanto passou da cota. */
+function linhasPonto(p: Posto): string[] {
+  return [
+    `▪️ *${nomeTexto(p)}* (${p.prefixo})`,
+    `     📏 ${m(p.nivel, 2)} m${p.hora ? ` às ${hora(p.hora)}` : ''}${p.tendencia ? `  ${SETAS_ZAP[p.tendencia]}` : ''}`,
+    `     ⚠️ ${m(p.acima, 2)} m acima da cota de ${SITUACOES[p.situacao].toLocaleLowerCase('pt-BR')} (${m(p.cota_ref, 2)} m)`,
+  ];
+}
+
 /** Ícone de cada situação (mensagem de WhatsApp). */
 export const EMOJIS: Record<Situacao, string> = { extravasamento: '🔴', emergencia: '🟣', alerta: '🟠', atencao: '🟡', normal: '🟢' };
 
@@ -289,10 +310,9 @@ const fmtDia = new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo',
  * Mesma informação do texto(), formatada para WhatsApp: ícones, *negrito* e
  * _itálico_, um bloco por situação e uma linha por ponto.
  */
-export function textoWhatsapp(postos: Posto[], titulo: string, geradoEm: number, blocoChuva = ''): string {
+export function textoWhatsapp(postos: Posto[], titulo: string, geradoEm: number, blocoChuva = '', tipo: TipoPonto = 'rios'): string {
   const por = porSituacao(postos);
-  const setas: Record<Tendencia, string> = { elevacao: '⬆️ subindo', reducao: '⬇️ descendo', estavel: '➡️ estável' };
-  const l = ['🌊 *SITUAÇÃO DOS RIOS E CÓRREGOS*', `📍 *${titulo}*`, `🗓️ ${fmtDia.format(new Date(geradoEm * 1000))}  🕒 ${hora(geradoEm)}`, ''];
+  const l = [`🌊 *SITUAÇÃO DOS ${TITULO_TIPO[tipo]}*`, `📍 *${titulo}*`, `🗓️ ${fmtDia.format(new Date(geradoEm * 1000))}  🕒 ${hora(geradoEm)}`, ''];
   if (!postos.length) {
     l.push('ℹ️ Sem pontos monitorados com dados na última hora.');
   } else {
@@ -304,13 +324,7 @@ export function textoWhatsapp(postos: Posto[], titulo: string, geradoEm: number,
     for (const k of GRAVES) {
       if (!por[k].length) continue;
       l.push('', `${EMOJIS[k]} *${SITUACOES[k].toLocaleUpperCase('pt-BR')}*`);
-      for (const p of por[k]) {
-        l.push(
-          `▪️ *${nomeTexto(p)}* (${p.prefixo})`,
-          `     📏 ${m(p.nivel, 2)} m${p.hora ? ` às ${hora(p.hora)}` : ''}${p.tendencia ? `  ${setas[p.tendencia]}` : ''}`,
-          `     ⚠️ ${m(p.acima, 2)} m acima da cota de ${SITUACOES[k].toLocaleLowerCase('pt-BR')} (${m(p.cota_ref, 2)} m)`,
-        );
-      }
+      for (const p of por[k]) l.push(...linhasPonto(p));
     }
     l.push(
       '',
@@ -318,6 +332,77 @@ export function textoWhatsapp(postos: Posto[], titulo: string, geradoEm: number,
     );
   }
   if (blocoChuva) l.push('', blocoChuva);
+  l.push('', '_Fonte: SIBH — SP Águas · Sala de Situação Alfredo Pisani_');
+  return l.join('\n');
+}
+
+const nomeUgrhiZap = (u: number) => (UGRHIS[u] ? `UGRHI ${u} — ${UGRHIS[u]}` : 'Sem UGRHI');
+
+/**
+ * Mensagem única do estado: os pontos fora do normal de todas as UGRHIs, um
+ * bloco por situação e, dentro dele, agrupados por UGRHI. Com `todas`, traz
+ * também os pontos em condição normal (por UGRHI) e a situação de cada uma das
+ * 22 UGRHIs, inclusive as sem ponto monitorado.
+ */
+export function textoWhatsappEstado(postos: Posto[], geradoEm: number, tipo: TipoPonto, todas: boolean): string {
+  const por = porSituacao(postos);
+  const fora = postos.length - por.normal.length;
+  const nUgrhisFora = new Set(postos.filter((p) => p.situacao !== 'normal').map((p) => p.ugrhi)).size;
+  const l = [
+    `🌊 *SITUAÇÃO DOS ${TITULO_TIPO[tipo]}*`,
+    `📍 *Estado de São Paulo — ${todas ? 'todas as UGRHIs' : 'pontos fora do normal'}*`,
+    `🗓️ ${fmtDia.format(new Date(geradoEm * 1000))}  🕒 ${hora(geradoEm)}`,
+    '',
+  ];
+  if (!postos.length) {
+    l.push('ℹ️ Sem pontos monitorados com dados na última hora.');
+  } else {
+    l.push(
+      `📊 *Resumo* (${fora} ${fora === 1 ? 'ponto fora do normal' : 'pontos fora do normal'}${fora ? ` em ${nUgrhisFora} ${nUgrhisFora === 1 ? 'UGRHI' : 'UGRHIs'}` : ''}; ${postos.length} monitorados)`,
+    );
+    for (const k of ORDEM) {
+      const n = por[k].length;
+      if (n) l.push(`${EMOJIS[k]} ${n}${k === 'normal' ? ' em condição normal' : ` em ${SITUACOES[k].toLocaleLowerCase('pt-BR')}`}`);
+    }
+    // a lista já vem por gravidade; dentro de cada situação, por UGRHI
+    const porUgrhi = (lista: Posto[]) => {
+      const g = new Map<number, Posto[]>();
+      for (const p of [...lista].sort((a, b) => a.ugrhi - b.ugrhi)) g.set(p.ugrhi, [...(g.get(p.ugrhi) ?? []), p]);
+      return g;
+    };
+    for (const k of GRAVES) {
+      if (!por[k].length) continue;
+      l.push('', `${EMOJIS[k]} *${SITUACOES[k].toLocaleUpperCase('pt-BR')}*`);
+      for (const [u, lista] of porUgrhi(por[k])) {
+        l.push(`📍 _${nomeUgrhiZap(u)}_`);
+        for (const p of lista) l.push(...linhasPonto(p));
+      }
+    }
+    if (todas && por.normal.length) {
+      l.push('', `${EMOJIS.normal} *CONDIÇÃO NORMAL*`);
+      for (const [u, lista] of porUgrhi(por.normal)) {
+        l.push(`📍 _${nomeUgrhiZap(u)}_`);
+        for (const p of lista) l.push(`▪️ ${nomeTexto(p)} (${p.prefixo}) — ${m(p.nivel, 2)} m`);
+      }
+    }
+    if (!todas) {
+      l.push('', fora === 0 ? '✅ Todos os pontos em condição normal.' : '✅ Demais pontos em condição normal.');
+    }
+  }
+  if (todas) {
+    // situação de cada UGRHI do estado, inclusive as sem ponto monitorado
+    l.push('', '📋 *SITUAÇÃO POR UGRHI*');
+    for (const u of Object.keys(UGRHIS).map(Number)) {
+      const lista = postos.filter((p) => p.ugrhi === u);
+      if (!lista.length) {
+        l.push(`⚪ ${nomeUgrhiZap(u)}: sem ponto monitorado`);
+        continue;
+      }
+      const pu = porSituacao(lista);
+      const partes = ORDEM.filter((k) => pu[k].length).map((k) => `${pu[k].length} ${k === 'normal' ? 'normal' : SITUACOES[k].toLocaleLowerCase('pt-BR')}`);
+      l.push(`${EMOJIS[ORDEM.find((k) => pu[k].length)!]} ${nomeUgrhiZap(u)}: ${partes.join(', ')}`);
+    }
+  }
   l.push('', '_Fonte: SIBH — SP Águas · Sala de Situação Alfredo Pisani_');
   return l.join('\n');
 }

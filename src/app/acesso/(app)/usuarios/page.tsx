@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Form from 'next/form';
 import Link from 'next/link';
 import { inteiro, Paginacao, texto } from '@/components/paginacao';
 import { listar, ROTULO_STATUS, salas as listarSalas, STATUS, sugestoesBusca } from '@/lib/admin/usuarios';
@@ -39,7 +40,7 @@ export default async function PaginaUsuarios({
       {sp.excluido && <div className="alerta alerta-ok">Usuário excluído.</div>}
 
       <section className="cartao">
-        <form className="filtros" method="get">
+        <Form action="" scroll={false} className="filtros">
           <BuscaAutocompletar sugestoes={await sugestoesBusca()} name="busca" defaultValue={filtros.busca} placeholder="Buscar por nome, e-mail ou login" rotulo="Buscar" />
           <select name="sala" defaultValue={filtros.sala || ''} aria-label="Sala">
             <option value="">Todas as salas</option>
@@ -60,7 +61,7 @@ export default async function PaginaUsuarios({
           <button type="submit" className="botao botao-secundario">
             Filtrar
           </button>
-        </form>
+        </Form>
 
         {itens.length === 0 ? (
           <p className="suave">Nenhum usuário encontrado.</p>

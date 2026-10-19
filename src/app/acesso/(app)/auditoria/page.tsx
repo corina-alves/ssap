@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Form from 'next/form';
 import { redirect } from 'next/navigation';
 import { inteiro, Paginacao, texto } from '@/components/paginacao';
 import { listarAuditoria, opcoesFiltro, sugestoesUsuarios } from '@/lib/admin/auditoria';
@@ -47,7 +48,7 @@ export default async function PaginaAuditoria({
         {escopo === null ? 'Todas as ações registradas no sistema.' : 'Ações registradas nas salas que você gerencia.'}
       </p>
       <section className="cartao">
-        <form className="filtros" method="get">
+        <Form action="" scroll={false} className="filtros">
           <BuscaAutocompletar sugestoes={await sugestoesUsuarios(escopo)} name="usuario" defaultValue={f.usuario} placeholder="Usuário" rotulo="Usuário" />
           <select name="sala" defaultValue={f.sala || ''} aria-label="Sala">
             <option value="">Todas as salas</option>
@@ -78,7 +79,7 @@ export default async function PaginaAuditoria({
           <button type="submit" className="botao botao-secundario">
             Filtrar
           </button>
-        </form>
+        </Form>
 
         {itens.length === 0 ? (
           <p className="suave">Nenhum registro encontrado.</p>

@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Form from 'next/form';
 import '@/styles/legado/pagina-atos-outorga.css';
 import { SelectAutoEnvio } from '@/components/site/auto-envio';
 import { Hero, Principal, Secao } from '@/components/site/layout';
@@ -49,7 +50,7 @@ export default async function AtosOutorga({ searchParams }: { searchParams: Prom
       />
       <Principal>
         <Secao titulo="Atos por sistema produtor" subtitulo={`${linhas.length} de ${ATOS.length} atos`} icone="bi-list-columns">
-          <form className="ato-filtros" method="get">
+          <Form action="" scroll={false} className="ato-filtros">
             <div className="sssp-field">
               <label htmlFor="sistema">Sistema produtor</label>
               <SelectAutoEnvio id="sistema" name="sistema" defaultValue={filtro}>
@@ -65,7 +66,7 @@ export default async function AtosOutorga({ searchParams }: { searchParams: Prom
               <label htmlFor="q">Buscar</label>
               <BuscaAutocompletar sugestoes={SUGESTOES} id="q" name="q" defaultValue={q} placeholder="Nº, ano, órgão, assunto..." />
             </div>
-          </form>
+          </Form>
 
           <div className="table-responsive mt-3">
             <table className="ato-tabela">

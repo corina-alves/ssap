@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Form from 'next/form';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 import { Cabecalho } from '@/components/acesso/pecas';
@@ -80,7 +81,7 @@ export default async function MediasMensais({ searchParams }: { searchParams: Pr
         ]}
       />
 
-      <form className="acesso-card mb-3 row g-2 align-items-end mx-0" method="get">
+      <Form action="" scroll={false} className="acesso-card mb-3 row g-2 align-items-end mx-0">
         <input type="hidden" name="s" value={sala.slug} />
         <div className="col-md-4">
           <label className="form-label small" htmlFor="sistema">
@@ -106,7 +107,7 @@ export default async function MediasMensais({ searchParams }: { searchParams: Pr
             ))}
           </SelectAutoEnvio>
         </div>
-      </form>
+      </Form>
 
       {/* Título e filtros aparecem na hora; tabelas e gráficos chegam quando a SABESP responder. */}
       <Suspense

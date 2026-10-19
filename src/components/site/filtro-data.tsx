@@ -1,5 +1,6 @@
 'use client';
 
+import Form from 'next/form';
 import type { ReactNode } from 'react';
 
 /**
@@ -10,10 +11,12 @@ import type { ReactNode } from 'react';
  */
 export function FiltroData({ data, max, status, children }: { data: string; max: string; status?: string; children?: ReactNode }) {
   return (
-    <form className="sssp-filter-grid" method="get">
+    <Form action="" scroll={false} className="sssp-filter-grid">
       <div className="sssp-field">
         <label htmlFor="inputData">Data de referência</label>
         <input
+          // a data volta a ser a da URL no voltar/avançar do navegador
+          key={data}
           type="date"
           id="inputData"
           name="data"
@@ -30,6 +33,6 @@ export function FiltroData({ data, max, status, children }: { data: string; max:
       </noscript>
       {status && <div className="sssp-status is-ok">{status}</div>}
       {children}
-    </form>
+    </Form>
   );
 }

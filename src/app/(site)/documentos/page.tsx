@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Form from 'next/form';
 import Link from 'next/link';
 import '@/styles/legado/pagina-boletins.css';
 import { inteiro, texto } from '@/components/paginacao';
@@ -45,7 +46,7 @@ export default async function Documentos({ searchParams }: { searchParams: Promi
         </Secao>
 
         <Secao titulo="Documentos publicados" subtitulo={`${total} documento(s)`} icone="bi-journals">
-          <form className="blt-toolbar" method="get">
+          <Form action="" scroll={false} className="blt-toolbar">
             <div className="blt-filtros">
               <div className="sssp-field">
                 <label htmlFor="categoria">Categoria</label>
@@ -63,7 +64,7 @@ export default async function Documentos({ searchParams }: { searchParams: Promi
               <i className="bi bi-search" />
               <BuscaAutocompletar sugestoes={sugestoes} name="q" defaultValue={f.busca} placeholder="Buscar no título ou na descrição..." rotulo="Buscar documento" />
             </div>
-          </form>
+          </Form>
           {itens.length === 0 ? (
             <div className="sssp-component-error">
               <i className="bi bi-folder2-open" />
