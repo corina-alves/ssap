@@ -120,9 +120,23 @@ export function Moldura({
             <button type="button" className="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#acessoMenu" aria-label="Fechar" />
           </div>
           <div className="acesso-menu__rolagem">
-            {menu.geral.map((i) => (
-              <Item key={i.href} item={i} ativo={caminho === i.caminho} />
-            ))}
+            {menu.geral.map((i) =>
+              i.filhos ? (
+                // Item com submenu (ex.: Defesa Civil): abre os subitens quando a página está dentro dele.
+                <div key={i.href} className={`acesso-menu__sala${dentro(i.caminho) ? ' aberta' : ''}`}>
+                  <Item item={i} ativo={dentro(i.caminho)} />
+                  {dentro(i.caminho) && (
+                    <div className="acesso-menu__sub">
+                      {i.filhos.map((f) => (
+                        <Item key={f.href} item={f} ativo={caminho === f.caminho} />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <Item key={i.href} item={i} ativo={caminho === i.caminho} />
+              ),
+            )}
 
             {menu.salas.length > 0 && (
               <>
