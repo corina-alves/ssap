@@ -45,7 +45,8 @@ export default async function Projecoes({ searchParams }: { searchParams: Promis
   const sistema = SISTEMAS[um(sp.sistema)] ? um(sp.sistema) : 'cantareira';
   const nomeSistema = SISTEMAS[sistema]!.nome;
   const rodadas = await listarRodadas(sistema);
-  const info = rodadas.find((r) => r.arquivo === um(sp.rodada)) ?? rodadas[0] ?? null;
+  // Só a rodada mais recente fica gravada (cada envio substitui a anterior).
+  const info = rodadas[0] ?? null;
 
   let graficos: GraficoProjecao[] = [];
   let avisos: string[] = [];
@@ -112,25 +113,6 @@ export default async function Projecoes({ searchParams }: { searchParams: Promis
                 </option>
               ))}
             </SelectAutoEnvio>
-          </div>
-          <div className="col-md-6">
-            <label className="form-label small" htmlFor="rodada">
-              Rodada
-            </label>
-            {rodadas.length === 0 ? (
-              <select className="form-select" id="rodada" disabled>
-                <option>Nenhuma rodada enviada para este sistema</option>
-              </select>
-            ) : (
-              <SelectAutoEnvio key={sistema} className="form-select" id="rodada" name="rodada" defaultValue={info!.arquivo}>
-                {rodadas.map((r) => (
-                  <option key={r.arquivo} value={r.arquivo}>
-                    {dataBr(r.enviado_em)}
-                    {r.referencia ? ` — ${r.referencia}` : ''} · {r.enviado_por}
-                  </option>
-                ))}
-              </SelectAutoEnvio>
-            )}
           </div>
         </div>
       </form>

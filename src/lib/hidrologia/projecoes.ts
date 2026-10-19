@@ -575,7 +575,8 @@ export function graficos(sistema: string, registros: Registro[]): { graficos: Gr
       limite: sis.gdn ? { nome: `Limite da Faixa ${CONFIG.faixa_gdn}`, valores: meses.map((m) => limiteFaixa(m)) } : null,
       marcas,
       y_min: Math.min(0, Math.floor(Math.min(...valores) / 10) * 10),
-      y_max: Math.max(80, Math.ceil(Math.max(...valores) / 10) * 10),
+      // Até 90 no mínimo, com folga de 1 ponto acima do maior valor: a linha não encosta no topo e não é cortada.
+      y_max: Math.max(90, Math.ceil((Math.max(...valores) + 1) / 10) * 10),
       rodape: CONFIG.rodape,
       arquivo: `projecao_${semAcento(sis.nome).replace(/[^A-Za-z0-9]+/g, '_')}_ESI_${esi.replace('.', '_')}.png`,
     });

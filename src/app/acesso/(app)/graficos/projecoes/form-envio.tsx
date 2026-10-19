@@ -45,7 +45,7 @@ export function FormEnvio({ sala, sistema, nomeSistema, aberto }: { sala: string
           Uma planilha com todas as simulações, no formato de “Simulações Cantareira 16-10-2026.xlsx”: uma linha com a retirada de cada
           grupo de colunas (<code>ESI 29</code>, <code>ESI 30</code>…), embaixo o cabeçalho <code>data</code> e as colunas <code>QN100</code>,{' '}
           <code>QN70</code>, <code>QN50</code>, e uma linha por data com o volume útil (%). Dados diários viram o fechamento de cada mês. A
-          rodada nova substitui a anterior na exibição e a anterior fica no histórico.
+          rodada nova substitui a anterior, que é apagada.
         </p>
       </form>
     </details>
