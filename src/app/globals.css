@@ -1090,3 +1090,15 @@ td.seq-3, td.seq-4, td.seq-5, td.seq-6 { color: var(--seq-tinta-escura); }
   background: linear-gradient(90deg, rgba(255, 255, 255, 0.05) 25%, rgba(255, 255, 255, 0.12) 37%, rgba(255, 255, 255, 0.05) 63%);
   background-size: 400% 100%;
 }
+
+/* Páginas de aviso: não encontrado e erro (app/not-found.tsx, error.tsx, global-error.tsx). */
+.pagina-aviso { min-height: 60vh; display: grid; place-items: center; padding: 48px 16px; background: var(--fundo, #f4f7fb); }
+.pagina-aviso__caixa { max-width: 520px; text-align: center; background: var(--superficie, #fff); border: 1px solid var(--borda, #e2eaf2); border-radius: 14px; padding: 32px 28px; box-shadow: 0 2px 12px rgba(18, 38, 58, .06); }
+.pagina-aviso__codigo { font-size: 2.6rem; font-weight: 800; color: var(--primaria, #0b4f8a); line-height: 1; margin-bottom: 8px; }
+.pagina-aviso h1 { font-size: 1.35rem; margin: 0 0 8px; color: var(--texto, #12263a); }
+.pagina-aviso p { color: var(--suave, #66788a); margin: 0 0 18px; }
+.pagina-aviso__acoes { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+.pagina-aviso__acoes a, .pagina-aviso__acoes button { display: inline-block; padding: 8px 16px; border-radius: 8px; border: 1px solid var(--primaria, #0b4f8a); font: inherit; font-weight: 600; text-decoration: none; cursor: pointer; }
+.pagina-aviso__primario { background: var(--primaria, #0b4f8a); color: var(--primaria-texto, #fff); }
+.pagina-aviso__secundario { background: transparent; color: var(--primaria, #0b4f8a); }
+.pagina-aviso small { display: block; margin-top: 16px; color: var(--suave, #66788a); font-size: .75rem; }

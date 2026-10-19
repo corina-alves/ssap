@@ -62,7 +62,7 @@ test('gráficos: um por ESI, QNs em ordem decrescente, limite e blocos da retoma
     { de: 4, ate: 5, texto: 'Retomada da GDN: fev/27', cenarios: '(QN 70%)' },
   ]);
   assert.equal(g.y_min, 0);
-  assert.ok(g.y_max >= 80 && g.y_max % 10 === 0);
+  assert.ok(g.y_max >= 90 && g.y_max % 10 === 0);
 });
 
 test('retomadas no mesmo mês viram um bloco só; simulação com menos meses que as outras gera aviso', () => {
@@ -228,4 +228,11 @@ test('quantidade de meses livre: menos ou mais datas não gera aviso; só falta 
   const curta = lerGrade([['ESI 29'], ['data', 'QN100', 'QN70'], ['2026-10-31', '40', '38'], ['2026-11-30', '39', '36']], 'x')!;
   assert.deepEqual(graficos('cantareira', curta).avisos, []);
   assert.equal(graficos('cantareira', curta).graficos[0]!.rotulos.length, 2);
+});
+
+test('eixo do volume: até 90 no mínimo e com folga acima do maior valor (linha não cortada no topo)', () => {
+  const g = (max: number) => graficos('cantareira', lerGrade([['ESI 29'], ['data', 'QN100'], ['2026-10-31', '40'], ['2026-11-30', String(max)]], 'x')!).graficos[0]!.y_max;
+  assert.equal(g(83.45), 90);
+  assert.equal(g(89.5), 100); // a menos de 1 ponto do topo: sobe mais 10
+  assert.equal(g(60), 90);
 });

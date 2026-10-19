@@ -1,0 +1,17 @@
+/* Defesa Civil — gráficos de postos (app/acesso/(app)/defesa_civil/graficos). */
+.pg-cartoes { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 560px), 1fr)); gap: 16px; }
+.pg-cartao { background: #fff; border: 1px solid #c9d6e2; border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; }
+.pg-cartao__topo { background: #0b3a66; color: #fff; padding: 12px 16px; }
+.pg-cartao__topo h2 { margin: 0; font-size: 1.2rem; font-weight: 800; color: #fff; }
+.pg-cartao__topo p { margin: 2px 0 0; font-size: .82rem; color: #d7e6f4; font-weight: 600; }
+.pg-cartao__corpo { padding: 12px 16px 16px; display: flex; flex-direction: column; gap: 10px; flex: 1; }
+.pg-kpis { display: flex; flex-wrap: wrap; gap: 6px 24px; align-items: baseline; }
+.pg-kpis small { font-size: .72rem; font-weight: 800; letter-spacing: .06em; color: #4a5b6b; }
+.pg-kpis strong { font-size: 1.25rem; font-weight: 800; color: #0b2a4a; }
+.pg-kpis em { font-style: normal; font-size: .78rem; color: #66788a; }
+.pg-grafico { position: relative; height: 300px; }
+.pg-analise { background: #e8f3fb; border-radius: 8px; padding: 12px 16px; }
+.pg-analise h3 { margin: 0 0 6px; font-size: 1.2rem; font-weight: 800; color: #0b3a66; }
+.pg-analise__texto { font-size: .92rem; line-height: 1.5; color: #1d2b38; }
+.pg-analise__texto.is-editado { border: 1px dashed #9fb3c4; border-radius: 6px; padding: 6px 8px; background: rgba(255, 255, 255, .5); }
+@media (max-width: 575.98px) { .pg-grafico { height: 240px; } }

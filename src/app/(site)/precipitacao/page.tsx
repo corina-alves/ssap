@@ -40,7 +40,7 @@ export default async function Precipitacao({ searchParams }: { searchParams: Pro
     <Principal>
       <Periodo>
         <FiltroData data={data} max={hojeSp()}>
-          <Suspense key={data} fallback={<Consultando>Consultando a SABESP…</Consultando>}>
+          <Suspense key={data} fallback={<Consultando />}>
             <Status data={data} />
           </Suspense>
         </FiltroData>

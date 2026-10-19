@@ -84,7 +84,7 @@ export default async function EvolucaoHistorica({ searchParams }: { searchParams
               <i className="bi bi-arrow-repeat me-1" /> Atualizar
             </button>
           </div>
-          <Suspense key={consulta} fallback={<Consultando>Consultando a série histórica…</Consultando>}>
+          <Suspense key={consulta} fallback={<Consultando />}>
             <Status base={base} anoInicial={anoInicial} referencia={referencia} />
           </Suspense>
         </Form>

@@ -9,7 +9,8 @@ import { query } from '../db';
  * protegem as páginas: esconder um item é só conforto visual.
  */
 
-export type ItemMenu = { rotulo: string; href: string; icone: string; caminho: string };
+/** `filhos`: subitens (submenu), mostrados quando a página atual está dentro do item. */
+export type ItemMenu = { rotulo: string; href: string; icone: string; caminho: string; filhos?: ItemMenu[] };
 export type SalaMenu = { id: number; slug: string; rotulo: string; cor: string | null; filhos: ItemMenu[] };
 export type Menu = { geral: ItemMenu[]; salas: SalaMenu[]; admin: ItemMenu[] };
 
@@ -75,7 +76,12 @@ export async function montarMenu(a: Acl): Promise<Menu> {
 
   const geral = [item('Painel', '/acesso', 'bi-speedometer2')];
   // Situação dos rios por UGRHI (dados estaduais do SIBH): para quem vê alguma sala.
-  if (a.podeEmAlguma('visualizar_dashboard')) geral.push(item('Defesa Civil', '/acesso/defesa_civil', 'bi-shield-exclamation'));
+  if (a.podeEmAlguma('visualizar_dashboard')) {
+    geral.push({
+      ...item('Defesa Civil', '/acesso/defesa_civil', 'bi-shield-exclamation'),
+      filhos: [item('Painel de alerta', '/acesso/defesa_civil', 'bi-exclamation-triangle'), item('Gráficos de postos', '/acesso/defesa_civil/graficos', 'bi-graph-up')],
+    });
+  }
 
   const salas = (await salasPainel(a)).map((s) => {
     const filhos = [item('Visão geral', '/acesso/salas/sala', 'bi-grid', `/acesso/salas/sala?s=${s.slug}`)];

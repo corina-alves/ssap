@@ -56,11 +56,39 @@ function normalizarLista(json: unknown): MedicaoAna[] | null {
   }));
 }
 
+/** "16/10/2026" → "2026-10-16" */
+const ymdDe = (br: string | null) => (br && /^\d{2}\/\d{2}\/\d{4}$/.test(br) ? `${br.slice(6)}-${br.slice(3, 5)}-${br.slice(0, 2)}` : null);
+
+/**
+ * A medição é do dia pedido? O retornaMedicoes não responde vazio para dia
+ * ainda não publicado: devolve a última medição que tiver (ex.: pedido 19/10,
+ * resposta de 16/10). A data vem em cada reservatório (a linha agregada
+ * "Sistema Cantareira" vem sem data).
+ */
+function doDia(lista: MedicaoAna[], ymd: string): boolean {
+  const datas = lista.flatMap((m) => (m.reservatorio ? [ymdDe(m.data)] : []));
+  return datas.length > 0 && datas.every((d) => d === ymd);
+}
+
 function medicoes(ymd: string) {
   const url = `${BASE}retornaMedicoes?data=${encodeURIComponent(dataSar(ymd))}&siglaUf=&tipoSistema=3`;
-  return lembrar('ana', `medicoes:${ymd}`, ttlPorData(ymd, TTL.hora, TTL.historico), async () => normalizarLista(await buscarJson(url)), {
-    esperaFalhaSeg: 10 * 60,
-  });
+  return lembrar(
+    'ana',
+    `medicoes:${ymd}`,
+    ttlPorData(ymd, TTL.hora, TTL.historico),
+    async () => {
+      const lista = normalizarLista(await buscarJson(url));
+      // Medição de outro dia = dia ainda não publicado: não guarda como se fosse deste.
+      return lista && doDia(lista, ymd) ? lista : null;
+    },
+    { esperaFalhaSeg: 10 * 60 },
+  );
+}
+
+/** Volume do Sistema Cantareira na lista, só se a medição for mesmo do dia `ymd` (vale também para o que já está no cache). */
+function cantareiraDoDia(lista: MedicaoAna[] | undefined, ymd: string): number | null {
+  if (!lista || !doDia(lista, ymd)) return null;
+  return pct(lista.find((m) => normalizar(m.estado ?? '').includes('CANTAREIRA'))?.volumeUtil ?? null);
 }
 
 function medicoesSin(ymd: string, bacia: number) {
@@ -84,8 +112,7 @@ export async function volumeCantareira(ymd = hojeSp()): Promise<Dado<VolumeAna>>
   const datas = [ymd, somarDias(ymd, -1)];
   const rs = await Promise.all(datas.map(medicoes));
   for (const [i, r] of rs.entries()) {
-    const linha = r?.valor.find((m) => normalizar(m.estado ?? '').includes('CANTAREIRA'));
-    const v = pct(linha?.volumeUtil ?? null);
+    const v = cantareiraDoDia(r?.valor, datas[i]!);
     if (r && v !== null) return comoDado(FONTE, { ...r, valor: { volumePct: v, data: datas[i]! } });
   }
   return comoDado(FONTE, null);
@@ -102,7 +129,7 @@ export async function volumesCantareira(datas: string[]): Promise<Map<string, nu
     const lote = datas.slice(i, i + 10);
     const rs = await Promise.all(lote.map(medicoes));
     rs.forEach((r, j) => {
-      const v = pct(r?.valor.find((m) => normalizar(m.estado ?? '').includes('CANTAREIRA'))?.volumeUtil ?? null);
+      const v = cantareiraDoDia(r?.valor, lote[j]!);
       if (v !== null) saida.set(lote[j]!, v);
     });
   }

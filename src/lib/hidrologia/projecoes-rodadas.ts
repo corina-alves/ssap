@@ -1,5 +1,5 @@
 import 'server-only';
-import { mkdir, readFile, stat, writeFile } from 'node:fs/promises';
+import { mkdir, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { absoluto } from '../storage';
 import { csvConsolidado, decodificar, lerCsv, SISTEMAS, type Registro } from './projecoes';
 
@@ -7,6 +7,7 @@ import { csvConsolidado, decodificar, lerCsv, SISTEMAS, type Registro } from './
  * Rodadas de projeção gravadas em arquivo (como no PHP, nada vai para o banco):
  * cada rodada é um CSV consolidado em <storage>/projecoes/<sistema>/, no mesmo
  * formato do dados_consolidados.csv do kit, com o índice em rodadas.json.
+ * Fica só a rodada mais recente de cada sistema (sem histórico).
  */
 
 export type Rodada = { arquivo: string; referencia: string; enviado_em: string; enviado_por: string; series: number };
@@ -58,7 +59,11 @@ export async function carregarRodada(sistema: string, arquivo: string): Promise<
   return csv === null ? [] : lerCsv(csv, arquivo);
 }
 
-/** Grava a rodada consolidada e devolve o nome do arquivo. */
+/**
+ * Grava a rodada consolidada e devolve o nome do arquivo. Sem histórico: a
+ * rodada nova substitui a anterior, e os arquivos das rodadas antigas do
+ * sistema são apagados.
+ */
 export async function salvarRodada(sistema: string, registros: Registro[], referencia: string, enviadoPor: string): Promise<string> {
   // Data e hora de São Paulo, como "2026-09-28 14:07:54".
   const agora = new Intl.DateTimeFormat('sv-SE', { timeZone: 'America/Sao_Paulo', dateStyle: 'short', timeStyle: 'medium' }).format(new Date());
@@ -75,8 +80,11 @@ export async function salvarRodada(sistema: string, registros: Registro[], refer
       enviado_por: enviadoPor,
       series: new Set(registros.map((r) => `${r.esi}|${r.qn}`)).size,
     },
-    ...(await rodadas(sistema)),
   ];
   await writeFile(/*turbopackIgnore: true*/ caminho(sistema, 'rodadas.json'), JSON.stringify(indice, null, 4));
+  // Índice já aponta só para a nova; agora apaga os CSVs das rodadas anteriores.
+  for (const f of await readdir(/*turbopackIgnore: true*/ caminho(sistema, ''))) {
+    if (RE_ARQUIVO.test(f) && f !== arquivo) await rm(/*turbopackIgnore: true*/ caminho(sistema, f), { force: true });
+  }
   return arquivo;
 }

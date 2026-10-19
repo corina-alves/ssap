@@ -223,7 +223,7 @@ export default async function Previsao({ searchParams }: { searchParams: Promise
             Ver previsão
           </button>
         </Form>
-        <Suspense fallback={<Consultando className="sssp-status mt-3">Localizando o município…</Consultando>}>
+        <Suspense fallback={<Consultando className="sssp-status mt-3" />}>
           <StatusLocal municipio={municipio} />
         </Suspense>
       </SecaoBusca>

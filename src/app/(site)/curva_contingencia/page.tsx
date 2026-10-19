@@ -74,7 +74,7 @@ export default async function CurvaContingencia({ searchParams }: { searchParams
               <i className="bi bi-arrow-repeat me-1" /> Atualizar
             </button>
           </div>
-          <Suspense key={periodo} fallback={<Consultando>Consultando os volumes observados…</Consultando>}>
+          <Suspense key={periodo} fallback={<Consultando />}>
             <Status inicio={inicio} fim={fim} />
           </Suspense>
         </Form>

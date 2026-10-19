@@ -58,7 +58,7 @@ export function CarregandoPagina() {
 }
 
 /** Linha de status enquanto a fonte responde (mesmo visual de .sssp-status). */
-export function Consultando({ children = 'Consultando os dados…', className = 'sssp-status' }: { children?: ReactNode; className?: string }) {
+export function Consultando({ children = 'Carregando…', className = 'sssp-status' }: { children?: ReactNode; className?: string }) {
   return (
     <div className={className} role="status" aria-live="polite">
       <span className="spinner-border spinner-border-sm me-2" aria-hidden />
