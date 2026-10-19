@@ -15,3 +15,7 @@
 .pg-analise__texto { font-size: .92rem; line-height: 1.5; color: #1d2b38; }
 .pg-analise__texto.is-editado { border: 1px dashed #9fb3c4; border-radius: 6px; padding: 6px 8px; background: rgba(255, 255, 255, .5); }
 @media (max-width: 575.98px) { .pg-grafico { height: 240px; } }
+/* Item da grade: linha de ações (Baixar dados) acima do cartão, fora da faixa azul. */
+.pg-item { display: flex; flex-direction: column; min-width: 0; }
+.pg-item__acoes { display: flex; justify-content: flex-end; gap: 8px; min-height: 31px; margin-bottom: 6px; }
+.pg-item > .pg-cartao { flex: 1; }

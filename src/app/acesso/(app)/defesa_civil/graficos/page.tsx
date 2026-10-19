@@ -30,24 +30,27 @@ async function SeletorPostos(props: { escolhidos: number[]; de: string; ate: str
 /** Cartão do posto como vai ficar, com os valores em esqueleto. */
 function CartaoEsqueleto({ titulo, periodo }: { titulo: string; periodo: string }) {
   return (
-    <section className="pg-cartao">
-      <header className="pg-cartao__topo">
-        <h2>{titulo}</h2>
-        <p>{periodo}</p>
-      </header>
-      <div className="pg-cartao__corpo">
-        <div className="pg-kpis">
-          <Esqueleto largura="45%" altura="1.4rem" />
+    <div className="pg-item">
+      <div className="pg-item__acoes" />
+      <section className="pg-cartao">
+        <header className="pg-cartao__topo">
+          <h2>{titulo}</h2>
+          <p>{periodo}</p>
+        </header>
+        <div className="pg-cartao__corpo">
+          <div className="pg-kpis">
+            <Esqueleto largura="45%" altura="1.4rem" />
+          </div>
+          <EsqueletoGrafico className="pg-grafico" altura="auto" rotulo="Carregando o gráfico do posto…" />
+          <div className="pg-analise">
+            <Esqueleto largura="40%" altura="1.2rem" />
+            <Esqueleto />
+            <Esqueleto />
+            <Esqueleto largura="70%" />
+          </div>
         </div>
-        <EsqueletoGrafico className="pg-grafico" altura="auto" rotulo="Carregando o gráfico do posto…" />
-        <div className="pg-analise">
-          <Esqueleto largura="40%" altura="1.2rem" />
-          <Esqueleto />
-          <Esqueleto />
-          <Esqueleto largura="70%" />
-        </div>
-      </div>
-    </section>
+      </section>
+    </div>
   );
 }
 
@@ -57,48 +60,65 @@ async function CartaoPosto({ posto, de, ate, diaRef }: { posto: PostoSibh; de: s
   const periodo = `${dataBr(de)} a ${dataBr(ate)}`;
   if (!pontos || !pontos.length) {
     return (
-      <section className="pg-cartao">
-        <header className="pg-cartao__topo">
-          <h2>{titulo}</h2>
-          <p>{periodo}</p>
-        </header>
-        <div className="pg-cartao__corpo">
-          <p className="text-secondary mb-0">
-            <i className="bi bi-cloud-slash me-1" />
-            {pontos ? 'Sem leituras deste posto no período.' : 'Não foi possível obter as leituras do SIBH agora. Tente novamente em instantes.'}
-          </p>
-        </div>
-      </section>
+      <div className="pg-item">
+        <div className="pg-item__acoes" />
+        <section className="pg-cartao">
+          <header className="pg-cartao__topo">
+            <h2>{titulo}</h2>
+            <p>{periodo}</p>
+          </header>
+          <div className="pg-cartao__corpo">
+            <p className="text-secondary mb-0">
+              <i className="bi bi-cloud-slash me-1" />
+              {pontos ? 'Sem leituras deste posto no período.' : 'Não foi possível obter as leituras do SIBH agora. Tente novamente em instantes.'}
+            </p>
+          </div>
+        </section>
+      </div>
     );
   }
   const ultimo = pontos.at(-1)!;
   const cn = comparar(pontos, 'nivel', diaRef);
   const cq = comparar(pontos, 'vazao', diaRef);
   return (
-    <section className="pg-cartao">
-      <header className="pg-cartao__topo">
-        <h2>{titulo}</h2>
-        <p>
-          {periodo} · última leitura {diaMes(ultimo.dia)} {ultimo.hora}
-        </p>
-      </header>
-      <div className="pg-cartao__corpo">
-        <div className="pg-kpis">
-          {cn && (
-            <span>
-              <small>NÍVEL</small> <strong>{fmtNivel(cn.valor)}</strong> <em>{fmtDif('nivel', cn.dif)} vs. média de {diaMes(diaRef)}</em>
-            </span>
-          )}
-          {cq && (
-            <span>
-              <small>VAZÃO</small> <strong>{fmtVazao(cq.valor)}</strong> <em>{fmtDif('vazao', cq.dif, cq.valor)} vs. média de {diaMes(diaRef)}</em>
-            </span>
-          )}
-        </div>
-        <GraficoPosto pontos={pontos.map(({ dia, hora, nivel, vazao }) => ({ dia, hora, nivel, vazao }))} titulo={`Nível${cq ? ' e vazão' : ''} de ${titulo}, ${periodo}`} />
-        <AnaliseEditavel titulo={`Análise – ${posto.nome}`} automatico={analise(pontos, diaRef)} chave={`dc-analise:${posto.id}:${de}:${ate}:${diaRef}`} />
+    <div className="pg-item">
+      {/* Fora do cartão: o cartão (faixa azul até a análise) fica só com o conteúdo do comunicado. */}
+      <div className="pg-item__acoes">
+        <a
+          className="btn btn-sm btn-outline-primary"
+          href={`/acesso/defesa_civil/graficos/baixar?${new URLSearchParams({ p: String(posto.id), de, ate })}`}
+          download
+          title={`Leituras horárias de ${titulo}, ${periodo}, em planilha (CSV)`}
+        >
+          <i className="bi bi-download me-1" />
+          Baixar dados (CSV)
+        </a>
       </div>
-    </section>
+      <section className="pg-cartao">
+        <header className="pg-cartao__topo">
+          <h2>{titulo}</h2>
+          <p>
+            {periodo} · última leitura {diaMes(ultimo.dia)} {ultimo.hora}
+          </p>
+        </header>
+        <div className="pg-cartao__corpo">
+          <div className="pg-kpis">
+            {cn && (
+              <span>
+                <small>NÍVEL</small> <strong>{fmtNivel(cn.valor)}</strong> <em>{fmtDif('nivel', cn.dif)} vs. média de {diaMes(diaRef)}</em>
+              </span>
+            )}
+            {cq && (
+              <span>
+                <small>VAZÃO</small> <strong>{fmtVazao(cq.valor)}</strong> <em>{fmtDif('vazao', cq.dif, cq.valor)} vs. média de {diaMes(diaRef)}</em>
+              </span>
+            )}
+          </div>
+          <GraficoPosto pontos={pontos.map(({ dia, hora, nivel, vazao }) => ({ dia, hora, nivel, vazao }))} titulo={`Nível${cq ? ' e vazão' : ''} de ${titulo}, ${periodo}`} />
+          <AnaliseEditavel titulo={`Análise – ${posto.nome}`} automatico={analise(pontos, diaRef)} chave={`dc-analise:${posto.id}:${de}:${ate}:${diaRef}`} />
+        </div>
+      </section>
+    </div>
   );
 }
 
