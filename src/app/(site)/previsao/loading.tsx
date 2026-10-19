@@ -7,7 +7,7 @@ export default function Carregando() {
   return (
     <Principal>
       <SecaoBusca>
-        <Consultando>Localizando o município…</Consultando>
+        <Consultando />
       </SecaoBusca>
       <PrevisaoEsqueleto nome="São Paulo" />
       <SecaoMapa>

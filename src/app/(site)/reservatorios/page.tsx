@@ -41,7 +41,7 @@ export default async function Reservatorios({ searchParams }: { searchParams: Pr
     <Principal>
       <Periodo>
         <FiltroData data={data} max={hojeSp()}>
-          <Suspense key={data} fallback={<Consultando>Consultando a SABESP…</Consultando>}>
+          <Suspense key={data} fallback={<Consultando />}>
             <Status data={data} />
           </Suspense>
         </FiltroData>

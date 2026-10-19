@@ -8,7 +8,7 @@ export default function Carregando() {
   return (
     <Principal>
       <Periodo>
-        <Consultando>Consultando a SABESP…</Consultando>
+        <Consultando />
       </Periodo>
       <Secoes d={null} ano={Number(hojeSp().slice(0, 4))} />
     </Principal>

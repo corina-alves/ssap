@@ -7,7 +7,7 @@ export default function Carregando() {
   return (
     <Principal>
       <Referencia>
-        <Consultando>Consultando a série histórica…</Consultando>
+        <Consultando />
       </Referencia>
       <GradeSeries grafico={esqueletoSerie} />
     </Principal>

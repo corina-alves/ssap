@@ -7,7 +7,7 @@ export default function Carregando() {
   return (
     <Principal>
       <Periodo>
-        <Consultando>Consultando os volumes observados…</Consultando>
+        <Consultando />
       </Periodo>
       <Cartoes d={null} />
       <SecaoProjecao>

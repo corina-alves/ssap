@@ -35,7 +35,7 @@ type Blocos = { panorama: ReactNode; mapa: ReactNode; evolucao: ReactNode; tabel
 export const ESQUELETOS: Blocos = {
   panorama: (
     <>
-      <Consultando className="sssp-status mb-3">Consultando a previsão da Open-Meteo…</Consultando>
+      <Consultando className="sssp-status mb-3" />
       <Cartoes />
     </>
   ),
