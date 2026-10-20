@@ -130,9 +130,11 @@ services:
     init: true
     env_file: .env.docker
     environment:
-      <<: *banco
+     <<: *banco
+     NO_PROXY: "db,localhost,127.0.0.1,app"
+     no_proxy: "db,localhost,127.0.0.1,app" 
     secrets:
-      - app_db_password
+      - app_db_password 
     ports:
       - '127.0.0.1:${APP_PORTA:-3000}:3000' # só na própria máquina; o proxy reverso é quem publica
     volumes:
