@@ -1,3 +1,4 @@
+import { FonteOpenMeteo } from '@/components/fonte-open-meteo';
 import type { ReactNode } from 'react';
 import { Consultando, Esqueleto, EsqueletoGrafico, EsqueletoTabela } from '@/components/carregamento';
 import { Principal, Secao } from '@/components/site/layout';
@@ -69,7 +70,7 @@ export function Estrutura({ panorama, mapa, evolucao, tabela }: Blocos) {
       <Secao titulo="Chuva prevista por sistema" subtitulo="Acumulado por horizonte de tempo, em milímetros." icone="bi-table">
         {tabela}
         <p className="text-secondary small mt-2 mb-0">
-          Fonte: Open-Meteo, no ponto central de cada sistema · atualizado a cada hora. Hoje = dia corrente; 48 h e 72 h = hoje
+          <FonteOpenMeteo />, no ponto central de cada sistema · atualizado a cada hora. Hoje = dia corrente; 48 h e 72 h = hoje
           somado aos 1 ou 2 dias seguintes.
         </p>
       </Secao>

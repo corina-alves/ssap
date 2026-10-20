@@ -1,6 +1,6 @@
-import { Consultando, EsqueletoGrafico } from '@/components/carregamento';
+import { Consultando } from '@/components/carregamento';
 import { Principal } from '@/components/site/layout';
-import { PrevisaoEsqueleto, SecaoBusca, SecaoMapa } from './esqueleto';
+import { PrevisaoEsqueleto, SecaoBusca } from './esqueleto';
 
 /** Estrutura da página em esqueleto: aparece no clique do menu, antes de o servidor responder. */
 export default function Carregando() {
@@ -10,9 +10,6 @@ export default function Carregando() {
         <Consultando />
       </SecaoBusca>
       <PrevisaoEsqueleto nome="São Paulo" />
-      <SecaoMapa>
-        <EsqueletoGrafico altura={420} rotulo="Carregando o mapa de chuva prevista…" />
-      </SecaoMapa>
     </Principal>
   );
 }

@@ -73,17 +73,3 @@ export function SecaoBusca({ children }: { children: ReactNode }) {
     </Secao>
   );
 }
-
-/** Seção do mapa de chuva prevista no estado. */
-export function SecaoMapa({ children }: { children: ReactNode }) {
-  return (
-    <Secao
-      id="mapa"
-      titulo="Chuva prevista no Estado de São Paulo"
-      subtitulo="Grade de precipitação acumulada, com dados reais da Open-Meteo. Escolha o horizonte de tempo."
-      icone="bi-map"
-    >
-      {children}
-    </Secao>
-  );
-}

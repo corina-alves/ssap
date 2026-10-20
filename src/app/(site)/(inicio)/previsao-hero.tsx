@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useState, useTransition } from 'react';
+import { FonteOpenMeteo } from '@/components/fonte-open-meteo';
 import { previsaoHero, type PrevisaoHero as Previsao } from './previsao-hero-acao';
 
 /**
@@ -74,6 +75,9 @@ export function PrevisaoHero({ municipios, municipio, inicial }: { municipios: s
               </div>
             </div>
             {previsao.aviso && <small className="d-block text-secondary mt-2">{previsao.aviso}</small>}
+            <small className="d-block text-secondary mt-2">
+              <FonteOpenMeteo />
+            </small>
           </>
         ) : (
           <div className="alert alert-warning mt-3 mb-0">{previsao.mensagem}</div>

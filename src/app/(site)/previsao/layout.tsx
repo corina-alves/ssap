@@ -4,7 +4,7 @@ import { Hero } from '@/components/site/layout';
 
 /**
  * Título da página fora do page.tsx: não depende de API, vem no pré-carregamento
- * do link e continua na tela quando o município ou o horizonte mudam.
+ * do link e continua na tela quando o município muda.
  */
 export default function LayoutPrevisao({ children }: { children: ReactNode }) {
   return (

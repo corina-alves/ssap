@@ -8,6 +8,7 @@ import '@/styles/legado/pagina-inicio-faixas.css';
 import '@/styles/legado/pagina-inicio-salas.css';
 import '@/styles/legado/pagina-inicio-hero.css';
 import { Esqueleto } from '@/components/carregamento';
+import { FonteOpenMeteo } from '@/components/fonte-open-meteo';
 import { texto } from '@/components/paginacao';
 import { dataBr, dataHora } from '@/lib/formato';
 import { hojeSp, textoReserva } from '@/lib/integracoes/comum';
@@ -382,6 +383,9 @@ export default async function Inicio({ searchParams }: { searchParams: Promise<R
                 <PrevisaoSistemas />
               </Suspense>
             </div>
+            <p className="small text-secondary mt-2 mb-0">
+              <FonteOpenMeteo />
+            </p>
           </section>
 
           <section className="mt-5">
