@@ -48,8 +48,8 @@ const GRUPOS: Grupo[] = [
       { href: '/boletins/mensal', rotulo: 'Chuvas Mensal', icone: 'bi-cloud-rain-heavy' },
       { href: '/boletins/spi', rotulo: 'Índice SPI', icone: 'bi-bar-chart' },
       { href: '/boletins/integrado', rotulo: 'Boletim Integrado', icone: 'bi-layers' },
-      { href: '/boletins/alto-tiete-pinheiros', rotulo: 'Boletim Alto Tietê Pinheiros', icone: 'bi-layers' },
-      { href: '/boletins/ribeira', rotulo: 'Boletim Vale do Ribeira', icone: 'bi-layers' },
+      { href: '/boletins/alto-tiete-pinheiros', rotulo: 'Sumário Executivo Alto Tietê', icone: 'bi-layers' },
+      { href: '/boletins/ribeira', rotulo: 'Sumário Executivo Vale do Ribeira', icone: 'bi-layers' },
     ],
   },
   {
