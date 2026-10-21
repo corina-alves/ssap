@@ -1,5 +1,6 @@
 import pg from 'pg';
 import { env } from './env';
+import { erroSeguro, idRequisicao, limiteMs, log } from './log';
 
 // Um pool por processo; em desenvolvimento o hot reload reaproveita o mesmo.
 const global_ = globalThis as unknown as { __ssapPool?: pg.Pool };
@@ -13,18 +14,29 @@ export function pool(): pg.Pool {
     });
     // Conexão ociosa derrubada (banco reiniciado, rede): o pool descarta e abre outra
     // na próxima consulta. Sem este tratador, o erro viraria exceção não capturada.
-    global_.__ssapPool.on('error', (e) => console.error('Conexão ociosa com o banco encerrada:', e.message));
+    global_.__ssapPool.on('error', (e) => log.warn('banco_conexao_encerrada', { erro: erroSeguro(e) }));
   }
   return global_.__ssapPool;
 }
+
+/** Começo do SQL para o log (sem valores: eles vão nos parâmetros $1, $2…). */
+const resumoSql = (sql: string) => sql.replace(/\s+/g, ' ').trim().slice(0, 160);
 
 /** Consulta parametrizada — nunca concatenar valores no SQL. */
 export async function query<T extends pg.QueryResultRow = pg.QueryResultRow>(
   sql: string,
   params: unknown[] = [],
 ): Promise<T[]> {
-  const r = await pool().query<T>(sql, params);
-  return r.rows;
+  const inicio = performance.now();
+  try {
+    const r = await pool().query<T>(sql, params);
+    const ms = Math.round(performance.now() - inicio);
+    if (ms >= limiteMs('LOG_DB_LENTO_MS', 1000)) log.warn('banco_lento', { req: await idRequisicao(), ms, linhas: r.rowCount, sql: resumoSql(sql) });
+    return r.rows;
+  } catch (e) {
+    log.error('banco_erro', { req: await idRequisicao(), ms: Math.round(performance.now() - inicio), sql: resumoSql(sql), erro: erroSeguro(e) });
+    throw e;
+  }
 }
 
 export async function queryOne<T extends pg.QueryResultRow = pg.QueryResultRow>(
@@ -45,6 +57,7 @@ export async function transacao<T>(fn: (c: pg.PoolClient) => Promise<T>): Promis
     return r;
   } catch (e) {
     await c.query('ROLLBACK');
+    log.warn('banco_transacao_desfeita', { req: await idRequisicao(), erro: erroSeguro(e) });
     throw e;
   } finally {
     c.release();

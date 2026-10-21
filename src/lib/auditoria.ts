@@ -1,5 +1,6 @@
 import type pg from 'pg';
 import { pool } from './db';
+import { idRequisicao, log } from './log';
 
 export type RegistroAuditoria = {
   modulo: string;
@@ -40,4 +41,16 @@ export async function auditar(r: RegistroAuditoria, c?: pg.PoolClient): Promise<
       r.userAgent ?? null,
     ],
   );
+  // O mesmo evento no log da aplicação, sem dados pessoais: nem nome, login
+  // digitado (vai na descrição), IP ou navegador — só o id do usuário.
+  const nivel = /falha|bloque|negad|recusad|inativ|invalid/i.test(r.acao) ? 'warn' : 'info';
+  log[nivel]('auditoria', {
+    req: await idRequisicao(),
+    modulo: r.modulo,
+    acao: r.acao,
+    usuarioId: r.usuario?.id ?? null,
+    salaId: r.salaId ?? null,
+    entidade: r.entidade ?? null,
+    entidadeId: r.entidadeId != null ? String(r.entidadeId) : null,
+  });
 }

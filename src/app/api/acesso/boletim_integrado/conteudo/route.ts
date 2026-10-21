@@ -1,3 +1,4 @@
+import { erroSeguro, idRequisicao, log } from '@/lib/log';
 import { NextResponse, type NextRequest } from 'next/server';
 import { exigirApi } from '@/lib/acesso/api';
 import {
@@ -33,7 +34,7 @@ export async function GET(req: NextRequest) {
   try {
     return NextResponse.json({ ok: true, tipo, titulo: TIPOS[tipo], periodo: { ano, mes }, html: await montar(tipo, ano, mes) }, { headers: { 'Cache-Control': 'private, no-store' } });
   } catch (e) {
-    console.error('Boletim integrado:', e);
+    log.error('rota_falha', { req: await idRequisicao(), rota: '/api/acesso/boletim_integrado/conteudo', tipo, periodo: `${ano}-${mes}`, erro: erroSeguro(e) });
     return erro('Não foi possível montar o boletim no momento. Tente novamente em instantes.', 500);
   }
 }

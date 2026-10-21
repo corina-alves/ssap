@@ -7,6 +7,7 @@ import type { Acl } from '../auth/acl';
 import { query } from '../db';
 import { lembrar } from '../integracoes/cache';
 import { buscarJson } from '../integracoes/http';
+import { viaProxy } from '../integracoes/monitor';
 import { absoluto } from '../storage';
 
 /**
@@ -18,20 +19,38 @@ import { absoluto } from '../storage';
  */
 export const SUMARIOS = {
   ribeira_iguape: {
+    titulo: 'Sumário Executivo — Vale do Ribeira de Iguape',
     salas: ['alfredo-pisani', 'ribeira'],
+    // Tipo de boletim em que o PDF é cadastrado, por sala.
+    tipos: { 'alfredo-pisani': 'sumario-ribeira', ribeira: 'sumario-cheias' } as Record<string, string>,
     diagrama: { url: 'https://apps.spaguas.sp.gov.br/sibh/diagramas/tiete_pinheiros/?vw=flow&dg=ribeira-iguape&bs=gigante', altura: 1150 },
   },
   tiete_pinheiros: {
+    titulo: 'Sumário Executivo — Alto Tietê / Pinheiros',
     salas: ['alfredo-pisani'],
+    tipos: { 'alfredo-pisani': 'sumario-tiete-pinheiros' } as Record<string, string>,
     diagrama: { url: 'https://apps.spaguas.sp.gov.br/sibh/diagramas/tiete_pinheiros/?vw=flow&dg=tiete-pinheiros&bf=completo&bs=medio', altura: 1048 },
   },
 } as const;
 export type ChaveSumario = keyof typeof SUMARIOS;
 
+export const ehSumario = (chave: string): chave is ChaveSumario => Object.hasOwn(SUMARIOS, chave);
+
+/** Endereço do HTML original do sumário (aberto dentro da página da área). */
+export const arquivoSumario = (chave: ChaveSumario) => `/acesso/sumario_executivo_cheias/sumario_executivo_${chave}.html`;
+
+type SalaSumario = { id: number; slug: string; nome: string; sigla: string | null };
+
+/** Salas ativas do sumário em que o usuário tem criar_boletim (a preferida primeiro). */
+export async function salasDoSumario(a: Acl, salas: readonly string[], preferida = ''): Promise<SalaSumario[]> {
+  const linhas = await query<SalaSumario>(`SELECT id, slug, nome, sigla FROM salas WHERE slug = ANY($1::text[]) AND status = 'ativa' AND excluido_em IS NULL`, [[...salas]]);
+  const ordem = (s: SalaSumario) => (s.slug === preferida ? -1 : salas.indexOf(s.slug));
+  return linhas.filter((s) => a.pode('criar_boletim', s.id)).sort((x, y) => ordem(x) - ordem(y));
+}
+
 /** Tem criar_boletim em alguma das salas (ativas)? */
 export async function podeSumario(a: Acl, salas: readonly string[]): Promise<boolean> {
-  const linhas = await query<{ id: number }>(`SELECT id FROM salas WHERE slug = ANY($1::text[]) AND status = 'ativa' AND excluido_em IS NULL`, [[...salas]]);
-  return linhas.some((s) => a.pode('criar_boletim', s.id));
+  return (await salasDoSumario(a, salas)).length > 0;
 }
 
 export const SALAS_SUMARIOS = [...new Set(Object.values(SUMARIOS).flatMap((s) => s.salas))];
@@ -86,14 +105,24 @@ const arquivoCaptura = (chave: ChaveSumario) => absoluto(`sumarios/diagrama_${ch
 
 type Resultado = { success: true; path: string; geradoEm: string } | { success: false; error: string };
 
+/** Proxy de saída (HTTPS_PROXY montado em docker/entrada.sh) no formato do Playwright, se a URL passar por ele. */
+function proxyNavegador(url: string) {
+  const proxy = process.env.HTTPS_PROXY || process.env.https_proxy;
+  if (!proxy || !viaProxy(url)) return undefined;
+  const u = new URL(proxy);
+  return { server: `${u.protocol}//${u.host}`, username: decodeURIComponent(u.username) || undefined, password: decodeURIComponent(u.password) || undefined };
+}
+
 /**
- * Screenshot colorido do diagrama ao vivo do SIBH, para o PDF (o iframe ao
- * vivo imprime com as cores clareadas pelo @media print da página do SIBH).
- * Precisa do pacote "playwright" instalado no servidor (opcional: npm install
- * playwright); sem ele a página avisa e imprime com o diagrama ao vivo.
+ * Screenshot colorido do diagrama ao vivo do SIBH, para o PDF: o iframe é de
+ * outro domínio e, na impressão, o navegador descarta as cores de fundo dele
+ * (a menos que se marque "Gráficos de plano de fundo"). Usa o pacote
+ * "playwright" com o Chromium instalado na imagem Docker (veja o Dockerfile)
+ * ou, fora do Docker no Windows, o Edge; sem eles a página avisa e imprime com
+ * o diagrama ao vivo.
  */
 export async function capturarDiagrama(chave: ChaveSumario, rota: string): Promise<Resultado> {
-  type Pagina = { goto(u: string, o: object): Promise<unknown>; waitForLoadState(e: string, o: object): Promise<void>; waitForTimeout(ms: number): Promise<void>; screenshot(o: object): Promise<unknown> };
+  type Pagina = { goto(u: string, o: object): Promise<unknown>; waitForLoadState(e: string, o: object): Promise<void>; waitForTimeout(ms: number): Promise<void>; waitForSelector(s: string, o: object): Promise<unknown>; screenshot(o: object): Promise<unknown> };
   type Navegador = { newPage(o: object): Promise<Pagina>; close(): Promise<void> };
   let chromium: { launch(o?: object): Promise<Navegador> };
   try {
@@ -107,14 +136,19 @@ export async function capturarDiagrama(chave: ChaveSumario, rota: string): Promi
   let navegador: Navegador | undefined;
   try {
     await mkdir(/*turbopackIgnore: true*/ dirname(destino), { recursive: true });
-    // Usa o Edge instalado no Windows; se não houver, o Chromium baixado pelo Playwright.
-    navegador = await chromium.launch({ channel: 'msedge' }).catch(() => chromium.launch());
-    const pagina = await navegador.newPage({ viewport: { width: 1700, height: altura } });
+    // /dev/shm do contêiner é pequeno (64 MB): o Chromium usa /tmp no lugar.
+    const opcoes = { proxy: proxyNavegador(url), args: ['--disable-dev-shm-usage'] };
+    // No Windows usa o Edge instalado; no Linux (Docker), o Chromium baixado pelo Playwright.
+    navegador = process.platform === 'win32' ? await chromium.launch({ ...opcoes, channel: 'msedge' }).catch(() => chromium.launch(opcoes)) : await chromium.launch(opcoes);
+    // Proxy que inspeciona HTTPS assina com o certificado da instituição (NODE_EXTRA_CA_CERTS), que o Chromium não conhece.
+    const pagina = await navegador.newPage({ viewport: { width: 1700, height: altura }, ignoreHTTPSErrors: Boolean(process.env.NODE_EXTRA_CA_CERTS) });
     await pagina.goto(url, { waitUntil: 'load', timeout: 30_000 });
     // espera a rede ficar ociosa (todas as leituras já carregadas e coloridas) e dá uma margem
     // para a última leva de cores; segue mesmo se ainda houver alguma requisição pendente
     await pagina.waitForLoadState('networkidle', { timeout: 25_000 }).catch(() => {});
-    await pagina.waitForTimeout(6000);
+    // os cartões das estações só aparecem quando a API do SIBH responde (às vezes depois da rede ociosa)
+    await pagina.waitForSelector('.station-box', { timeout: 30_000 }).catch(() => {});
+    await pagina.waitForTimeout(4000);
     // recorta só a barra de menu do site (mantém a barra do diagrama e a legenda do rodapé)
     await pagina.screenshot({ path: destino, clip: { x: 0, y: 64, width: 1700, height: altura - 64 } });
     // a página acrescenta "?t=<hora>" a este endereço

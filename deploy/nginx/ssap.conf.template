@@ -6,6 +6,15 @@
 
 server_tokens off;
 
+# Acesso em JSON, no mesmo formato dos logs da aplicação (src/lib/log.ts):
+# o "req" é o X-Request-Id repassado ao app, que aparece também nos logs dele.
+# Sem a query string ($uri, não $request_uri: o link de senha leva um código)
+# e sem o IP do visitante (dado pessoal). "s" e "app_s" em segundos.
+log_format ssap_json escape=json
+    '{"ts":"$time_iso8601","nivel":"info","evento":"http","req":"$request_id",'
+    '"metodo":"$request_method","caminho":"$uri","status":$status,'
+    '"s":$request_time,"app_s":"$upstream_response_time","bytes":$body_bytes_sent}';
+
 # HTTP: só redireciona para HTTPS
 server {
     listen 80;
@@ -37,6 +46,8 @@ server {
     # upload de PDF de boletim: até 30 MB (o mesmo limite da aplicação) + folga
     client_max_body_size 32m;
 
+    access_log /dev/stdout ssap_json;
+
     location / {
         proxy_pass http://app:3000;
         proxy_http_version 1.1;
@@ -46,6 +57,8 @@ server {
         proxy_set_header X-Forwarded-Proto $scheme;
         # o último endereço da lista é o do cliente real (TRUST_PROXY=true usa esse)
         proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+        # mesmo identificador no log do nginx e nos logs da aplicação (o app o devolve na resposta)
+        proxy_set_header X-Request-Id      $request_id;
         proxy_set_header Upgrade           $http_upgrade;
         proxy_set_header Connection        "";
         # páginas que consultam várias APIs externas podem demorar na primeira vez

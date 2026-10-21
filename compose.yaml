@@ -16,6 +16,16 @@ x-logs: &logs
   options:
     max-size: '10m' # cada serviço guarda no máximo 5 arquivos de 10 MB
     max-file: '5'
+    compress: 'true' # arquivos já rotacionados ficam comprimidos (gzip)
+
+# A aplicação gera os logs estruturados (src/lib/log.ts): mais espaço que os demais.
+# Histórico que sobrevive à recriação do contêiner: compose.journald.yaml (DOCKER.md, Logs).
+x-logs-app: &logs-app
+  driver: json-file
+  options:
+    max-size: '20m' # até 10 arquivos de 20 MB (~200 MB, menos com a compressão)
+    max-file: '10'
+    compress: 'true'
 
 x-banco: &banco # como a aplicação e as ferramentas chegam ao banco
   DB_HOST: db
@@ -156,7 +166,7 @@ services:
         limits:
           cpus: '2.0'
           memory: 1536m
-    logging: *logs
+    logging: *logs-app
 
   # Proxy reverso com HTTPS (opcional):  docker compose --profile proxy up -d
   # Certificado em deploy/certs/fullchain.pem e deploy/certs/privkey.pem.

@@ -16,7 +16,8 @@ ARG NODE_VERSION=24.21.0
 FROM node:${NODE_VERSION}-bookworm-slim AS base
 ENV NEXT_TELEMETRY_DISABLED=1 \
     NPM_CONFIG_UPDATE_NOTIFIER=false \
-    TZ=America/Sao_Paulo
+    TZ=America/Sao_Paulo \
+    PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
 WORKDIR /app
 # Monta DATABASE_URL a partir do segredo (arquivo) antes de iniciar o processo.
 COPY docker/entrada.sh /usr/local/bin/entrada
@@ -43,6 +44,10 @@ ENV NODE_ENV=development \
     PORT=3000
 # .next fica num volume próprio (compose.dev.yaml), gravável pelo usuário "node".
 RUN mkdir -p /app/.next && chown node:node /app/.next
+# Chromium sem interface + bibliotecas do sistema: captura colorida do diagrama dos
+# sumários de cheias (src/lib/acesso/sumarios-cheias.ts).
+RUN node node_modules/playwright/cli.js install --with-deps --only-shell chromium \
+ && rm -rf /var/lib/apt/lists/*
 USER node
 EXPOSE 3000
 # O código vem por volume (compose.dev.yaml).
@@ -58,9 +63,18 @@ ENV NODE_ENV=production \
     HOSTNAME=0.0.0.0 \
     PORT=3000 \
     STORAGE_DIR=/dados/storage \
-    CACHE_DIR=/dados/cache
+    CACHE_DIR=/dados/cache \
+    XDG_CONFIG_HOME=/tmp/.config \
+    XDG_CACHE_HOME=/tmp/.cache
 
 RUN mkdir -p /app/.next/cache && chown -R node:node /app/.next
+# Captura do diagrama dos sumários de cheias: o playwright é carregado em tempo de
+# execução (fora do .next/standalone) e usa o Chromium sem interface instalado aqui.
+# XDG_*: com o contêiner só leitura, o Chromium grava a configuração em /tmp.
+COPY --from=deps /app/node_modules/playwright ./node_modules/playwright
+COPY --from=deps /app/node_modules/playwright-core ./node_modules/playwright-core
+RUN node node_modules/playwright/cli.js install --with-deps --only-shell chromium \
+ && rm -rf /var/lib/apt/lists/*
 COPY --from=build --chown=node:node /app/.next/standalone ./
 COPY --from=build --chown=node:node /app/.next/static ./.next/static
 COPY --from=build --chown=node:node /app/public ./public

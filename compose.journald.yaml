@@ -1,0 +1,32 @@
+# Logs no journald do servidor Linux (opcional, só em produção).
+#
+# Com o json-file padrão (compose.yaml), os logs de um contêiner somem quando ele
+# é recriado (todo deploy com --build). Com o journald, eles ficam no diário do
+# sistema: sobrevivem à recriação, a rotação e a retenção são as do servidor
+# (/etc/systemd/journald.conf) e o `docker compose logs` continua funcionando.
+#
+# Uso no servidor — no arquivo .env (o mesmo do APP_PORTA), uma linha:
+#   COMPOSE_FILE=compose.yaml:compose.journald.yaml
+# e todos os comandos `docker compose ...` passam a usar os dois arquivos.
+# Não use no Docker Desktop (Windows/macOS): lá não há journald.
+
+x-journald: &journald
+  driver: journald
+  options:
+    tag: 'sala-situacao/{{.Name}}' # aparece como SYSLOG_IDENTIFIER no journalctl
+
+services:
+  db:
+    logging: *journald
+  permissoes:
+    logging: *journald
+  ferramentas:
+    logging: *journald
+  app:
+    logging: *journald
+  proxy:
+    logging: *journald
+  backup:
+    logging: *journald
+  restaurar:
+    logging: *journald

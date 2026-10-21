@@ -9,7 +9,7 @@
  */
 export type Atalho = { modulo: 'boletins' | 'graficos'; titulo: string; descricao: string; href: string; icone: string; permissao: string };
 
-/** Atalhos que valem para qualquer sala com o módulo ('*' no PHP); {sala} vira o identificador da sala. */
+/** Atalhos que valem para qualquer sala com o módulo ('*' no PHP). Em qualquer atalho, {sala} vira o identificador da sala. */
 export const ATALHOS_GERAIS: Atalho[] = [
   {
     modulo: 'graficos',
@@ -23,7 +23,7 @@ export const ATALHOS_GERAIS: Atalho[] = [
 
 /** Atalhos de uma sala: os gerais mais os próprios. */
 export function atalhosDaSala(slug: string): Atalho[] {
-  return [...ATALHOS_GERAIS.map((t) => ({ ...t, href: t.href.replace('{sala}', slug) })), ...(ATALHOS[slug] ?? [])];
+  return [...ATALHOS_GERAIS, ...(ATALHOS[slug] ?? [])].map((t) => ({ ...t, href: t.href.replace('{sala}', slug) }));
 }
 
 // O sumário do Ribeira aparece na Sala Alfredo Pisani e na Sala Vale do Ribeira.
@@ -31,7 +31,7 @@ const SUMARIO_RIBEIRA: Atalho = {
   modulo: 'boletins',
   titulo: 'Sumário Executivo — Vale do Ribeira de Iguape',
   descricao: 'Abra o sumário, confira os dados, use "Gerar PDF" e cadastre o PDF como boletim.',
-  href: '/acesso/sumario_executivo_cheias/sumario_executivo_ribeira_iguape.html',
+  href: '/acesso/sumarios_cheias/ribeira_iguape?s={sala}',
   icone: 'bi-pencil-square',
   permissao: 'criar_boletim',
 };
@@ -99,7 +99,7 @@ export const ATALHOS: Record<string, Atalho[]> = {
       modulo: 'boletins',
       titulo: 'Sumário Executivo — Alto Tietê / Pinheiros',
       descricao: 'Abra o sumário, confira os dados, use "Gerar PDF" e cadastre o PDF como boletim.',
-      href: '/acesso/sumario_executivo_cheias/sumario_executivo_tiete_pinheiros.html',
+      href: '/acesso/sumarios_cheias/tiete_pinheiros?s={sala}',
       icone: 'bi-pencil-square',
       permissao: 'criar_boletim',
     },

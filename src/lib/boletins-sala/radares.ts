@@ -1,4 +1,5 @@
 import { lembrar } from '../integracoes/cache';
+import { classificarErro, classificarStatus, registrarChamada, viaProxy } from '../integracoes/monitor';
 
 /**
  * Imagens de radar do Boletim Diário da SSAP (acumulado de 24 h):
@@ -16,8 +17,21 @@ const NAVEGADOR = 'Mozilla/5.0 (SalaDeSituacao-SPAguas)';
 
 export type Imagem = { tipo: string; base64: string };
 
+/** fetch com registro no log (falha de rede ou HTTP; sucesso só em DEBUG). Os cabeçalhos (login do SAISP) não são registrados. */
+async function buscar(url: string, init: RequestInit): Promise<Response> {
+  const inicio = performance.now();
+  try {
+    const r = await fetch(url, init);
+    void registrarChamada({ url, inicio, status: r.status, falha: r.ok ? null : classificarStatus(r.status) });
+    return r;
+  } catch (e) {
+    void registrarChamada({ url, inicio, falha: classificarErro(e, viaProxy(url)), erro: e });
+    throw e;
+  }
+}
+
 async function baixar(url: string, cabecalhos: Record<string, string> = {}): Promise<Imagem> {
-  const r = await fetch(url, { headers: { 'User-Agent': NAVEGADOR, ...cabecalhos }, signal: AbortSignal.timeout(40_000), cache: 'no-store' });
+  const r = await buscar(url, { headers: { 'User-Agent': NAVEGADOR, ...cabecalhos }, signal: AbortSignal.timeout(40_000), cache: 'no-store' });
   const tipo = r.headers.get('content-type') ?? '';
   if (!r.ok || !tipo.startsWith('image/')) throw new Error(`HTTP ${r.status} (${tipo || 'sem tipo'})`);
   return { tipo, base64: Buffer.from(await r.arrayBuffer()).toString('base64') };
@@ -65,7 +79,7 @@ export async function radarSaisp(ini: number, fim: number): Promise<Imagem | nul
     6 * 3600,
     async () => {
       const acesso = { Authorization: `Basic ${Buffer.from(`${process.env.SAISP_USUARIO}:${process.env.SAISP_SENHA}`).toString('base64')}` };
-      const pagina = await fetch(
+      const pagina = await buscar(
         `${SAISP}/geral/processo.jsp?PRODUTO=${PRODUTO_ACUMULADA}&OVLCODE=${MAPA_ESTADO_UGRHI}&WHICHCODE=0&DI=${dataSaisp(ini)}&DF=${dataSaisp(fim)}`,
         { headers: { 'User-Agent': NAVEGADOR, ...acesso }, signal: AbortSignal.timeout(60_000), cache: 'no-store' },
       );

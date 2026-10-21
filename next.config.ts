@@ -64,7 +64,11 @@ const nextConfig: NextConfig = {
     ];
   },
   async headers() {
-    return [{ source: '/:path*', headers: cabecalhosSeguranca }];
+    return [
+      { source: '/:path*', headers: cabecalhosSeguranca },
+      // Sumários de cheias: abrem num quadro da própria área (/acesso/sumarios_cheias).
+      { source: '/acesso/sumario_executivo_cheias/:arquivo', headers: [{ key: 'X-Frame-Options', value: 'SAMEORIGIN' }] },
+    ];
   },
 };
 

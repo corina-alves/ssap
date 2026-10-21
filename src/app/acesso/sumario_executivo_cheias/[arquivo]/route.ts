@@ -6,10 +6,11 @@ import { usuarioAtual } from '@/lib/auth/sessao';
 
 // O HTML original usa scripts/estilos inline, Bootstrap do CDN, o iframe do
 // diagrama do SIBH e o Open-Meteo: política própria, só para estas páginas.
+// frame-ancestors 'self': abrem num quadro de /acesso/sumarios_cheias/<chave>.
 const CSP =
   "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; " +
   "font-src 'self' data: https://cdn.jsdelivr.net; img-src 'self' data: blob: https:; connect-src 'self' https://api.open-meteo.com; " +
-  "frame-src https://apps.spaguas.sp.gov.br; frame-ancestors 'none'; base-uri 'self'; form-action 'self'";
+  "frame-src https://apps.spaguas.sp.gov.br; frame-ancestors 'self'; base-uri 'self'; form-action 'self'";
 
 // Endereços que o JavaScript dos sumários chama na mesma pasta.
 const CAPTURAS: Record<string, ChaveSumario> = { 'capturar-diagrama': 'tiete_pinheiros', 'capturar-diagrama-ribeira': 'ribeira_iguape' };
@@ -37,7 +38,9 @@ export async function GET(req: Request, { params }: { params: Promise<{ arquivo:
     const { default: html } = await (chave === 'tiete_pinheiros'
       ? import('@/conteudo/legado/sumario_cheias_tiete_pinheiros')
       : import('@/conteudo/legado/sumario_cheias_ribeira_iguape'));
-    return new Response(html, { headers: { 'Content-Type': 'text/html; charset=utf-8', 'Content-Security-Policy': CSP, 'Cache-Control': 'private, no-store' } });
+    // Sem a captura, o diagrama (iframe de outro domínio) só sai colorido com a opção do navegador.
+    const pagina = html.replaceAll('Imprimindo com o diagrama ao vivo.', 'Imprimindo com o diagrama ao vivo: para sair com as cores, marque “Gráficos de plano de fundo” em Mais configurações na janela de impressão.');
+    return new Response(pagina, { headers: { 'Content-Type': 'text/html; charset=utf-8', 'Content-Security-Policy': CSP, 'X-Frame-Options': 'SAMEORIGIN', 'Cache-Control': 'private, no-store' } });
   }
 
   const captura = CAPTURAS[arquivo];

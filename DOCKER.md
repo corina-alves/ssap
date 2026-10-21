@@ -176,6 +176,71 @@ Para voltar à versão anterior: `git checkout <versão anterior>` e `docker com
 
 Limpeza de imagens antigas (não mexe em volumes): `docker image prune -f`.
 
+## Logs
+
+A aplicação escreve **uma linha JSON por evento** no stdout (info, debug) e no stderr (warn, error); o Docker guarda e rotaciona. Nenhum log fica acessível pelo site.
+
+```
+{"ts":"2026-10-20T14:03:12.481Z","nivel":"warn","evento":"api_falha","req":"6639f24d-…","fonte":"sibh","endpoint":"https://apps.spaguas.sp.gov.br/sibh/api/v2/…","ms":12004,"http":null,"proxy":true,"sucesso":false,"tipo":"timeout",…}
+```
+
+| Evento | Nível | Quando |
+|---|---|---|
+| `app_iniciada`, `banco_ok` / `banco_falha` | info / error | subida da aplicação (proxy, pastas, nível de log) e teste do banco |
+| `app_encerrando`, `app_encerrada` | info | parada (sinal do Docker) e código de saída |
+| `requisicao_erro` | error | erro em página, rota, ação ou proxy — com a rota, o `req` e o `digest` mostrado na tela de erro |
+| `excecao_nao_tratada`, `promessa_rejeitada_sem_tratamento` | error | falhas sem tratamento no servidor |
+| `banco_erro`, `banco_lento`, `banco_transacao_desfeita`, `banco_conexao_encerrada` | error / warn | PostgreSQL: erro (código, começo do SQL, sem valores), consulta acima de `LOG_DB_LENTO_MS` |
+| `api_falha`, `api_lenta`, `api_ok` | warn / warn / debug | cada chamada real a uma fonte externa: `fonte`, `endpoint` (sem credenciais), `ms`, `http`, `proxy`, `tipo` = `timeout`, `dns`, `conexao`, `proxy`, `certificado`, `autenticacao`, `http` ou `resposta_invalida` |
+| `auditoria` | info / warn | login, falha de login, bloqueio, acesso negado, logout, troca de senha e ações administrativas — só o id do usuário (nome, login digitado, IP e navegador ficam só na tabela `auditoria` do banco) |
+| `rota_falha` | error | falha tratada numa rota interna (ex.: montagem do boletim integrado) |
+
+Senhas, tokens, cookies, cabeçalhos de autorização, usuário/senha do proxy e conteúdo das respostas **nunca** são registrados. `X-Request-Id`: toda resposta do site traz esse cabeçalho; o mesmo valor aparece como `"req"` nos logs da requisição (e no log do nginx do perfil `proxy`).
+
+Níveis (no `.env.docker`, recriando o app com `docker compose up -d app`): `LOG_NIVEL=info` (padrão). Para investigar, `LOG_NIVEL=debug` registra também cada chamada bem-sucedida às APIs — volte para `info` depois. Limites: `LOG_DB_LENTO_MS` (1000) e `LOG_API_LENTA_MS` (8000).
+
+**Consultar:**
+
+```
+docker compose logs -f --tail=100 app                                  # tempo real
+docker compose logs --since 24h app | grep '"nivel":"error"'             # erros das últimas 24 h
+docker compose logs --since 24h app | grep '"evento":"api_falha"'        # falhas das APIs externas
+docker compose logs --since 24h app | grep '"evento":"api_falha"' | grep '"fonte":"sibh"'   # só uma fonte
+docker compose logs --since 7d app | grep '"evento":"auditoria"' | grep '"nivel":"warn"'     # falhas de login e acessos negados
+docker compose logs --since 24h app | grep '"req":"6639f24d-ef29-43e9-9148-64f2791534b1"'    # tudo de uma requisição
+docker compose logs app | grep '"digest":"3833714216"'                   # o erro de uma tela "Código de referência"
+```
+
+Com o `jq` instalado no servidor, um resumo das falhas por fonte e tipo:
+
+```
+docker compose logs --no-log-prefix --since 24h app | grep '^{' | jq -r 'select(.evento=="api_falha") | "\(.fonte) \(.tipo) \(.http)"' | sort | uniq -c
+```
+
+**Armazenamento e histórico.** No padrão (`compose.yaml`), cada serviço usa o driver `json-file` com rotação e compressão: a aplicação guarda até 10 arquivos de 20 MB e os demais serviços 5 de 10 MB. Esses logs ficam **dentro do contêiner**: somem quando ele é recriado (todo `docker compose up -d --build`).
+
+Para manter o histórico entre recriações no servidor Linux, use o **journald** (nativo do Docker, sem armazenamento duplicado):
+
+1. No arquivo `.env` do servidor (o mesmo do `APP_PORTA`), acrescente `COMPOSE_FILE=compose.yaml:compose.journald.yaml`. Todos os comandos `docker compose …` passam a usar os dois arquivos.
+2. Defina a retenção em `/etc/systemd/journald.conf` e reinicie o serviço (`sudo systemctl restart systemd-journald`):
+
+   ```
+   [Journal]
+   Storage=persistent
+   SystemMaxUse=2G
+   MaxRetentionSec=90day
+   ```
+
+3. Recrie os contêineres: `docker compose up -d`.
+
+`docker compose logs` continua funcionando. Para o histórico antigo, também por data:
+
+```
+journalctl SYSLOG_IDENTIFIER=sala-situacao/sala-situacao-app-1 --since "2026-10-01" --until "2026-10-15" -o cat | grep '"nivel":"error"'
+```
+
+O Docker Desktop (Windows) não tem journald: em desenvolvimento fica o `json-file`.
+
 ## Implantar no servidor de produção (Linux)
 
 1. **Instale o Docker Engine com o plugin Compose** (documentação oficial do Docker para a sua distribuição) e ative-o no início do sistema: `sudo systemctl enable --now docker`.
@@ -238,6 +303,10 @@ Para mudar a porta local do site (padrão 3000), crie um arquivo `.env` com `APP
 
 Para voltar ao modo de produção depois de usar o de desenvolvimento: `docker compose up -d`.
 
+As dependências do desenvolvimento ficam num volume (`dev_node_modules`), preenchido só na primeira subida. Depois de um `package.json` novo, atualize o volume com `docker compose -f compose.yaml -f compose.dev.yaml exec -u root app npm install`.
+
+As duas imagens trazem o Chromium sem interface (Playwright), com o qual os sumários de cheias capturam o diagrama do SIBH em cores para o PDF. O navegador sai pelo mesmo proxy das APIs (`SSSP_PROXY`).
+
 ## Segurança — o que já vem configurado
 
 - O site roda como usuário sem privilégios (`node`), com o sistema de arquivos somente leitura (só escreve nos volumes), sem capacidades extras do Linux.
@@ -254,6 +323,7 @@ Para voltar ao modo de produção depois de usar o de desenvolvimento: `docker c
 | Sintoma | Causa provável |
 |---|---|
 | `app` não sobe e `ferramentas` saiu com erro | Migração falhou: `docker compose logs ferramentas`. |
+| Sumário de cheias: "pacote playwright não instalado" | Imagem antiga: refaça com `--build`; no desenvolvimento, atualize também o volume `dev_node_modules` (veja Desenvolvimento). |
 | `entrada: segredo da senha do banco não encontrado` | Falta `secrets/app_db_password.txt`. |
 | `password authentication failed` | O arquivo de senha foi trocado depois da primeira subida do banco, ou tem quebra de linha do Windows. |
 | Login volta para a tela de login sem erro | Acesso por HTTP em produção: use HTTPS (item 5 da implantação). |

@@ -6,6 +6,8 @@
  * corporativo, rode com NODE_USE_ENV_PROXY=1 e HTTPS_PROXY definidos.
  */
 
+import { classificarErro, classificarStatus, registrarChamada, viaProxy } from './monitor';
+
 const USER_AGENT = 'SalaSituacaoSP/3.0 (+https://www.spaguas.sp.gov.br)';
 
 export class ErroFonte extends Error {
@@ -21,6 +23,7 @@ export type OpcoesHttp = { timeoutMs?: number; headers?: Record<string, string> 
 
 /** GET que devolve o JSON decodificado; lança ErroFonte em timeout, HTTP >= 400 ou JSON inválido. */
 export async function buscarJson(url: string, opcoes: OpcoesHttp = {}): Promise<unknown> {
+  const inicio = performance.now();
   let r: Response;
   try {
     r = await fetch(url, {
@@ -29,17 +32,22 @@ export async function buscarJson(url: string, opcoes: OpcoesHttp = {}): Promise<
       cache: 'no-store', // o cache é nosso (cache.ts), não o do fetch do Next
     });
   } catch (e) {
+    void registrarChamada({ url, inicio, falha: classificarErro(e, viaProxy(url)), erro: e });
     const causa = (e as { cause?: { code?: string } }).cause?.code;
     const nome = (e as Error).name;
     throw new ErroFonte(nome === 'TimeoutError' ? 'tempo esgotado' : `falha de conexão${causa ? ` (${causa})` : ''}`);
   }
   if (!r.ok) {
     await r.body?.cancel();
+    void registrarChamada({ url, inicio, status: r.status, falha: classificarStatus(r.status) });
     throw new ErroFonte(`HTTP ${r.status}`, r.status);
   }
   try {
-    return await r.json();
-  } catch {
+    const json = await r.json();
+    void registrarChamada({ url, inicio, status: r.status });
+    return json;
+  } catch (e) {
+    void registrarChamada({ url, inicio, status: r.status, falha: 'resposta_invalida', erro: e });
     throw new ErroFonte('resposta não é JSON válido', r.status);
   }
 }
