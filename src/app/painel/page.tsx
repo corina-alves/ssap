@@ -159,15 +159,32 @@ async function KpiTransposicao({ data }: { data: string }) {
 
 async function KpiChuva({ data }: { data: string }) {
   const p = await chuvaDe(data);
-  return <Kpi rotulo="Chuva do dia — RMSP" valor={fmt(p?.sim?.dia, 1, ' mm')} sub="média dos sistemas produtores" cor="#e08600" />;
+  return <Kpi rotulo="Chuva do dia — SIM" valor={fmt(p?.sim?.dia, 1, ' mm')} sub="média dos sistemas produtores" cor={COR_CHUVA_DIA} />;
 }
+
+async function KpiChuvaMes({ data }: { data: string }) {
+  const p = await chuvaDe(data);
+  return <Kpi rotulo="Chuva do mês — SIM" valor={fmt(p?.sim?.mes, 1, ' mm')} sub={`acumulado de ${dataBr(p?.dataUsada ?? data).slice(3)}`} cor={COR_CHUVA_MES} />;
+}
+
+async function KpiVazao({ data }: { data: string }) {
+  const q = await vazaoDe(data);
+  return <Kpi rotulo="Vazão natural do dia — SIM" valor={fmt(q?.sim?.dia, 1, ' m³/s')} sub={`em ${dataBr(q?.dataUsada ?? data)}`} cor={COR_VAZAO} />;
+}
+
+const COR_CHUVA_DIA = '#e08600';
+const COR_CHUVA_MES = '#f0a94e';
+const COR_VAZAO = '#1aa564';
+
+/** Cards de volume: o SIM primeiro, depois os produtores na ordem do painel. */
+const simPrimeiro = (sistemas: LinhaSistema[]) => [...sistemas.filter((s) => s.id === ID_SIM), ...ordenar(sistemas).filter((s) => s.id !== ID_SIM)];
 
 async function CartoesSistemas({ data }: { data: string }) {
   const v = await volumeDe(data);
   const ano = v?.anoComparacao ?? Number(data.slice(0, 4)) - 1;
   return (
     <>
-      {ordenar(v?.sistemas ?? []).map((s) => (
+      {simPrimeiro(v?.sistemas ?? []).map((s) => (
         <div className="pnl-sist-card" key={s.id} style={{ '--e': corEstagio(s.estagio.classe) } as CSSProperties}>
           <small>{s.nome}</small>
           <div className="v">{fmt(s.volume, 2, '%')}</div>
@@ -404,7 +421,7 @@ export default async function Painel({ searchParams }: { searchParams: Promise<R
           </Link>
           <div>
             <h1>Painel de Situação Hídrica</h1>
-            <span>Região Metropolitana de São Paulo · Sala de Situação Alfredo Pisani</span>
+            <span>Região Metropolitana de São Paulo - Sala de Situação Alfredo Pisani</span>
           </div>
         </div>
         <Form action="" scroll={false} className="pnl-busca" key={data}>
@@ -437,24 +454,11 @@ export default async function Painel({ searchParams }: { searchParams: Promise<R
         <Avisos data={data} />
       </Suspense>
 
-      <section className="pnl-kpis">
-        <Suspense fallback={<Kpi rotulo="Volume UHE Jaguari (PS)" cor="#12a8d2" />}>
-          <KpiJaguari data={data} />
-        </Suspense>
-        <Suspense fallback={<Kpi rotulo="Transferência — Paraíba do Sul" cor="#12a8d2" />}>
-          <KpiTransferencia data={data} />
-        </Suspense>
-        <Suspense fallback={<Kpi rotulo="Transposição Paraíba do Sul" cor="#7c5cff" />}>
-          <KpiTransposicao data={data} />
-        </Suspense>
-        <Suspense fallback={<Kpi rotulo="Chuva do dia — RMSP" cor="#e08600" />}>
-          <KpiChuva data={data} />
-        </Suspense>
-      </section>
-
       <section className="pnl-sistemas">
         <Suspense
-          fallback={Object.entries(SISTEMAS).map(([id, nome]) => (
+          fallback={Object.entries(SISTEMAS)
+            .sort(([a], [b]) => Number(Number(b) === ID_SIM) - Number(Number(a) === ID_SIM))
+            .map(([id, nome]) => (
             <div className="pnl-sist-card" key={id}>
               <small>{nome}</small>
               <Esqueleto className="esq-valor" largura="70%" />
@@ -466,9 +470,38 @@ export default async function Painel({ searchParams }: { searchParams: Promise<R
         </Suspense>
       </section>
 
+      <section className="pnl-kpis">
+        <Cartao classe="pnl-grupo" icone="bi-cloud-rain-heavy-fill" titulo="Chuva e vazão natural — SIM">
+          <div className="pnl-grupo-itens">
+            <Suspense fallback={<Kpi rotulo="Chuva do dia — SIM" cor={COR_CHUVA_DIA} />}>
+              <KpiChuva data={data} />
+            </Suspense>
+            <Suspense fallback={<Kpi rotulo="Chuva do mês — SIM" cor={COR_CHUVA_MES} />}>
+              <KpiChuvaMes data={data} />
+            </Suspense>
+            <Suspense fallback={<Kpi rotulo="Vazão natural do dia — SIM" cor={COR_VAZAO} />}>
+              <KpiVazao data={data} />
+            </Suspense>
+          </div>
+        </Cartao>
+        <Cartao classe="pnl-grupo" icone="bi-arrow-left-right" titulo="Paraíba do Sul">
+          <div className="pnl-grupo-itens">
+            <Suspense fallback={<Kpi rotulo="Volume UHE Jaguari (PS)" cor="#12a8d2" />}>
+              <KpiJaguari data={data} />
+            </Suspense>
+            <Suspense fallback={<Kpi rotulo="Transferência — Paraíba do Sul" cor="#12a8d2" />}>
+              <KpiTransferencia data={data} />
+            </Suspense>
+            <Suspense fallback={<Kpi rotulo="Transposição Paraíba do Sul" cor="#7c5cff" />}>
+              <KpiTransposicao data={data} />
+            </Suspense>
+          </div>
+        </Cartao>
+      </section>
+
       <section className="pnl-grid">
         <Cartao classe="pnl-card--mapa" icone="bi-geo-alt-fill" titulo="Sistemas produtores">
-          <Suspense fallback={<div className="esq" style={{ flex: 1, minHeight: 'clamp(150px, 17vh, 260px)', borderRadius: 12 }} role="status" aria-label="Carregando o mapa…" />}>
+          <Suspense fallback={<div className="esq" style={{ flex: 1, minHeight: 'clamp(180px, 22vh, 340px)', borderRadius: 12 }} role="status" aria-label="Carregando o mapa…" />}>
             <Mapa data={data} />
           </Suspense>
           <LegendaFaixas />

@@ -106,6 +106,8 @@ export type SerieCatalogo = {
   space: string;
   spaceTipo: string;
   variavel: string;
+  /** id da variável no SSD (o mesmo dos diagramas: data-variable-id) */
+  variavelId: number | null;
   unidade: string;
   frequencia: number;
   inicio: string | null;
@@ -119,14 +121,15 @@ const itemCatalogo = z.looseObject({
     fullName: z.string().nullable().optional(),
     spaceType: z.string().nullable().optional(),
   }),
-  variable: z.looseObject({ name: z.string(), unit: z.looseObject({ symbol: z.string().nullable().optional() }).nullable().optional() }),
+  variable: z.looseObject({ id: z.number().optional(), name: z.string(), unit: z.looseObject({ symbol: z.string().nullable().optional() }).nullable().optional() }),
   frequencyPeriod: z.number().nullable().optional(),
   startAt: z.string().nullable().optional(),
 });
 
 /** Catálogo completo de séries do SSD (sistemas, reservatórios, ETAs, postos...). Guardado por 1 dia. */
 export async function catalogo(): Promise<Dado<SerieCatalogo[]>> {
-  const l = await lembrar('ssd', 'catalogo', 86_400, async () => {
+  // v2: com o id da variável (a chave antiga, sem ele, fica sem uso)
+  const l = await lembrar('ssd', 'catalogo:v2', 86_400, async () => {
     const bruto = await buscarJson(`${BASE}TimeSeries`, { timeoutMs: 20_000 });
     const saida: SerieCatalogo[] = [];
     for (const s of Array.isArray(bruto) ? bruto : [bruto]) {
@@ -139,6 +142,7 @@ export async function catalogo(): Promise<Dado<SerieCatalogo[]>> {
         space: d.space.shortName ?? d.space.fullName ?? '',
         spaceTipo: d.space.spaceType ?? '',
         variavel: d.variable.name,
+        variavelId: d.variable.id ?? null,
         unidade: d.variable.unit?.symbol ?? '',
         frequencia: d.frequencyPeriod ?? FREQ_DIARIA,
         inicio: d.startAt ? d.startAt.slice(0, 10) : null,

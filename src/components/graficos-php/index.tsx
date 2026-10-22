@@ -136,7 +136,8 @@ export function Canvas({ montar, chave, rotulo, sssp = true, id, className }: { 
   useEffect(() => {
     let grafico: ChartJs | null = null;
     let cancelado = false;
-    carregarLibs().then((l) => {
+    // espera as fontes da página: o canvas não redesenha quando a fonte chega depois
+    Promise.all([carregarLibs(), document.fonts?.ready]).then(([l]) => {
       if (cancelado || !ref.current) return;
       const cfg = montarRef.current(l);
       grafico = new l.Chart(ref.current, sssp ? padraoSssp(cfg) : cfg);

@@ -22,7 +22,7 @@
 
 .pnl, .pnl * { box-sizing: border-box; }
 .pnl {
-  font-family: var(--font-inter), Inter, "Segoe UI", Arial, sans-serif;
+  font-family: var(--font-montserrat), Montserrat, "Segoe UI", Arial, sans-serif;
   color: var(--pnl-ink);
   background:
     radial-gradient(1200px 600px at 12% -5%, rgba(18, 168, 210, .10), transparent 60%),
@@ -78,21 +78,26 @@
 .pnl-status.is-erro { background: rgba(224, 71, 90, .16); border-color: rgba(224, 71, 90, .4); color: #ffd9de; }
 
 /* ------------------------------------------------------------------- KPIs */
+/* dois grupos (chuva/vazão do SIM e Paraíba do Sul), cada um com a largura de quatro cards de sistema */
 .pnl-kpis {
-  display: grid; grid-template-columns: repeat(5, 1fr); gap: clamp(8px, .9vw, 16px);
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: clamp(6px, .8vw, 14px);
 }
+.pnl-grupo { padding: clamp(8px, .7vw, 12px); }
+.pnl-grupo h2 { margin-bottom: 6px; font-size: clamp(.72rem, .85vw, .88rem); }
+.pnl-grupo-itens { display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(6px, .7vw, 12px); }
+.pnl-grupo .pnl-kpi { box-shadow: none; border-radius: 12px; border-left-width: 4px; padding: clamp(6px, .55vw, 10px) clamp(8px, .7vw, 12px); }
 .pnl-kpi {
   position: relative; overflow: hidden;
-  border-radius: 18px; padding: clamp(12px, 1.1vw, 20px);
+  border-radius: 18px; padding: clamp(10px, .9vw, 16px);
   background: var(--pnl-panel);
   border: 1.5px solid var(--kpi, var(--pnl-panel-border));
   border-left-width: 6px;
   box-shadow: 0 14px 34px rgba(0, 0, 0, .28);
 }
-.pnl-kpi small { display: block; color: var(--pnl-muted); font-size: clamp(.66rem, .82vw, .82rem); font-weight: 700; text-transform: uppercase; letter-spacing: .05em; }
-.pnl-kpi .v { font-size: clamp(1.5rem, 2.6vw, 2.8rem); font-weight: 900; line-height: 1.05; margin-top: 4px; }
+.pnl-kpi small { display: block; color: var(--pnl-muted); font-size: clamp(.54rem, .62vw, .66rem); font-weight: 700; text-transform: uppercase; letter-spacing: .05em; }
+.pnl-kpi .v { font-size: clamp(.95rem, 1.3vw, 1.4rem); font-weight: 900; line-height: 1.05; margin-top: 2px; }
 .pnl-kpi .v i { font-size: .55em; margin-left: 4px; }
-.pnl-kpi .sub { color: var(--pnl-muted); font-size: clamp(.64rem, .8vw, .8rem); margin-top: 2px; }
+.pnl-kpi .sub { color: var(--pnl-muted); font-size: clamp(.52rem, .6vw, .64rem); margin-top: 1px; }
 .pnl-kpi.up .v { color: #7ef0b6; } .pnl-kpi.down .v { color: #ffb0bb; }
 
 /* --------------------------------------------- cards de volume por sistema */
@@ -103,14 +108,14 @@
   border-radius: 12px; padding: clamp(8px, .8vw, 14px); text-align: center;
   box-shadow: 0 10px 26px rgba(0, 0, 0, .24);
 }
-.pnl-sist-card small { display: block; color: var(--pnl-muted); font-size: clamp(.6rem, .76vw, .78rem); font-weight: 700; }
-.pnl-sist-card .v { font-size: clamp(1.05rem, 1.7vw, 1.7rem); font-weight: 900; color: #fff; line-height: 1.1; margin: 3px 0 5px; }
-.pnl-sist-card .pnl-estagio { font-size: .66rem; }
-.pnl-sist-card .dif { margin-top: 5px; font-size: clamp(.56rem, .72vw, .72rem); color: var(--pnl-muted); }
+.pnl-sist-card small { display: block; color: var(--pnl-muted); font-size: clamp(.66rem, .86vw, .9rem); font-weight: 700; }
+.pnl-sist-card .v { font-size: clamp(1.25rem, 2.1vw, 2.2rem); font-weight: 900; color: #fff; line-height: 1.1; margin: 3px 0 5px; }
+.pnl-sist-card .pnl-estagio { font-size: .72rem; }
+.pnl-sist-card .dif { margin-top: 5px; font-size: clamp(.6rem, .78vw, .8rem); color: var(--pnl-muted); }
 .pnl-sist-card .dif.up { color: #7ef0b6; }
 .pnl-sist-card .dif.down { color: #ffb0bb; }
 @media (max-width: 1400px) { .pnl-sistemas { grid-template-columns: repeat(4, 1fr); } }
-@media (max-width: 640px) { .pnl-sistemas { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 640px) { .pnl-sistemas { grid-template-columns: repeat(2, 1fr); } .pnl-grupo-itens { grid-template-columns: 1fr; } }
 
 /* ------------------------------------------------------------------ grade */
 .pnl-grid {
@@ -134,11 +139,11 @@
 .pnl-chart { position: relative; flex: 1; min-height: 0; }
 /* linha do topo (grade de 5 colunas): mapa 2 · volume 2 · pizza 1 (menor) */
 .pnl-card--mapa { grid-column: span 2; grid-row: auto; }
-#pnlMapa { flex: 1; min-height: clamp(150px, 17vh, 260px); border-radius: 12px; overflow: hidden; }
+#pnlMapa { flex: 1; min-height: clamp(180px, 22vh, 340px); border-radius: 12px; overflow: hidden; }
 .pnl-card--vol { grid-column: span 2; grid-row: auto; }
-.pnl-card--vol .pnl-chart { min-height: clamp(150px, 17vh, 260px); }
+.pnl-card--vol .pnl-chart { min-height: clamp(180px, 22vh, 340px); }
 .pnl-card--pizza { grid-column: span 1; }
-.pnl-card--pizza .pnl-chart { min-height: clamp(150px, 17vh, 260px); }
+.pnl-card--pizza .pnl-chart { min-height: clamp(180px, 22vh, 340px); }
 .pnl-card--wide { grid-column: 1 / -1; }
 .pnl-card--wide .pnl-chart { min-height: clamp(200px, 24vh, 320px); }
 .pnl-card--tabela { grid-column: 1 / -1; }
@@ -243,7 +248,7 @@
 
 /* ------------------------------------------------------------ responsivo */
 @media (max-width: 1400px) {
-  .pnl-kpis { grid-template-columns: repeat(3, 1fr); }
+  .pnl-kpis { grid-template-columns: 1fr; }
   .pnl-grid { grid-template-columns: repeat(2, 1fr); }
   .pnl-card--tabela { grid-column: span 2; }
 }

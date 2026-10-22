@@ -83,7 +83,12 @@ export async function montarMenu(a: Acl): Promise<Menu> {
     });
   }
 
-  const salas = (await salasPainel(a)).map((s) => {
+  const visiveis = await salasPainel(a);
+  // Painel interativo dos sistemas produtores (SSD): visualizar_dashboard na Sala Alfredo Pisani.
+  const alfredo = visiveis.find((s) => s.slug === 'alfredo-pisani');
+  if (alfredo && a.pode('visualizar_dashboard', alfredo.id)) geral.push(item('Painel interativo', '/acesso/painel_interativo', 'bi-water'));
+
+  const salas = visiveis.map((s) => {
     const filhos = [item('Visão geral', '/acesso/salas/sala', 'bi-grid', `/acesso/salas/sala?s=${s.slug}`)];
     for (const m of s.modulos) {
       const def = MODULOS[m.slug];

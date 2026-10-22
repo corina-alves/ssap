@@ -10,7 +10,12 @@ import { Canvas, type Montar } from '@/components/graficos-php';
 
 const TEXTO = '#cfe2f3';
 const GRADE = 'rgba(255,255,255,.10)';
-const FONTE = "Inter, 'Segoe UI', Arial, sans-serif";
+const FONTE = "Montserrat, 'Segoe UI', Arial, sans-serif";
+/** Fonte do painel (Montserrat do next/font, com nome gerado): lida da página, para o canvas usar a mesma. */
+const fontePainel = () => {
+  const pnl = typeof document === 'undefined' ? null : document.getElementById('pnl');
+  return (pnl && getComputedStyle(pnl).fontFamily) || FONTE;
+};
 
 const ORDEM = ['Cantareira', 'Alto Tietê', 'Guarapiranga', 'Cotia', 'Rio Grande', 'Rio Claro', 'São Lourenço'];
 const CORES: Record<string, string> = {
@@ -44,11 +49,20 @@ type Obj = Record<string, unknown>;
 /** Padrão do painel (no PHP, Chart.defaults): texto claro, grade discreta, sem animação. */
 function escuro(cfg: ChartConfiguration): ChartConfiguration {
   const o = (cfg.options ??= {}) as Obj;
-  Object.assign(o, { responsive: true, maintainAspectRatio: false, animation: false, color: TEXTO, borderColor: GRADE, font: { family: FONTE } });
+  const family = fontePainel();
+  Object.assign(o, { responsive: true, maintainAspectRatio: false, animation: false, color: TEXTO, borderColor: GRADE, font: { family } });
   const plugins = (o.plugins ??= {}) as Obj;
+  // rótulos de valor e dicas não herdam a fonte do gráfico
+  if (plugins.datalabels) {
+    const dl = plugins.datalabels as Obj;
+    dl.font = { family, ...(dl.font as Obj | undefined) };
+  }
+  plugins.tooltip = { titleFont: { family }, bodyFont: { family }, ...(plugins.tooltip as Obj | undefined) };
   const legenda = (plugins.legend ??= { display: false }) as Obj;
   legenda.labels = { color: TEXTO, ...(legenda.labels as Obj | undefined) };
   if (cfg.type !== 'doughnut') {
+    // ao passar o mouse sobre um sistema/mês, a dica traz todos os valores dele (não só a barra apontada)
+    o.interaction ??= { mode: 'index', intersect: false };
     const escalas = (o.scales ??= {}) as Record<string, Obj>;
     for (const id of new Set(['x', 'y', ...Object.keys(escalas)])) {
       const e = (escalas[id] ??= {});
@@ -85,16 +99,21 @@ export function GraficoVolume({
   rotuloAtual: string;
   rotuloAnterior: string;
 }) {
-  // linhas das faixas do protocolo (60 / 40 / 30 / 20 %)
-  const faixa = (y: number, cor: string) => ({
-    type: 'line' as const,
-    yMin: y,
-    yMax: y,
-    borderColor: cor,
-    borderWidth: 1.5,
-    borderDash: [6, 5],
-    label: { display: true, content: `${y}%`, position: 'start' as const, color: cor, backgroundColor: 'transparent', font: { size: 10, weight: 'bold' as const } },
-  });
+  // linhas das faixas do protocolo (60 / 40 / 30 / 20 %), só o tracejado
+  const faixa = (y: number, cor: string) => ({ type: 'line' as const, yMin: y, yMax: y, borderColor: cor, borderWidth: 1.5, borderDash: [6, 5] });
+  // afasta a legenda das barras: o valor de um sistema perto de 100% ficava em cima dela
+  const espacoLegenda: Plugin<'bar'> = {
+    id: 'pnlEspacoLegenda',
+    beforeInit(chart) {
+      const legenda = chart.legend as unknown as { fit(): void; height: number } | undefined;
+      if (!legenda) return;
+      const ajustar = legenda.fit.bind(legenda);
+      legenda.fit = () => {
+        ajustar();
+        legenda.height += 30;
+      };
+    },
+  };
   return (
     <Grafico
       chave={[rotuloAtual, ...atual, ...anterior].join()}
@@ -112,11 +131,12 @@ export function GraficoVolume({
           plugins: {
             legend: { display: true, position: 'top', labels: { boxWidth: 12, font: { size: 11 } } },
             annotation: { annotations: { f60: faixa(60, '#f4b400'), f40: faixa(40, '#e08600'), f30: faixa(30, '#dc3545'), f20: faixa(20, '#800080') } },
-            datalabels: { display: (c) => c.datasetIndex === 1, anchor: 'end', align: 'end', formatter: (x: number | null) => fmt(x, 0, '%'), color: '#eef6ff', font: { weight: 'bold' } },
+            tooltip: { callbacks: { label: (c) => `${c.dataset.label}: ${fmt(c.parsed.y, 2, '%')}` } },
+            datalabels: { display: (c) => c.datasetIndex === 1, anchor: 'end', align: 'end', formatter: (x: number | null) => fmt(x, 2, '%'), color: '#eef6ff', font: { weight: 'bold' } },
           },
           scales: { y: { min: 0, max: 100, ticks: { callback: (x) => `${x}%` } }, x: { ticks: { autoSkip: false, maxRotation: 30 } } },
         },
-        plugins: [ChartDataLabels],
+        plugins: [ChartDataLabels, espacoLegenda as Plugin],
       })}
     />
   );
@@ -216,7 +236,10 @@ export function GraficoTransposicao({ meses }: { meses: { mes: number; volumeHm3
           ],
         },
         options: {
-          plugins: { datalabels: { align: 'top', anchor: 'end', formatter: (x: number | null) => fmt(x, 1), color: '#dcd2ff', font: { weight: 'bold' } } },
+          plugins: {
+            datalabels: { align: 'top', anchor: 'end', formatter: (x: number | null) => fmt(x, 1), color: '#dcd2ff', font: { weight: 'bold' } },
+            tooltip: { callbacks: { label: (c) => `Volume transferido: ${fmt(c.parsed.y, 1, ' hm³')}` } },
+          },
           scales: { y: { beginAtZero: true, title: { display: true, text: 'hm³' } } },
         },
         plugins: [ChartDataLabels],
@@ -249,7 +272,7 @@ export function MedidorTransposicao({ acumulado, vigente, anterior }: { acumulad
       ctx.lineTo(arco.x + rExt * s, arco.y - rExt * c);
       ctx.stroke();
       ctx.fillStyle = '#f0a94e';
-      ctx.font = '700 11px Inter, Arial, sans-serif';
+      ctx.font = `700 11px ${fontePainel()}`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'bottom';
       ctx.fillText(fmt(anterior, 0), arco.x + (rExt + 11) * s, arco.y - (rExt + 11) * c);

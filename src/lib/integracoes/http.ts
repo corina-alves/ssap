@@ -24,10 +24,31 @@ export type OpcoesHttp = { timeoutMs?: number; headers?: Record<string, string> 
 /** GET que devolve o JSON decodificado; lança ErroFonte em timeout, HTTP >= 400 ou JSON inválido. */
 export async function buscarJson(url: string, opcoes: OpcoesHttp = {}): Promise<unknown> {
   const inicio = performance.now();
+  const r = await requisitar(url, 'application/json', opcoes, inicio);
+  try {
+    const json = await r.json();
+    void registrarChamada({ url, inicio, status: r.status });
+    return json;
+  } catch (e) {
+    void registrarChamada({ url, inicio, status: r.status, falha: 'resposta_invalida', erro: e });
+    throw new ErroFonte('resposta não é JSON válido', r.status);
+  }
+}
+
+/** GET que devolve o corpo como texto (ex.: SVG); lança ErroFonte em timeout ou HTTP >= 400. */
+export async function buscarTexto(url: string, opcoes: OpcoesHttp = {}): Promise<string> {
+  const inicio = performance.now();
+  const r = await requisitar(url, '*/*', opcoes, inicio);
+  const texto = await r.text();
+  void registrarChamada({ url, inicio, status: r.status });
+  return texto;
+}
+
+async function requisitar(url: string, accept: string, opcoes: OpcoesHttp, inicio: number): Promise<Response> {
   let r: Response;
   try {
     r = await fetch(url, {
-      headers: { Accept: 'application/json', 'User-Agent': USER_AGENT, ...opcoes.headers },
+      headers: { Accept: accept, 'User-Agent': USER_AGENT, ...opcoes.headers },
       signal: AbortSignal.timeout(opcoes.timeoutMs ?? 12_000),
       cache: 'no-store', // o cache é nosso (cache.ts), não o do fetch do Next
     });
@@ -42,14 +63,7 @@ export async function buscarJson(url: string, opcoes: OpcoesHttp = {}): Promise<
     void registrarChamada({ url, inicio, status: r.status, falha: classificarStatus(r.status) });
     throw new ErroFonte(`HTTP ${r.status}`, r.status);
   }
-  try {
-    const json = await r.json();
-    void registrarChamada({ url, inicio, status: r.status });
-    return json;
-  } catch (e) {
-    void registrarChamada({ url, inicio, status: r.status, falha: 'resposta_invalida', erro: e });
-    throw new ErroFonte('resposta não é JSON válido', r.status);
-  }
+  return r;
 }
 
 /** Converte "12,3" / "12.3" / " 45 % " / 12.3 em número, ou null. */
