@@ -305,7 +305,7 @@ Para voltar ao modo de produção depois de usar o de desenvolvimento: `docker c
 
 As dependências do desenvolvimento ficam num volume (`dev_node_modules`), preenchido só na primeira subida. Depois de um `package.json` novo, atualize o volume com `docker compose -f compose.yaml -f compose.dev.yaml exec -u root app npm install`.
 
-As duas imagens trazem o Chromium sem interface (Playwright), com o qual os sumários de cheias capturam o diagrama do SIBH em cores para o PDF. O navegador sai pelo mesmo proxy das APIs (`SSSP_PROXY`).
+As imagens não trazem navegador: o "Gerar PDF" dos sumários de cheias imprime com o diagrama do SIBH ao vivo. Para sair com as cores, marque "Gráficos de plano de fundo" em Mais configurações na janela de impressão.
 
 ## Segurança — o que já vem configurado
 
@@ -323,7 +323,6 @@ As duas imagens trazem o Chromium sem interface (Playwright), com o qual os sum�
 | Sintoma | Causa provável |
 |---|---|
 | `app` não sobe e `ferramentas` saiu com erro | Migração falhou: `docker compose logs ferramentas`. |
-| Sumário de cheias: "pacote playwright não instalado" | Imagem antiga: refaça com `--build`; no desenvolvimento, atualize também o volume `dev_node_modules` (veja Desenvolvimento). |
 | `entrada: segredo da senha do banco não encontrado` | Falta `secrets/app_db_password.txt`. |
 | `password authentication failed` | O arquivo de senha foi trocado depois da primeira subida do banco, ou tem quebra de linha do Windows. |
 | Login volta para a tela de login sem erro | Acesso por HTTP em produção: use HTTPS (item 5 da implantação). |
