@@ -20,6 +20,8 @@
 .hp-estado { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 30px; margin-bottom: 26px; font-size: .98rem; }
 .hp-estado strong { display: inline-flex; align-items: center; gap: 12px; color: #fff; font-weight: 700; }
 .hp-estado strong::before { content: ''; width: 13px; height: 13px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 0 4px rgba(34, 197, 94, .25); }
+.hp-estado strong a { color: inherit; text-decoration: underline; text-underline-offset: 3px; }
+.hp-estado strong a:hover { color: #bbf7d0; }
 .hp-estado span { padding-left: 30px; border-left: 1px solid rgba(255, 255, 255, .4); color: rgba(255, 255, 255, .75); }
 
 .public-page .hero .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; }

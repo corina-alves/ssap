@@ -276,12 +276,16 @@ export default async function Inicio({ searchParams }: { searchParams: Promise<R
                   <span>Alfredo Pisani</span>
                 </h1>
                 <p>
-                  Monitoramento integrado de chuvas, níveis, vazões, reservatórios e condições meteorológicas para apoio à gestão dos
-                  recursos hídricos do Estado de São Paulo.
+                  A Sala de Situação São Paulo é definida como o conjunto de atividades de monitoramento e acompanhamento da situação de
+                  chuvas, cotas e vazões de rios, níveis piezométricos, balanço hídrico e níveis dos principais reservatórios de
+                  regularização, estruturadas de modo a permitir a disponibilização de informações sistematizadas sobre condições
+                  hidrológicas de interesse para a gestão de recursos hídricos no Estado de São Paulo.
                 </p>
                 <div className="hp-estado">
-                  <strong>Monitoramento ativo</strong>
-                  <span>Dados hidrológicos • meteorológicos • reservatórios</span>
+                  <strong>
+                    <Link href="/deliberacao_dss">Leia mais</Link>
+                  </strong>
+                  <span>Dados hidrológicos - meteorológicos - reservatórios</span>
                 </div>
                 <div className="hero-actions">
                   <a href="#painel" className="btn btn-primary">
