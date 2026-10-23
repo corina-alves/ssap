@@ -70,6 +70,8 @@ export function AtoNormativo({
   anexo,
   assinaturas = [],
   anexos = [],
+  pdf,
+  orgaosSemFundo = false,
 }: {
   /** Último item da trilha (depois de Início › Documentos). */
   trilha: string;
@@ -92,6 +94,10 @@ export function AtoNormativo({
   assinaturas?: { nome: string; cargo: string }[];
   /** Anexos do ato, cada um num cartão depois do texto (entram no índice). */
   anexos?: { id: string; rotulo: string; conteudo: ReactNode }[];
+  /** PDF oficial do ato, oferecido para download no cabeçalho. */
+  pdf?: string;
+  /** Mostra os logos direto sobre a faixa, sem o cartão branco (ex.: só o brasão). */
+  orgaosSemFundo?: boolean;
 }) {
   const lista = artigos(dispositivos);
   return (
@@ -120,8 +126,13 @@ export function AtoNormativo({
                   </li>
                 ))}
               </ul>
+              {pdf && (
+                <a href={pdf} download className="res-hero__pdf">
+                  <i className="bi bi-download" /> Baixar PDF
+                </a>
+              )}
             </div>
-            {orgaos && <div className="res-hero__orgaos">{orgaos}</div>}
+            {orgaos && <div className={`res-hero__orgaos${orgaosSemFundo ? ' res-hero__orgaos--sem-fundo' : ''}`}>{orgaos}</div>}
           </div>
         </div>
       </section>

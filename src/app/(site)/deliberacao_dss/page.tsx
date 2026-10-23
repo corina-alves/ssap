@@ -35,6 +35,8 @@ export default function Pagina() {
       verbo="Delibera:"
       dispositivos={DISPOSITIVOS}
       assuntos={ASSUNTOS}
+      pdf="/legado/deliberacao_dss/deliberacao-crh-287-2024.pdf"
+      orgaosSemFundo
     />
   );
 }
