@@ -1,9 +1,7 @@
+import Link from 'next/link';
 import { Suspense } from 'react';
-import { Esqueleto } from '@/components/carregamento';
 import { centroArea } from '@/components/graficos/mapa-pontos';
 import areas from '@/conteudo/sistemas-produtores-areas.json';
-import { dataBr } from '@/lib/formato';
-import { ESTAGIOS } from '@/lib/hidrologia/reservatorios';
 import { contornoSP, type Contorno } from '@/lib/integracoes/ibge';
 import { ID_SIM } from '@/lib/integracoes/sabesp';
 import { painelHoje } from './dados-inicio';
@@ -11,8 +9,21 @@ import { painelHoje } from './dados-inicio';
 const PAINEL =
   'https://app.powerbi.com/view?r=eyJrIjoiNzE3NGY2ZGQtYjc1OC00ZThiLTgxZDgtMDhlZDQ1OTM0YmI2IiwidCI6IjNhNzhiMGNkLTdjOGUtNDkyOS04M2Q1LTE5MGE2Y2MwMTM2NSJ9';
 
-/** Faixa de volume útil de cada estágio (lib/hidrologia/reservatorios: LIMITES_ESTAGIO). */
-const FAIXAS: Record<string, string> = { E0: '≥ 60%', E1: '40% – 60%', E2: '30% – 40%', E3: '20% – 30%', E4: '< 20%' };
+/** Publicações oferecidas ao lado do mapa. */
+const PUBLICACOES = [
+  {
+    href: '/boletins/integrado',
+    icone: 'bi-layers',
+    titulo: 'Boletim Integrado',
+    texto: 'Boletins integrados entre as agências.',
+  },
+  {
+    href: '/nota_informativa',
+    icone: 'bi-info-circle',
+    titulo: 'Nota Informativa',
+    texto: 'Nota Informativa Conjunta SP-Águas e Arsesp.',
+  },
+];
 
 /** Deslocamento do rótulo no mapa, em unidades do viewBox, para os nomes não se sobreporem. */
 const AJUSTE_ROTULO: Record<string, [number, number]> = {
@@ -67,44 +78,19 @@ function MapaSistemas({ contorno, classes }: { contorno: Contorno | null; classe
 async function situacao() {
   const r = await painelHoje();
   const sistemas = r.ok ? r.dados.sistemas.filter((s) => s.id !== ID_SIM) : [];
-  return { r, sistemas, classes: new Map(sistemas.map((s) => [s.nome, s.estagio.classe])) };
+  return new Map(sistemas.map((s) => [s.nome, s.estagio.classe]));
 }
 
 /** Mapa colorido: espera a SABESP (cores) e o IBGE (contorno do Estado), em paralelo. */
 async function MapaColorido() {
-  const [{ classes }, c] = await Promise.all([situacao(), contornoSP()]);
+  const [classes, c] = await Promise.all([situacao(), contornoSP()]);
   return <MapaSistemas contorno={c.ok ? c.dados : null} classes={classes} />;
 }
 
-async function DataSituacao() {
-  const { r } = await situacao();
-  return r.ok ? <small>Atualizado em {dataBr(r.dados.dataUsada)}</small> : null;
-}
-
-async function Contagem() {
-  const { r, sistemas } = await situacao();
-  if (!r.ok) return <p className="fx-situacao__erro">{r.mensagem}</p>;
-  return <ContagemFaixas contar={(codigo) => sistemas.filter((s) => s.estagio.codigo === codigo).length} />;
-}
-
-/** Quantos sistemas há em cada faixa; sem `contar`, os números em esqueleto. */
-function ContagemFaixas({ contar }: { contar?: (codigo: string) => number }) {
-  return (
-    <div className="fx-contagem">
-      {ESTAGIOS.map((e) => (
-        <div key={e.codigo} className={`fx-contagem__item fx-cor--${e.classe}`}>
-          <strong>{contar ? contar(e.codigo) : <Esqueleto className="esq-valor esq-centro" largura="1.5rem" />}</strong>
-          <span>{e.nome}</span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
 /**
- * Página inicial — "Acompanhamento das FAIXAS de atuação": chamada do painel e
- * situação dos sistemas. Texto e escala aparecem na hora; o mapa surge sem cores
- * e é pintado, e a contagem preenchida, quando a SABESP responder.
+ * Página inicial — "Acompanhamento das FAIXAS de atuação": chamada do painel,
+ * mapa dos sistemas e atalhos para o Boletim Integrado e a Nota Informativa.
+ * O mapa surge sem cores e é pintado quando a SABESP responder.
  */
 export function FaixasAtuacao() {
   return (
@@ -131,24 +117,23 @@ export function FaixasAtuacao() {
 
       <div className="fx-situacao">
         <div className="fx-situacao__cabeca">
-          <i className="bi bi-calendar3" />
-          <h4>Situação dos Sistemas</h4>
-          <Suspense fallback={null}>
-            <DataSituacao />
-          </Suspense>
+          <i className="bi bi-journal-text" />
+          <h4>Publicações</h4>
         </div>
-        <Suspense fallback={<ContagemFaixas />}>
-          <Contagem />
-        </Suspense>
-        <h5>Faixas de atuação dos sistemas (volume útil)</h5>
-        <ol className="fx-escala">
-          {ESTAGIOS.map((e) => (
-            <li key={e.codigo} className={`fx-cor--${e.classe}`}>
-              <strong>{e.nome}</strong>
-              <span>{FAIXAS[e.codigo]}</span>
+        <ul className="fx-links">
+          {PUBLICACOES.map((p) => (
+            <li key={p.href}>
+              <Link href={p.href} className="fx-link">
+                <i className={`bi ${p.icone} fx-link__icone`} />
+                <span>
+                  <strong>{p.titulo}</strong>
+                  <small>{p.texto}</small>
+                </span>
+                <i className="bi bi-arrow-right fx-link__seta" />
+              </Link>
             </li>
           ))}
-        </ol>
+        </ul>
       </div>
     </div>
   );

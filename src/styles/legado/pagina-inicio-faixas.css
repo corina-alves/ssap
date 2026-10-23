@@ -39,31 +39,22 @@
 .fx-mapa__area { fill: var(--fx-cor); fill-opacity: .88; stroke: #062a5c; stroke-width: 1.2; stroke-linejoin: round; }
 .fx-mapa__rotulo { fill: #fff; font-size: 15px; font-weight: 700; paint-order: stroke; stroke: #062a5c; stroke-width: 4px; stroke-linejoin: round; }
 
-/* Situação dos sistemas. */
+/* Publicações (Boletim Integrado e Nota Informativa). */
 .fx-situacao { padding: 20px 22px 22px; border-radius: 18px; background: rgba(6, 34, 78, .78); border: 1px solid rgba(255, 255, 255, .14); }
 .fx-situacao__cabeca { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
 .fx-situacao__cabeca > i { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 10px; background: rgba(255, 255, 255, .1); }
 .fx-situacao__cabeca h4 { margin: 0; font-size: 1.1rem; font-weight: 800; color: #fff; }
-.fx-situacao__cabeca small { margin-left: auto; color: #4fc3f7; font-size: .8rem; white-space: nowrap; }
-.fx-situacao__erro { margin: 0 0 14px; color: rgba(255, 255, 255, .85); font-size: .9rem; }
-.fx-situacao h5 { margin: 18px 0 12px; font-size: .98rem; font-weight: 700; color: #fff; }
 
-.fx-contagem { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
-.fx-contagem__item { padding: 10px 4px; border-radius: 12px; text-align: center; background: var(--fx-suave); color: var(--fx-tinta); }
-.fx-contagem__item strong { display: block; font-size: 1.7rem; font-weight: 800; line-height: 1.1; }
-.fx-contagem__item span { display: block; font-size: .86rem; font-weight: 700; }
-
-.fx-escala { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); list-style: none; margin: 0; padding: 0; }
-.fx-escala li { position: relative; padding-top: 30px; text-align: center; }
-.fx-escala li::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 14px; background: var(--fx-cor); }
-.fx-escala li:first-child::before { border-radius: 999px 0 0 999px; }
-.fx-escala li:last-child::before { border-radius: 0 999px 999px 0; }
-.fx-escala li::after {
-    content: ''; position: absolute; top: 1px; left: 50%; width: 12px; height: 12px; margin-left: -6px;
-    border-radius: 50%; background: #062a5c; border: 2px solid #fff;
+.fx-links { display: grid; gap: 12px; list-style: none; margin: 0; padding: 0; }
+.fx-link {
+    display: flex; align-items: center; gap: 14px; padding: 14px 16px; border-radius: 14px;
+    background: rgba(255, 255, 255, .08); border: 1px solid rgba(255, 255, 255, .14); color: #fff; text-decoration: none; transition: .2s ease;
 }
-.fx-escala strong { display: block; color: var(--fx-cor); font-size: .8rem; font-weight: 800; text-transform: uppercase; }
-.fx-escala span { display: block; margin-top: 4px; color: #fff; font-size: .86rem; }
+.fx-link:hover { color: #fff; background: rgba(255, 255, 255, .14); transform: translateY(-2px); }
+.fx-link__icone { flex: none; width: 44px; height: 44px; display: grid; place-items: center; border-radius: 12px; background: linear-gradient(120deg, #12b886, #0ea371); font-size: 1.25rem; }
+.fx-link strong { display: block; font-size: 1rem; font-weight: 800; }
+.fx-link small { display: block; margin-top: 2px; color: rgba(255, 255, 255, .78); font-size: .84rem; }
+.fx-link__seta { margin-left: auto; color: #4fc3f7; font-size: 1.1rem; }
 
 @media (max-width: 1199.98px) {
     .fx-banner { grid-template-columns: minmax(0, 1fr) minmax(0, .8fr); }
@@ -72,10 +63,6 @@
 @media (max-width: 767.98px) {
     .fx-banner { grid-template-columns: 1fr; padding: 24px 20px; }
     .fx-mapa { max-width: 360px; margin: 0 auto; }
-    .fx-contagem__item span, .fx-escala strong { font-size: .68rem; }
-    .fx-escala span { font-size: .72rem; }
-    .fx-situacao__cabeca { flex-wrap: wrap; }
-    .fx-situacao__cabeca small { margin-left: 46px; }
 }
 
 /* Destaques e serviços. */
@@ -102,6 +89,3 @@
 .dq-card p { margin: 0 0 18px; max-width: 30ch; color: #4a5d73; font-size: .9rem; line-height: 1.5; }
 .dq-card__acao { margin-top: auto; display: flex; align-items: center; justify-content: space-between; gap: 12px; color: var(--dq-cor); font-size: .95rem; font-weight: 800; }
 .dq-card__acao i { width: 42px; height: 42px; display: grid; place-items: center; border-radius: 50%; background: var(--dq-suave); font-size: 1.1rem; }
-
-/* No fundo escuro o roxo da Emergência some: o rótulo usa um tom mais claro. */
-.fx-escala .fx-cor--emergencia strong { color: #e39ae3; }
