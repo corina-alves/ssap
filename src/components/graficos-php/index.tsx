@@ -31,7 +31,9 @@ function carregarLibs(): Promise<Libs> {
 // ------------------------------------------- padrão SSSP (sssp-charts.js)
 
 /** Fonte/cor/legenda que o sssp-charts.js põe em Chart.defaults nas páginas internas (não na Home). */
-const FONTE = "'Inter','Segoe UI',system-ui,-apple-system,sans-serif";
+const FONTE = 'Montserrat, Verdana, sans-serif';
+/** Fonte do site (Montserrat do next/font, com nome gerado): lida da página, para o canvas usar a mesma. */
+const fonteSite = () => (typeof document === 'undefined' ? FONTE : getComputedStyle(document.body.querySelector('.public-page, .acesso-app') ?? document.body).fontFamily || FONTE);
 const COR_TEXTO = '#3b4a59';
 
 type Obj = Record<string, unknown>;
@@ -53,13 +55,13 @@ function mesclar(a: Obj, b: Obj): Obj {
  * gráfico para não vazar para os gráficos da Home, que usam o padrão do Chart.js.
  */
 function padraoSssp(cfg: ChartConfiguration): ChartConfiguration {
-  const fonte = { family: FONTE, size: 13 };
+  const fonte = { family: fonteSite(), size: 13 };
   const base: Obj = {
     color: COR_TEXTO,
     plugins: {
       legend: { labels: { usePointStyle: true, boxWidth: 10, color: COR_TEXTO, font: { ...fonte } } },
       tooltip: { titleFont: { ...fonte }, bodyFont: { ...fonte }, footerFont: { ...fonte } },
-      datalabels: { color: COR_TEXTO, font: { family: FONTE } },
+      datalabels: { color: COR_TEXTO, font: { family: fonte.family } },
     },
   };
   const tipo = cfg.type as string | undefined;
@@ -488,7 +490,7 @@ export function GraficoTransposicaoGauge({ acumulado, vigente, anterior }: { acu
       ctx.lineTo(arco.x + rExt * sin, arco.y - rExt * cos);
       ctx.stroke();
       ctx.fillStyle = '#e0770e';
-      ctx.font = '700 12px Inter, Arial, sans-serif';
+      ctx.font = `700 12px ${fonteSite()}`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'bottom';
       ctx.fillText(umaCasa(anterior).replace(',0', ''), arco.x + (rExt + 11) * sin, arco.y - (rExt + 11) * cos);

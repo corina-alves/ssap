@@ -1,10 +1,10 @@
 
 :root{
-    --azul:#0868b7;
-    --azul-escuro:#082c4c;
-    --azul-claro:#45b8df;
-    --verde:#49a942;
-    --verde-escuro:#2f7d32;
+    --azul:var(--marca-azul-escuro);
+    --azul-escuro:var(--marca-profundo);
+    --azul-claro:var(--marca-azul);
+    --verde:var(--marca-verde);
+    --verde-escuro:#03924a;
     --preto:#111820;
     --laranja:#f39b38;
     --roxo:#7759d9;
@@ -24,7 +24,7 @@ html{scroll-behavior:smooth}
 body{
     margin:0;
     min-height:100vh;
-    font-family:'Inter',sans-serif;
+    font-family:var(--fonte);
     background:var(--fundo);
     color:var(--texto);
 }
@@ -171,7 +171,7 @@ a{text-decoration:none}
     max-width:680px;
     margin:23px 0 0;
     color:rgba(255,255,255,.91);
-    font-size:1.03rem;
+    font-size: var(--fonte-destaque);
     line-height:1.72;
 }
 
@@ -217,7 +217,7 @@ a{text-decoration:none}
 .section-head p{
     margin:4px 0 0;
     color:var(--muted);
-    font-size:.79rem;
+    font-size: var(--fonte-legenda);
 }
 
 .section-link{
@@ -287,7 +287,7 @@ a{text-decoration:none}
     margin:0;
     max-width:175px;
     color:var(--muted);
-    font-size:.7rem;
+    font-size: var(--fonte-legenda);
     line-height:1.5;
 }
 
@@ -304,12 +304,14 @@ a{text-decoration:none}
     color:var(--card-color);
 }
 
-.card-blue{--card-color:#0d6ad2;--card-soft:#e8f2ff}
-.card-cyan{--card-color:#079fc2;--card-soft:#e2f8fc}
-.card-green{--card-color:#49a942;--card-soft:#edf8ea}
-.card-orange{--card-color:#e8851b;--card-soft:#fff2df}
-.card-purple{--card-color:#7759d9;--card-soft:#f0ecff}
-.card-red{--card-color:#de5562;--card-soft:#ffebed}
+.card-blue{--card-color:var(--marca-azul);--card-soft:#dde7ff}
+.card-cyan{--card-color:var(--marca-azul-escuro);--card-soft:#dbe2f8}
+.card-green{--card-color:var(--marca-verde);--card-soft:#d9f4e4}
+.card-orange{--card-color:#e8851b;--card-soft:#ffe8cc}
+.card-purple{--card-color:#7759d9;--card-soft:#e7e1ff}
+.card-red{--card-color:#de5562;--card-soft:#ffdfe2}
+/* Realce: faixa na cor do cartão e leve tom dela no fundo (cores do kit da marca em globals.css). */
+.quick-card{border-top:3px solid var(--card-color);background:linear-gradient(165deg,var(--card-soft) 0%,#fff 58%)}
 
 /* TRIO: PREVISÃO, GRÁFICO E NORMAS */
 .dashboard-card{
@@ -391,7 +393,7 @@ a{text-decoration:none}
 #boxPrevisaoMunicipio > p{
     margin:0;
     color:var(--muted)!important;
-    font-size:.7rem;
+    font-size: var(--fonte-legenda);
 }
 
 .valor-chuva{
@@ -657,7 +659,7 @@ a{text-decoration:none}
     max-width:310px;
     margin:0 0 17px;
     color:rgba(255,255,255,.87);
-    font-size:.72rem;
+    font-size: var(--fonte-legenda);
     line-height:1.55;
 }
 
@@ -721,7 +723,7 @@ a{text-decoration:none}
 .highlight-card p{
     margin:0;
     color:rgba(255,255,255,.87);
-    font-size:.7rem;
+    font-size: var(--fonte-legenda);
     line-height:1.5;
 }
 
@@ -909,7 +911,7 @@ footer{
 #boxPrevisaoMunicipioHero h2,
 #boxPrevisaoMetropolitana h2{
     margin:15px 0 2px;
-    color:#063669;
+    color:#002f9e;
     font-size:1.23rem;
     font-weight:800;
 }
@@ -918,7 +920,7 @@ footer{
 #boxPrevisaoMetropolitana > p{
     margin:0;
     color:#687b8e!important;
-    font-size:.7rem;
+    font-size: var(--fonte-legenda);
 }
 
 #boxPrevisaoMunicipioHero .valor-chuva,
@@ -927,7 +929,7 @@ footer{
     padding:14px;
     border-radius:14px;
     background:linear-gradient(135deg,#eaf5ff,#f2fbff);
-    color:#075bb5;
+    color:var(--marca-azul-escuro);
     font-size:1.75rem;
     font-weight:800;
     text-align:center;
@@ -967,7 +969,7 @@ footer{
 
 #boxPrevisaoMunicipioHero .temp-box strong,
 #boxPrevisaoMetropolitana .temp-box strong{
-    color:#063669;
+    color:#002f9e;
     font-size:.77rem;
 }
 
@@ -997,7 +999,7 @@ footer{
 }
 /* Ajuste 2026-08: previsão principal no hero */
 .hero-weather-card{width:min(100%,390px);min-height:330px;padding:19px;border-radius:22px;background:linear-gradient(180deg,rgba(228,239,249,.80),rgba(211,228,242,.74));box-shadow:0 18px 48px rgba(0,27,58,.18);border:1px solid rgba(255,255,255,.55);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
-.hero-weather-header{margin-bottom:14px;padding-bottom:13px}.hero-weather-header h6{font-size:.68rem;margin-bottom:2px}.hero-weather-header strong{font-size:.95rem}.hero-weather-principal{display:inline-flex;margin-left:5px;padding:2px 7px;border-radius:999px;background:#e8f4ff;color:#075bb5;font-size:.56rem;text-transform:uppercase;letter-spacing:.04em;vertical-align:middle}.hero-weather-card .form-label{font-size:.69rem;font-weight:700;color:#405c74}.hero-weather-card .form-select{height:42px;font-size:.82rem;border-color:#d6e4ef;background-color:#fff}.hero-weather-card #boxPrevisaoMunicipioHero h2{font-size:1.35rem}.hero-weather-card #boxPrevisaoMunicipioHero .valor-chuva{font-size:2rem!important;padding:15px!important}.hero-weather-card #boxPrevisaoMunicipioHero .temp-box{background:#f9fcff}
+.hero-weather-header{margin-bottom:14px;padding-bottom:13px}.hero-weather-header h6{font-size:.68rem;margin-bottom:2px}.hero-weather-header strong{font-size:.95rem}.hero-weather-principal{display:inline-flex;margin-left:5px;padding:2px 7px;border-radius:999px;background:#e8f4ff;color:var(--marca-azul-escuro);font-size:.56rem;text-transform:uppercase;letter-spacing:.04em;vertical-align:middle}.hero-weather-card .form-label{font-size:.69rem;font-weight:700;color:#405c74}.hero-weather-card .form-select{height:42px;font-size:.82rem;border-color:#d6e4ef;background-color:#fff}.hero-weather-card #boxPrevisaoMunicipioHero h2{font-size:1.35rem}.hero-weather-card #boxPrevisaoMunicipioHero .valor-chuva{font-size:2rem!important;padding:15px!important}.hero-weather-card #boxPrevisaoMunicipioHero .temp-box{background:#f9fcff}
 
 /* Identidade SP-ÁGUAS · azul + verde institucional */
 .topbar{border-top:4px solid transparent;border-image:linear-gradient(90deg,var(--verde),var(--azul-claro),var(--azul)) 1}.section-head h2{position:relative;padding-left:13px}.section-head h2:before{content:"";position:absolute;left:0;top:2px;bottom:2px;width:4px;border-radius:5px;background:linear-gradient(180deg,var(--verde),var(--azul-claro))}.hero-actions .btn-primary{background:var(--verde);border-color:var(--verde);color:#fff}.hero-actions .btn-primary:hover{background:var(--verde-escuro);border-color:var(--verde-escuro)}.dashboard-card,.quick-card{border-color:#d8e7e9}.quick-card:hover{box-shadow:0 21px 45px rgba(8,44,76,.14)}

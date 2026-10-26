@@ -9,7 +9,7 @@
   --mh-card-bg: #fff;
   --mh-card-border: #e6edf4;
   --mh-card-shadow: 0 4px 14px rgba(15, 23, 42, .05);
-  --mh-accent: #0b4f8a;
+  --mh-accent: var(--marca-azul-escuro);
   --mh-muted: #5a6b7b;
   --mh-soft: #f4f8fc;
 
@@ -44,7 +44,7 @@
   box-shadow: 0 10px 24px rgba(21, 96, 232, .12);
 }
 .monitor-card img { width: 100%; height: 220px; object-fit: cover; border-radius: 14px; margin-bottom: 18px; }
-.monitor-card h3, .monitor-card h4 { color: #17344e; }
+.monitor-card h3, .monitor-card h4 { color: var(--marca-profundo); }
 
 .icon-box { font-size: 2.6rem; margin-bottom: 12px; }
 
@@ -88,7 +88,7 @@
 .status-card p, .status-card small { color: #3c4667 !important; }
 
 .timeline-item { border-left: 3px solid var(--mh-blue); padding-left: 18px; margin-bottom: 24px; }
-.timeline-item h5 { color: #17344e; }
+.timeline-item h5 { color: var(--marca-profundo); }
 
 /* ===================================================== seção de mapas === */
 .mapa-section {
@@ -121,7 +121,7 @@
 .mapa-tag.rio { background: #1d4ed8; }
 .mapa-tag.sub { background: #15803d; }
 .mapa-body { padding: 22px; }
-.mapa-body h4 { font-weight: 800; margin-bottom: 10px; color: #17344e; }
+.mapa-body h4 { font-weight: 800; margin-bottom: 10px; color: var(--marca-profundo); }
 .mapa-body p { color: var(--mh-muted); text-align: justify; }
 .mapa-acoes { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; }
 .btn-mapa { border-radius: 999px; padding: 9px 14px; font-weight: 700; }
@@ -130,7 +130,7 @@
   border-radius: 16px; padding: 18px; height: 100%; color: inherit;
 }
 .mapa-indicador i { font-size: 1.7rem; }
-.mapa-indicador h5 { margin-top: 10px; margin-bottom: 4px; color: #17344e; }
+.mapa-indicador h5 { margin-top: 10px; margin-bottom: 4px; color: var(--marca-profundo); }
 .mapa-indicador small { color: var(--mh-muted); }
 .modal-mapa-img { width: 100%; border-radius: 14px; }
 @media (max-width: 768px) {
@@ -166,7 +166,7 @@
 /* cor apenas no texto e numa borda suave à esquerda, sem preenchimento */
 .entidade-saisp   { color: #dc3545; border-left: 3px solid #dc3545; }
 .entidade-ana     { color: #0d6efd; border-left: 3px solid #0d6efd; }
-.entidade-ciiagro { color: #198754; border-left: 3px solid #198754; }
+.entidade-ciiagro { color: var(--marca-verde); border-left: 3px solid var(--marca-verde); }
 .entidade-cemaden { color: #d98207; border-left: 3px solid #f59e0b; }
 .entidade-inmet   { color: #0891b2; border-left: 3px solid #06b6d4; }
 .entidade-inpe    { color: #495057; border-left: 3px solid #495057; }

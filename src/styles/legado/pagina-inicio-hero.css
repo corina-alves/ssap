@@ -2,7 +2,7 @@
 .public-page .hero {
     min-height: 520px; padding: 56px 0;
     background-image:
-        linear-gradient(90deg, #04213f 0%, rgba(5, 40, 78, .94) 22%, rgba(6, 52, 98, .55) 42%, rgba(6, 52, 98, 0) 62%),
+        linear-gradient(90deg, var(--marca-profundo) 0%, rgba(5, 40, 78, .94) 22%, rgba(6, 52, 98, .55) 42%, rgba(6, 52, 98, 0) 62%),
         url('/legado/img/hero-barragem.jpg');
     background-size: cover; background-position: center;
 }
@@ -15,7 +15,7 @@
 }
 .public-page .hero h1 { margin: 0 0 22px; color: #fff; font-size: clamp(2.4rem, 5.2vw, 4.4rem); font-weight: 800; line-height: 1.05; letter-spacing: -.03em; }
 .public-page .hero h1 span { display: block; color: #5ecbf5; }
-.public-page .hero .hero-content > p { max-width: 640px; margin: 0 0 22px; color: rgba(255, 255, 255, .94); font-size: 1.12rem; line-height: 1.55; }
+.public-page .hero .hero-content > p { max-width: 640px; margin: 0 0 22px; color: rgba(255, 255, 255, .94); font-size: var(--fonte-destaque); line-height: 1.55; }
 
 .hp-estado { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 30px; margin-bottom: 26px; font-size: .98rem; }
 .hp-estado strong { display: inline-flex; align-items: center; gap: 12px; color: #fff; font-weight: 700; }
@@ -29,7 +29,7 @@
     display: inline-flex; align-items: center; gap: 8px; padding: 9px 20px; border-radius: 999px;
     font-size: .92rem; font-weight: 700; color: #fff;
 }
-.public-page .hero .hero-actions .btn-primary { background: #12b356; border-color: #12b356; box-shadow: 0 10px 24px rgba(18, 179, 86, .35); }
+.public-page .hero .hero-actions .btn-primary { background: var(--marca-verde); border-color: var(--marca-verde); box-shadow: 0 10px 24px rgba(18, 179, 86, .35); }
 .public-page .hero .hero-actions .btn-primary:hover { background: #0e9a49; border-color: #0e9a49; }
 .public-page .hero .hero-actions .btn-outline-light { background: rgba(4, 33, 63, .55); border: 1.5px solid rgba(255, 255, 255, .85); }
 .public-page .hero .hero-actions .btn-outline-light:hover { background: rgba(255, 255, 255, .16); color: #fff; }
@@ -42,17 +42,17 @@
 }
 .public-page .hero .hero-weather-header { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; padding-bottom: 16px; border-bottom: 1px solid #dfe8f0; }
 .public-page .hero .hero-weather-icon { flex: none; width: 34px; height: 34px; display: grid; place-items: center; border-radius: 9px; background: #1373e6; color: #fff; font-size: 1rem; }
-.public-page .hero .hero-weather-header h2 { margin: 0; color: #0d2b52; font-size: 1.12rem; font-weight: 800; }
+.public-page .hero .hero-weather-header h2 { margin: 0; color: var(--marca-profundo); font-size: 1.12rem; font-weight: 800; }
 .hp-data { margin-left: auto; display: inline-flex; align-items: center; gap: 8px; color: #5b6f85; font-size: .95rem; white-space: nowrap; }
 .public-page .hero .hero-weather-card .form-label { margin-bottom: 8px; color: #5b6f85; font-size: .86rem; font-weight: 500; }
-.public-page .hero .hero-weather-card .form-select { height: 50px; border-radius: 12px; border-color: #e1e9f1; background-color: #fff; font-size: 1rem; color: #0d2b52; }
+.public-page .hero .hero-weather-card .form-select { height: 50px; border-radius: 12px; border-color: #e1e9f1; background-color: #fff; font-size: 1rem; color: var(--marca-profundo); }
 #boxPrevisaoMunicipioHero { margin-top: 18px; padding-top: 16px; border-top: 1px solid #dfe8f0; }
-.public-page .hero #boxPrevisaoMunicipioHero h2 { margin: 0 0 16px; color: #0d2b52; font-size: 1.3rem; font-weight: 800; }
+.public-page .hero #boxPrevisaoMunicipioHero h2 { margin: 0 0 16px; color: var(--marca-profundo); font-size: 1.3rem; font-weight: 800; }
 
 .hp-previsao { display: grid; grid-template-columns: 1.5fr 1fr 1fr; }
 .hp-previsao > div { padding: 0 14px; text-align: center; }
 .hp-previsao > div + div { border-left: 1px solid #dfe8f0; }
-.hp-previsao strong { display: inline-flex; align-items: center; gap: 10px; color: #0d2b52; font-size: 1.15rem; font-weight: 800; white-space: nowrap; }
+.hp-previsao strong { display: inline-flex; align-items: center; gap: 10px; color: var(--marca-profundo); font-size: 1.15rem; font-weight: 800; white-space: nowrap; }
 .hp-previsao small { display: block; margin-top: 8px; color: #6b7f94; font-size: .84rem; line-height: 1.4; }
 .hp-previsao i { font-size: 1.5rem; }
 .hp-previsao .bi-sun-fill { color: #f59e0b; }

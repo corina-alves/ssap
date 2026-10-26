@@ -76,7 +76,7 @@
 
 /* Texto da resolução. */
 .res-texto .sssp-section-card__body { padding: 34px clamp(18px, 4vw, 48px) 40px; }
-.res-texto p { max-width: 74ch; margin: 0 0 .9rem; color: var(--sp-ink); font-size: 1rem; line-height: 1.75; text-align: justify; hyphens: auto; }
+.res-texto p { max-width: 74ch; margin: 0 0 .9rem; color: var(--sp-ink); font-size: var(--fonte-texto); line-height: 1.75; text-align: justify; hyphens: auto; }
 .res-texto section + section { margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--sp-border); }
 .res-resolvem {
     margin: 2rem 0 1.5rem; padding-bottom: .6rem; border-bottom: 2px solid var(--sp-blue);
@@ -99,7 +99,7 @@
     display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px;
     margin-top: 2.5rem; padding-top: 2rem; border-top: 1px solid var(--sp-border); text-align: center;
 }
-.res-texto .res-assinaturas p { max-width: none; margin: 0; color: var(--sp-gray); font-size: .9rem; text-align: center; }
+.res-texto .res-assinaturas p { max-width: none; margin: 0; color: var(--sp-gray); font-size: var(--fonte-texto); text-align: center; }
 .res-assinaturas p:only-child { grid-column: 1 / -1; }
 .res-assinaturas strong { display: block; color: var(--sp-ink); font-size: 1rem; text-transform: uppercase; letter-spacing: .03em; }
 @media (max-width: 575.98px) { .res-assinaturas { grid-template-columns: 1fr; } }

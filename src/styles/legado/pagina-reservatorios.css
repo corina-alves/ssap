@@ -97,7 +97,7 @@
 .rsv-transp-gauge { position: relative; max-width: 280px; height: 160px; margin: 0 auto; }
 .rsv-transp-gauge-num {
   position: absolute; left: 0; right: 0; bottom: 4px; text-align: center;
-  font-size: 1.7rem; font-weight: 800; color: #0b4f8a; line-height: 1;
+  font-size: 1.7rem; font-weight: 800; color: var(--marca-azul-escuro); line-height: 1;
 }
 .rsv-transp-situacao { font-size: .85rem; }
 .rsv-transp-situacao.is-ok {

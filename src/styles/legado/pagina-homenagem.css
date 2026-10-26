@@ -1,0 +1,108 @@
+/* Homenagem a Alfredo Pisani (app/(site)/institucional/alfredo-pisani). */
+
+/* Cores do kit da marca SP-Águas (globals.css). */
+.hm-hero, .hm-main, .hm-final { --hm-verde: var(--marca-verde); --hm-azul: var(--marca-azul-escuro); --hm-azul-claro: var(--marca-azul); }
+
+.hm-hero {
+    position: relative; padding: 34px 0 56px; color: #fff;
+    background:
+        /* mesmo fundo da faixa de abertura da home (pagina-inicio-hero.css) */
+        /* à direita, em vez de transparente como na home, um azul mais leve sobre a foto */
+        linear-gradient(90deg, var(--marca-profundo) 0%, rgba(5, 40, 78, .94) 22%, rgba(6, 52, 98, .7) 42%, rgba(11, 79, 138, .55) 62%, rgba(11, 79, 138, .5) 100%),
+        url('/legado/img/hero-barragem.jpg') center / cover no-repeat,
+        var(--marca-profundo);
+}
+.hm-hero::before { content: ''; position: absolute; inset: 0; background: radial-gradient(circle at 0% 100%, rgba(20, 169, 209, .22), transparent 32%); }
+.hm-hero > .container { position: relative; }
+.hm-hero__grade { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, .8fr); gap: 40px; align-items: center; }
+.hm-hero__kicker { font-size: .8rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: rgba(255, 255, 255, .8); }
+.hm-hero h1 { margin: 10px 0 8px; font-size: clamp(2.4rem, 5vw, 3.6rem); font-weight: 800; letter-spacing: -.03em; color: #5ecbf5; /* mesmo azul do nome na home */ }
+.hm-hero__lema { position: relative; margin: 0 0 22px; padding-bottom: 18px; max-width: 30ch; font-size: clamp(1.15rem, 2vw, 1.45rem); line-height: 1.35; color: #fff; }
+.hm-hero__lema::after { content: ''; position: absolute; left: 0; bottom: 0; width: 56px; height: 4px; border-radius: 4px; background: var(--hm-verde); }
+.hm-hero p { max-width: 54ch; color: rgba(255, 255, 255, .9); font-size: var(--fonte-destaque); line-height: 1.65; }
+.hm-hero__nota { display: inline-flex; align-items: center; gap: 10px; margin: 8px 0 0; font-weight: 600; }
+.hm-hero__nota i { color: var(--hm-verde); }
+
+.hm-hero__retrato { justify-self: end; width: 100%; max-width: 520px; margin: 0; }
+.hm-hero__imagem { position: relative; aspect-ratio: 4 / 3; border-radius: 22px; overflow: hidden; border: 4px solid rgba(255, 255, 255, .9); box-shadow: 0 18px 40px rgba(0, 0, 0, .3); }
+.hm-hero__imagem img { object-fit: cover; }
+.hm-hero__retrato figcaption { margin-top: 10px; color: rgba(255, 255, 255, .8); font-size: .86rem; font-style: italic; }
+.hm-hero__cartao {
+    justify-self: end; display: flex; flex-direction: column; align-items: center; gap: 4px; width: 100%; max-width: 340px;
+    padding: 34px 28px; border-radius: 22px; text-align: center;
+    background: rgba(0, 31, 107, .7); border: 1px solid rgba(255, 255, 255, .18); backdrop-filter: blur(4px);
+}
+.hm-hero__cartao i { font-size: 2.6rem; color: var(--hm-verde); margin-bottom: 6px; }
+.hm-hero__cartao strong { font-size: 1.05rem; font-weight: 700; color: rgba(255, 255, 255, .85); }
+.hm-hero__cartao span { font-size: 1.6rem; font-weight: 800; }
+.hm-hero__cartao small { margin-top: 6px; font-size: .8rem; letter-spacing: .1em; text-transform: uppercase; color: rgba(255, 255, 255, .7); }
+
+.hm-main { color: var(--marca-profundo); }
+.hm-titulo { margin: 0 0 14px; font-size: 1.6rem; font-weight: 800; color: var(--hm-azul); }
+.hm-sub { margin: -8px 0 22px; color: var(--hm-azul-claro); }
+.hm-secao { margin-top: 44px; }
+
+.hm-duas { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 36px; align-items: start; }
+.hm-duas p { line-height: 1.7; }
+.hm-legado { padding: 24px 26px; border-radius: 18px; background: #eef3ff; border: 1px solid #d3e0ff; border-top: 4px solid var(--hm-verde); }
+.hm-legado h2 { display: flex; align-items: center; gap: 12px; margin: 0 0 14px; font-size: 1.2rem; font-weight: 800; color: var(--hm-azul); }
+.hm-legado h2 i { font-size: 1.6rem; color: var(--hm-azul-claro); }
+.hm-legado__link { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; color: var(--hm-azul-claro); text-decoration: none; }
+.hm-legado__link:hover { text-decoration: underline; }
+
+/* Linha do tempo: uma faixa com um ponto por marco. */
+.hm-linha { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 24px; list-style: none; margin: 0; padding: 0; }
+.hm-linha li { position: relative; padding-top: 28px; }
+.hm-linha li::before { content: ''; position: absolute; top: 6px; left: 0; right: -24px; height: 2px; background: var(--hm-azul-claro); }
+.hm-linha li:last-child::before { right: 0; }
+.hm-linha li::after { content: ''; position: absolute; top: 0; left: 0; width: 14px; height: 14px; border-radius: 50%; background: var(--hm-azul-claro); border: 3px solid #d3e0ff; }
+.hm-linha__cabeca { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; color: var(--hm-azul); }
+.hm-linha__cabeca i { font-size: 1.4rem; }
+.hm-linha__cabeca strong { font-size: 1.1rem; font-weight: 800; }
+.hm-linha h3 { margin: 0 0 6px; font-size: 1rem; font-weight: 800; color: var(--marca-profundo); }
+.hm-linha p { margin: 0; color: #4a5d73; font-size: var(--fonte-texto); line-height: 1.55; }
+
+.hm-fotos { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+.hm-fotos figure { margin: 0; }
+.hm-fotos__imagem { position: relative; aspect-ratio: 4 / 3; border-radius: 12px; overflow: hidden; background: #dbe3ec; }
+.hm-fotos__imagem img { object-fit: cover; }
+.hm-fotos figcaption { margin-top: 8px; color: var(--hm-azul); font-size: .86rem; }
+
+.hm-depoimentos { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+.hm-depoimentos blockquote { margin: 0; padding: 22px 24px; border-radius: 16px; background: #eef3ff; }
+.hm-depoimentos p { font-style: italic; line-height: 1.6; }
+.hm-depoimentos footer { color: var(--hm-azul); font-weight: 600; font-size: .88rem; }
+
+.hm-texto p { max-width: 80ch; line-height: 1.7; }
+
+.hm-final { padding: 44px 0; color: #fff; background: linear-gradient(120deg, #001f6b, var(--hm-azul) 55%, var(--hm-azul-claro)); border-top: 6px solid var(--hm-verde); }
+.hm-final__grade { display: grid; grid-template-columns: auto minmax(0, 1.6fr) minmax(0, 1fr); gap: 32px; align-items: start; }
+.hm-final__gota { font-size: 3.6rem; color: var(--hm-verde); }
+.hm-final h2 { margin: 0 0 12px; font-size: 1.5rem; font-weight: 800; color: #fff; }
+.hm-final p { margin: 0 0 12px; color: rgba(255, 255, 255, .88); line-height: 1.6; }
+.hm-final strong { color: #fff; }
+.hm-final__frase { align-self: center; margin: 0; padding-left: 28px; border-left: 1px solid rgba(255, 255, 255, .3); }
+.hm-final__frase > i { font-size: 2rem; color: var(--hm-verde); }
+.hm-final__frase p { margin: 0; font-size: var(--fonte-destaque); font-style: italic; color: #fff; }
+.hm-final__frase footer { margin-top: 16px; padding-top: 12px; border-top: 2px solid var(--hm-verde); width: fit-content; color: rgba(255, 255, 255, .8); font-size: .86rem; }
+
+@media (max-width: 991.98px) {
+    .hm-hero__grade, .hm-duas { grid-template-columns: 1fr; }
+    .hm-hero__retrato, .hm-hero__cartao { justify-self: start; }
+    .hm-fotos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .hm-depoimentos { grid-template-columns: 1fr; }
+    .hm-final__grade { grid-template-columns: auto minmax(0, 1fr); }
+    .hm-final__frase { grid-column: 1 / -1; }
+}
+@media (max-width: 767.98px) {
+    .hm-linha { grid-auto-flow: row; gap: 22px; padding-left: 26px; }
+    .hm-linha li { padding-top: 0; }
+    .hm-linha li::before { top: 14px; bottom: -22px; left: -20px; right: auto; width: 2px; height: auto; }
+    .hm-linha li:last-child::before { display: none; }
+    .hm-linha li::after { top: 4px; left: -26px; }
+    .hm-final__grade { grid-template-columns: 1fr; }
+    .hm-final__frase { padding-left: 18px; }
+}
+@media (max-width: 575.98px) {
+    .hm-fotos { grid-template-columns: 1fr; }
+}

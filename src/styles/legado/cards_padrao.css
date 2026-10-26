@@ -6,11 +6,11 @@
 :root{
     --ss-card-bg:#f5f9fd;
     --ss-card-border:#bfd3e3;
-    --ss-card-text:#17344e;
+    --ss-card-text:var(--marca-profundo);
     --ss-card-muted:#526b80;
     --ss-card-shadow:0 12px 30px rgba(18,58,91,.13);
     --ss-card-shadow-hover:0 18px 38px rgba(18,58,91,.20);
-    --ss-blue:#075bb5; --ss-blue-soft:#dcecff;
+    --ss-blue:var(--marca-azul-escuro); --ss-blue-soft:#dcecff;
     --ss-cyan:#078daa; --ss-cyan-soft:#d5f2f8;
     --ss-green:#087f68; --ss-green-soft:#d9f1ea;
     --ss-orange:#d8750d; --ss-orange-soft:#ffe9cb;

@@ -39,7 +39,7 @@ const ACESSO_RAPIDO = [
 const DESTAQUES = [
   { href: 'https://apps.spaguas.sp.gov.br/sibh/chuva_agora/', img: 'chuvaagora.png', cor: 'azul', icone: 'bi-cloud-drizzle', titulo: 'Chuva Agora', texto: 'Monitoramento em tempo real das chuvas registradas no Estado.', acao: 'Acessar mapa', externo: true },
   { href: 'https://hidroapp.spaguas.sp.gov.br/', img: 'hidroapp.png', cor: 'verde', icone: 'bi-bar-chart-line', titulo: 'HidroApp', texto: 'Indicadores de disponibilidade, clima e vulnerabilidade hídrica.', acao: 'Acessar indicadores', externo: true },
-  { href: 'https://www.saisp.br/estaticos/sitenovo/home.html', img: null, cor: 'indigo', icone: 'bi-bullseye', titulo: 'Radar SP Águas', texto: 'Acompanhamento meteorológico e radar de Ponte Nova.', acao: 'Acessar radar', externo: true },
+  { href: 'https://www.saisp.br/estaticos/sitenovo/home.html', img: 'radar_salesopolis.jpg', cor: 'indigo', icone: 'bi-bullseye', titulo: 'Radar SP Águas', texto: 'Acompanhamento meteorológico e radar de Ponte Nova.', acao: 'Acessar radar', externo: true },
   { href: '/protocolo_escassez', img: 'protocolo_escassez.png', cor: 'laranja', icone: 'bi-file-earmark-text', titulo: 'Protocolo de Escassez', texto: 'Consulte o enquadramento e as medidas previstas para cada estágio.', acao: 'Consultar estágios' },
 ];
 

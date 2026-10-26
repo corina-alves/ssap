@@ -22,7 +22,7 @@
 .rs-card h3::after { content: ''; position: absolute; left: 0; bottom: 0; width: 46px; height: 4px; border-radius: 2px; background: var(--rs-cor); }
 
 .rs-card__meio { flex: 1; display: flex; align-items: center; gap: 10px; margin: 20px 0 22px; }
-.rs-card__meio p { flex: 1; margin: 0; color: rgba(255, 255, 255, .9); font-size: .92rem; line-height: 1.55; }
+.rs-card__meio p { flex: 1; margin: 0; color: rgba(255, 255, 255, .9); font-size: var(--fonte-texto); line-height: 1.55; }
 
 /* Mapinha do Estado com a bacia da sala em destaque. */
 .rs-mapa { flex: none; width: 42%; max-width: 170px; height: auto; fill: rgba(140, 170, 215, .32); stroke: rgba(200, 220, 250, .5); stroke-width: .6; stroke-linejoin: round; }

@@ -68,6 +68,13 @@ const GRUPOS: Grupo[] = [
     ],
   },
   {
+    rotulo: 'Institucional',
+    icone: 'bi-bank',
+    cabecalho: 'Institucional',
+    ativos: ['/institucional'],
+    itens: [{ href: '/institucional/alfredo-pisani', rotulo: 'Homenagem a Alfredo Pisani', icone: 'bi-heart' }],
+  },
+  {
     rotulo: 'Outorgas',
     icone: 'bi-droplet',
     cabecalho: 'Outorgas',

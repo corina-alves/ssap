@@ -1,4 +1,18 @@
 :root {
+  /* Fonte do site (Montserrat, do kit da marca; carregada em components/fonte.ts) e escala do texto corrido. */
+  --fonte: var(--font-montserrat, Montserrat), Verdana, sans-serif; /* refeita onde a classe da fonte é aplicada (site.css, ajustes.css) */
+  --fonte-texto: 0.95rem; /* parágrafos */
+  --fonte-destaque: 1.05rem; /* parágrafo de abertura das faixas de topo */
+  --fonte-legenda: 0.8rem; /* legendas e textos curtos de cartões */
+  --bs-body-font-family: var(--fonte);
+
+  /* Kit da marca SP-Águas. */
+  --marca-azul: #0454fc;
+  --marca-azul-escuro: #0039c0;
+  --marca-verde: #04b454;
+  --marca-limao: #b9ff4f;
+  --marca-profundo: #0a1633;
+
   --fundo: #f4f6f9;
   --superficie: #ffffff;
   --texto: #1c2430;
@@ -40,7 +54,7 @@ body {
   margin: 0;
   background: var(--fundo);
   color: var(--texto);
-  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-family: var(--fonte);
   line-height: 1.5;
 }
 

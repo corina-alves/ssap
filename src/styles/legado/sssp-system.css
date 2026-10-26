@@ -7,17 +7,17 @@
 
 :root {
     /* Paleta institucional (fonte única de cores) */
-    --sp-blue:        #0b4f8a;   /* azul institucional principal */
-    --sp-blue-dark:   #062d52;   /* topo de gradientes / hover */
+    --sp-blue:        var(--marca-azul-escuro);   /* azul institucional principal */
+    --sp-blue-dark:   var(--marca-profundo);   /* topo de gradientes / hover */
     --sp-blue-light:  #eaf4fb;   /* fundo suave azul */
     --sp-cyan:        #0d7ea4;
-    --sp-green:       #198754;   /* situação normal */
+    --sp-green:       var(--marca-verde);   /* situação normal */
     --sp-warning:     #f4b400;   /* situação atenção */
     --sp-orange:      #e08600;   /* situação alerta */
     --sp-danger:      #dc3545;   /* situação crítica */
     --sp-danger-dark: #8c1c24;   /* situação emergência */
     --sp-gray:        #6c7f91;
-    --sp-ink:         #12263a;   /* texto principal */
+    --sp-ink:         var(--marca-profundo);   /* texto principal */
     --sp-bg:          #f4f7fb;   /* fundo de página */
     --sp-border:      #e2eaf2;
     --sp-shadow:      0 12px 34px rgba(15, 46, 77, .08);

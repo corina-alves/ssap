@@ -44,8 +44,9 @@
 
 .acesso-app,
 .acesso-auth {
-    /* mesma fonte do site público (Inter, carregada em src/app/acesso/layout.tsx) */
-    font-family: var(--font-inter), Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    /* mesma fonte do site público (globals.css); refeita aqui, onde a --font-montserrat já existe */
+    --fonte: var(--font-montserrat, Montserrat), Verdana, sans-serif;
+    font-family: var(--fonte);
     color: var(--ac-tinta);
 }
 
@@ -62,7 +63,7 @@
 }
 .acesso-conteudo > h1 { font-weight: 800; font-size: 1.5rem; }
 .acesso-conteudo .botao { background: var(--ac-azul); border-radius: 8px; padding: 8px 14px; text-decoration: none; display: inline-block; }
-.acesso-conteudo .botao:hover { background: #073457; color: #fff; }
+.acesso-conteudo .botao:hover { background: var(--marca-profundo); color: #fff; }
 .acesso-conteudo .tabela th { font-size: .8rem; color: var(--ac-cinza); }
 .acesso-conteudo .rolagem,
 .acesso-conteudo .tabela { background: #fff; border-radius: var(--ac-raio); }

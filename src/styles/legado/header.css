@@ -203,19 +203,19 @@ ANIMAÇÃO
    PADRÃO VISUAL GLOBAL · SALA DE SITUAÇÃO ALFREDO PISANI
    ========================================================== */
 :root{
-    --sssp-navy:#071a2c;
+    --sssp-navy:var(--marca-profundo);
     --sssp-navy-2:#0a2944;
-    --sssp-blue:#075bb5;
+    --sssp-blue:var(--marca-azul-escuro);
     --sssp-cyan:#12a8d2;
     --sssp-ice:#eef7fc;
-    --sssp-text:#17344e;
+    --sssp-text:var(--marca-profundo);
     --sssp-muted:#6e8294;
     --sssp-line:#dce7f0;
     --sssp-shadow:0 16px 45px rgba(17,50,78,.09);
 }
 
 html{scroll-behavior:smooth}
-body{background:#f5f8fb;color:var(--sssp-text);font-family:'Inter','Segoe UI',Arial,sans-serif;-webkit-font-smoothing:antialiased}
+body{background:#f5f8fb;color:var(--sssp-text);font-family:var(--fonte);-webkit-font-smoothing:antialiased}
 
 .menu{
     background:linear-gradient(90deg,rgba(5,22,37,.98),rgba(7,36,59,.97));
@@ -251,7 +251,7 @@ body{background:#f5f8fb;color:var(--sssp-text);font-family:'Inter','Segoe UI',Ar
     overflow:hidden;
     min-height:auto!important;
     padding:64px 0 58px!important;
-    background:linear-gradient(135deg,#071a2c 0%,#0a4677 62%,#087ca4 100%)!important;
+    background:linear-gradient(135deg,var(--marca-profundo) 0%,#002f9e 62%,var(--marca-azul) 100%)!important;
     color:#fff!important;
     border-radius:0!important;
     box-shadow:none!important;
@@ -268,7 +268,7 @@ body{background:#f5f8fb;color:var(--sssp-text);font-family:'Inter','Segoe UI',Ar
 }
 .hero-reservatorios .lead,.hero-precipitacao .lead,.hero-vazao .lead,.hero-protocolo .lead,.monitor-hero .lead,.hero-resolucao-ana-daee .lead,
 .hero-reservatorios p,.hero-precipitacao p,.hero-vazao p,.hero-protocolo p,.monitor-hero p,.hero-resolucao-ana-daee p{
-    color:#dcecf7!important;max-width:830px;font-size:1rem!important;line-height:1.7!important;text-align:left!important
+    color:#dcecf7!important;max-width:830px;font-size: var(--fonte-destaque)!important;line-height:1.7!important;text-align:left!important
 }
 .hero-reservatorios .btn,.hero-precipitacao .btn,.hero-vazao .btn,.hero-protocolo .btn,.monitor-hero .btn,.hero-resolucao-ana-daee .btn{
     border-radius:12px!important;font-weight:700!important;padding:11px 16px!important;box-shadow:none!important
@@ -283,7 +283,7 @@ main,.container.py-4{--bs-gutter-x:1.5rem}
 .btn{border-radius:11px;font-weight:650}
 
 /* Resolução / páginas documentais sem hero próprio */
-.sssp-document-hero{position:relative;overflow:hidden;padding:54px 0 46px;background:linear-gradient(135deg,#071a2c 0%,#0a4677 62%,#087ca4 100%);color:#fff}
+.sssp-document-hero{position:relative;overflow:hidden;padding:54px 0 46px;background:linear-gradient(135deg,var(--marca-profundo) 0%,#002f9e 62%,var(--marca-azul) 100%);color:#fff}
 .sssp-document-hero:after{content:"";position:absolute;width:360px;height:360px;border-radius:50%;right:-120px;top:-170px;background:rgba(255,255,255,.07)}
 .sssp-document-hero .container{position:relative;z-index:2}
 .sssp-document-hero .sssp-kicker{display:inline-flex;align-items:center;gap:7px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.10);border-radius:999px;padding:7px 11px;text-transform:uppercase;letter-spacing:.055em;font-size:.7rem;font-weight:800}

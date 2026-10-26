@@ -5,7 +5,16 @@
 
 .public-page {
   color-scheme: light;
-  font-family: var(--font-inter), Inter, Arial, sans-serif;
+  --fonte: var(--font-montserrat, Montserrat), Verdana, sans-serif; /* aqui a --font-montserrat já existe */
+  font-family: var(--fonte);
+  --bs-body-font-family: var(--fonte); /* o :root do Bootstrap vem depois do globals.css */
+  /* links e "primary" do Bootstrap no azul escuro do kit da marca */
+  --bs-primary: var(--marca-azul-escuro);
+  --bs-primary-rgb: 0, 57, 192;
+  --bs-link-color: var(--marca-azul-escuro);
+  --bs-link-color-rgb: 0, 57, 192;
+  --bs-link-hover-color: var(--marca-profundo);
+  --bs-link-hover-color-rgb: 10, 22, 51;
   background: var(--sp-bg);
   color: var(--sp-ink);
   min-height: 100vh;
@@ -13,10 +22,10 @@
   /* tokens dos componentes próprios (globals.css), em versão clara */
   --fundo: #f4f7fb;
   --superficie: #ffffff;
-  --texto: #12263a;
+  --texto: var(--marca-profundo);
   --suave: #66788a;
   --borda: #e2eaf2;
-  --primaria: #0b4f8a;
+  --primaria: var(--marca-azul-escuro);
   --primaria-texto: #ffffff;
   --erro-fundo: #fdecec;
   --erro-texto: #b02a24;
