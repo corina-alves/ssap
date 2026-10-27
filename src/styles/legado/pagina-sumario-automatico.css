@@ -1,0 +1,129 @@
+/* Sumário Executivo Automático — Alto Tietê / Pinheiros (/boletins/automatico/tiete-pinheiros).
+   Cores, tabelas e cartões do sumário tradicional (sumario_executivo_tiete_pinheiros.html),
+   com classes próprias (sat-) e folhas que se ajustam à largura da tela. */
+
+.sat {
+    --sat-azul: #0b5d89;
+    --sat-azul-claro: #eaf5fb;
+    --sat-borda: #bccbd4;
+    --sat-texto: #1f2f39;
+    --sat-normal: #4caf50;
+    --sat-atencao: #f4b400;
+    --sat-alerta: #ef8500;
+    --sat-emergencia: #8e44ad;
+    --sat-extravasamento: #f44336;
+    color: var(--sat-texto);
+}
+
+/* Barra acima das folhas */
+.sat-barra {
+    display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 18px;
+    max-width: 297mm; margin: 0 auto 16px; padding: 12px 16px;
+    border: 1px solid #d8e3ed; border-left: 4px solid var(--marca-verde); border-radius: 12px; background: #fff;
+    font-size: var(--fonte-texto); color: #3b4f5c;
+}
+.sat-barra i { color: var(--marca-azul); }
+.sat-barra__link { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; color: var(--marca-azul-escuro); text-decoration: none; }
+.sat-barra__link:hover { text-decoration: underline; }
+
+/* Folhas (A4 retrato; a do diagrama, paisagem) */
+.sat-pagina {
+    width: 100%; max-width: 210mm; margin: 0 auto 18px; padding: 20px 26px 26px;
+    background: #fff; box-shadow: 0 2px 12px rgba(0, 0, 0, .12);
+}
+.sat-pagina--larga { max-width: 297mm; }
+
+/* Cabeçalho */
+.sat-cabecalho {
+    display: grid; grid-template-columns: minmax(0, 1fr) 90px; align-items: center; gap: 10px;
+    margin-bottom: 14px; padding-bottom: 10px; border-bottom: 3px solid var(--sat-azul);
+}
+.sat-cabecalho h2 { margin: 0; font-size: 22px; font-weight: 800; color: var(--sat-azul); }
+.sat-subtitulo { margin-top: 3px; font-size: 13px; font-weight: 700; letter-spacing: .5px; color: #526772; }
+.sat-situacao { margin-top: 6px; font-size: 13px; font-weight: 800; }
+.sat-situacao span { color: var(--sat-azul); overflow-wrap: anywhere; } /* o endereço do diagrama não empurra o logo */
+.sat-logo { width: 100%; height: auto; }
+
+.sat-secao { margin: 18px 0 8px; padding: 7px 0; font-size: 15px; font-weight: 800; color: #1f497d; }
+.sat-esquema { display: block; width: 100%; height: auto; border: 1px solid var(--sat-borda); }
+
+/* Tabelas */
+.sat-rolagem { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.sat-tabela { width: 100%; border-collapse: collapse; }
+.sat-tabela th, .sat-tabela td { padding: 7px 9px; border: 1px solid var(--sat-borda); font-size: 13.5px; vertical-align: middle; }
+.sat-tabela thead th { background: var(--sat-azul); color: #fff; font-size: 12.5px; font-weight: 800; text-align: center; }
+.sat-chuva td { text-align: center; font-weight: 700; }
+.sat-eixo { font-weight: 700; text-align: center; }
+.sat-destaque td { background: var(--sat-azul-claro); }
+.sat-op tbody tr:nth-child(even) td { background: var(--sat-azul-claro); }
+.sat-fonte { font-size: 10px; }
+.sat-nota { margin: 4px 0 0; font-size: 11px; line-height: 1.4; color: #64757f; }
+.sat-nota .sat-fonte { vertical-align: text-top; }
+.sat-mudo { color: #8a9aa4; font-style: italic; }
+.sat-vazio { text-align: center; color: #526772; }
+
+.sat-sobe { color: #c0392b; font-weight: 800; }
+.sat-desce { color: var(--sat-azul); font-weight: 800; }
+.sat-estavel { color: #526772; font-weight: 800; }
+
+/* Avisos */
+.sat-aviso { margin: 8px 0; padding: 9px 12px; border: 1px solid #f0c36d; border-radius: 6px; background: #fff8e6; font-size: 13px; color: #6b4e00; }
+.sat-carregando { padding: 14px; font-size: 13px; color: #526772; }
+.sat-ultima { margin: -6px 0 8px; font-size: 12px; font-weight: 700; color: #526772; }
+
+/* Cartões de situação */
+.sat-cards { display: grid; grid-template-columns: repeat(6, 1fr); margin-top: 6px; border: 1px solid var(--sat-borda); }
+.sat-card { padding: 10px 4px; text-align: center; border-right: 1px solid var(--sat-borda); }
+.sat-card:last-child { border-right: 0; }
+.sat-card__num { font-size: 29px; font-weight: 900; line-height: 1; }
+.sat-card__rotulo { margin-top: 4px; font-size: 10.5px; font-weight: 800; }
+.sat-card--total .sat-card__num { color: #1481b7; }
+.sat-card--normal .sat-card__num { color: var(--sat-normal); }
+.sat-card--atencao .sat-card__num { color: #e7a900; }
+.sat-card--alerta .sat-card__num { color: var(--sat-alerta); }
+.sat-card--emergencia .sat-card__num { color: var(--sat-emergencia); }
+.sat-card--extravasamento .sat-card__num { color: #e33e35; }
+
+/* Situação: propagação e selos */
+.sat-propagacao thead th { background: var(--sat-azul-claro); color: #07527a; height: 34px; }
+.sat-sit { color: #fff; font-weight: 800; text-align: center; height: 30px; }
+.sat-sit--normal { background: var(--sat-normal); color: #fff; }
+.sat-sit--atencao { background: var(--sat-atencao); color: #fff; }
+.sat-sit--alerta { background: var(--sat-alerta); color: #fff; }
+.sat-sit--emergencia { background: var(--sat-emergencia); color: #fff; }
+.sat-sit--extravasamento { background: var(--sat-extravasamento); color: #fff; }
+.sat-sit--semdado { background: #9aa7ae; color: #fff; }
+.sat-selo { display: inline-block; margin-right: 4px; padding: 1px 6px; border-radius: 4px; font-size: 10.5px; font-weight: 800; white-space: nowrap; }
+
+.sat-acima { background: #fff1ef; color: #e33e35; font-weight: 800; text-align: center; }
+.sat-tendencia { font-weight: 800; white-space: nowrap; text-align: center; }
+
+/* Diagnóstico e síntese */
+.sat-diagnostico { margin-top: 12px; padding: 8px 9px; border: 1px solid #ef9f14; background: #fffdf8; font-size: 13px; line-height: 1.45; }
+.sat-diagnostico strong { margin-right: 6px; color: #e48a00; }
+.sat-sintese p { margin: 0 0 8px; font-size: 13px; line-height: 1.55; text-align: justify; }
+.sat-nome { padding: 1px 5px; border-radius: 3px; background: #d7dce0; }
+.sat-nome--atencao { color: #a3820a; }
+.sat-nome--alerta { color: #c9700a; }
+.sat-nome--emergencia { color: #8e44ad; }
+.sat-nome--extravasamento { color: #c0392b; }
+
+.sat-todos { margin-top: 14px; }
+.sat-todos summary { cursor: pointer; font-weight: 700; color: var(--marca-azul-escuro); }
+.sat-todos .sat-tabela { margin-top: 8px; }
+
+/* Diagrama ao vivo do SIBH (escala ajustada em ao-vivo.tsx) */
+.sat-diagrama { position: relative; width: 100%; height: 166mm; overflow: hidden; border: 1px solid var(--sat-borda); }
+.sat-diagrama iframe { position: absolute; top: 0; left: 0; width: 1700px; height: 1048px; border: 0; transform-origin: top left; }
+
+@media (max-width: 767.98px) {
+    .sat-pagina { padding: 14px 12px 18px; }
+    .sat-cabecalho { grid-template-columns: minmax(0, 1fr) 56px; }
+    .sat-cabecalho h2 { font-size: 17px; }
+    .sat-subtitulo, .sat-situacao { font-size: 11.5px; }
+    .sat-cards { grid-template-columns: repeat(3, 1fr); }
+    .sat-card:nth-child(3n) { border-right: 0; }
+    .sat-card:nth-child(-n+3) { border-bottom: 1px solid var(--sat-borda); }
+    .sat-tabela th, .sat-tabela td { padding: 6px 7px; font-size: 12.5px; }
+    .sat-eixos, .sat-criticos { min-width: 640px; }
+}

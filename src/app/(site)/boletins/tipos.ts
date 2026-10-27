@@ -28,6 +28,9 @@ export const TIPOS_PUBLICOS = {
     titulo: 'Sumário Executivo Alto Tietê',
     descricao: 'Boletins Sumário Executivo Controle de cheias no Alto Tietê e Pinheiros',
     tipos: ['integrado-ugrhi6', 'sumario-tiete-pinheiros', 'integrado-diario', 'integrado-mensal'],
+    // Botão para a versão automática (a lista de PDFs continua como está).
+    // Comentado até a EMAE liberar o acesso à planilha: basta descomentar a linha abaixo.
+    // acao: { href: '/boletins/automatico/tiete-pinheiros', rotulo: 'Acessar Sumário Automático', icone: 'bi-broadcast' },
   },
   ribeira: {
     titulo: 'Sumário Executivo Vale do Ribeira',

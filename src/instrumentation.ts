@@ -10,6 +10,17 @@ export async function register() {
   if (process.env.NEXT_RUNTIME !== 'nodejs' || process.env.NEXT_PHASE === 'phase-production-build') return;
   const { iniciarLogs } = await import('./lib/log-servidor');
   iniciarLogs();
+
+  // Sumário Executivo Automático (Alto Tietê/Pinheiros): busca as fontes a cada 10 min e
+  // grava as leituras das 07h mesmo sem visitas. SUMARIO_TP_COLETA=off desliga.
+  const global_ = globalThis as { __ssapColetaTp?: ReturnType<typeof setInterval> };
+  if (process.env.SUMARIO_TP_COLETA !== 'off' && !global_.__ssapColetaTp) {
+    const { coletar } = await import('./lib/boletins-sala/sumario-automatico-tp');
+    const rodar = () => void coletar();
+    setTimeout(rodar, 30_000).unref(); // não atrasa a subida do servidor
+    global_.__ssapColetaTp = setInterval(rodar, 10 * 60_000);
+    global_.__ssapColetaTp.unref();
+  }
 }
 
 export const onRequestError: Instrumentation.onRequestError = async (erro, request, contexto) => {

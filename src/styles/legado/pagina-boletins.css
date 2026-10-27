@@ -55,3 +55,15 @@
     .blt-item__acoes { grid-column: 1 / -1; }
     .blt-item__icone { width: 40px; height: 40px; }
 }
+
+/* Botão para a versão automática (só nas páginas com "acao" em boletins/tipos.ts). */
+.blt-acao {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; margin-bottom: 18px; padding: 14px 16px;
+    background: #fff; border: 1px solid var(--sp-border); border-left: 4px solid var(--marca-verde); border-radius: var(--sp-radius-sm); box-shadow: var(--sp-shadow);
+}
+.blt-acao__botao {
+    display: inline-flex; align-items: center; gap: 8px; padding: 10px 18px; border-radius: 999px;
+    background: var(--marca-verde); color: #fff; font-weight: 700; text-decoration: none; white-space: nowrap;
+}
+.blt-acao__botao:hover { background: #0e9a49; color: #fff; }
+.blt-acao span { color: var(--sp-gray); font-size: var(--fonte-texto); }
