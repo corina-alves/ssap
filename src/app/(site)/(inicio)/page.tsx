@@ -7,6 +7,7 @@ import '@/styles/legado/pagina-inicio-volume.css';
 import '@/styles/legado/pagina-inicio-faixas.css';
 import '@/styles/legado/pagina-inicio-salas.css';
 import '@/styles/legado/pagina-inicio-hero.css';
+import '@/styles/legado/pagina-inicio-cartoes.css';
 import { Esqueleto } from '@/components/carregamento';
 import { FonteOpenMeteo } from '@/components/fonte-open-meteo';
 import { texto } from '@/components/paginacao';

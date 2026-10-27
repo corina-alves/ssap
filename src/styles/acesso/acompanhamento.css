@@ -1,0 +1,96 @@
+/* Acompanhamento — volumes de espera e operacional (app/acesso/(app)/acompanhamento/volumes-espera). Cores do kit da marca (globals.css). */
+
+.acp-cartoes { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; margin-bottom: 20px; }
+.acp-cartoes--mes { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.acp-cartao {
+    display: flex; flex-direction: column; gap: 4px; padding: 16px 18px; border-radius: var(--ac-raio);
+    background: #fff; border: 1px solid var(--ac-borda); border-left: 5px solid var(--acp-cor); box-shadow: var(--ac-sombra);
+}
+.acp-cartao--sistema { --acp-cor: var(--marca-profundo); }
+.acp-cartao--espera { --acp-cor: var(--marca-azul); }
+.acp-cartao--operacional { --acp-cor: var(--marca-verde); }
+.acp-cartao--atual { background: linear-gradient(160deg, #eef3ff 0%, #fff 70%); }
+.acp-cartao__rotulo { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; color: var(--ac-cinza); font-size: .86rem; }
+.acp-cartao__rotulo em { padding: 1px 8px; border-radius: 999px; background: var(--marca-azul); color: #fff; font-size: .7rem; font-style: normal; font-weight: 700; }
+.acp-cartao strong { color: var(--marca-profundo); font-size: 1.35rem; font-weight: 800; }
+.acp-cartao__pct { width: fit-content; padding: 0 8px; border-radius: 6px; background: var(--marca-limao); color: var(--marca-profundo); font-size: 1.1rem; font-weight: 800; }
+
+/* Tabelas dos acompanhamentos: cabeçalho no azul profundo, linhas alternadas e destaque no hover. */
+.acp-tabela table, .trp-tabela { --bs-table-striped-bg: #f3f7ff; --bs-table-hover-bg: #e6eeff; }
+.acp-tabela thead th, .trp-tabela thead th {
+    background: var(--marca-azul-escuro); color: #fff; font-size: .78rem; font-weight: 700; white-space: nowrap; border-bottom: 3px solid var(--marca-profundo);
+}
+.acp-tabela thead th:first-child, .trp-tabela thead th:first-child { border-top-left-radius: 8px; }
+.acp-tabela thead th:last-child, .trp-tabela thead th:last-child { border-top-right-radius: 8px; }
+.acp-tabela tbody tr:nth-child(even) > *, .trp-tabela tbody tr:nth-child(even) > * { background: #f3f7ff; }
+.acp-tabela tbody tr:hover > *, .trp-tabela tbody tr:hover > * { background: #e6eeff; }
+.acp-tabela tbody th { color: var(--marca-profundo); font-weight: 700; white-space: nowrap; }
+.acp-tabela td, .acp-tabela tbody th, .trp-tabela td { border-color: #e6ecf3; }
+.trp-tabela tfoot th { background: #eef3ff; color: var(--marca-profundo); border-top: 2px solid var(--marca-azul); }
+.acp-nota { margin: 12px 0 0; color: var(--ac-cinza); font-size: .8rem; }
+.acp-situacao { display: inline-flex; align-items: center; gap: 6px; color: #137a45; font-size: .85rem; font-weight: 600; white-space: nowrap; }
+.acp-situacao--acima { color: #b45309; }
+
+.acp-grafico-cabeca { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 6px; }
+.acp-grafico-cartao h2 { margin: 0; color: var(--marca-profundo); font-size: 1.05rem; font-weight: 800; }
+
+/* Linha da tabela que abre o gráfico do reservatório. */
+.acp-linha-clicavel { cursor: pointer; }
+.acp-linha-clicavel th a { color: var(--marca-azul-escuro); text-decoration: none; }
+.acp-linha-clicavel th a:hover { text-decoration: underline; }
+.acp-tabela tbody tr.acp-linha-clicavel--ativa > * { background: #dbe6ff; box-shadow: inset 0 0 0 0 transparent; }
+.acp-tabela tbody tr.acp-linha-clicavel--ativa > th { border-left: 4px solid var(--marca-azul); }
+
+@media (max-width: 1199.98px) {
+    .acp-cartoes { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 575.98px) {
+    .acp-cartoes { grid-template-columns: 1fr 1fr; }
+}
+
+/* Transposição Paraíba do Sul → Cantareira (app/acesso/(app)/acompanhamento/transposicao). */
+.trp-secao { display: flex; align-items: center; gap: 10px; margin: 24px 0 12px; color: var(--marca-profundo); font-size: 1.15rem; font-weight: 800; }
+.trp-secao i { color: var(--marca-azul); }
+.trp-titulo { margin: 0 0 12px; color: var(--marca-profundo); font-size: 1rem; font-weight: 800; }
+.trp-ano { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+.trp-rolagem { max-height: 420px; overflow-y: auto; }
+
+
+.trp-indicadores { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px; margin-bottom: 16px; }
+.trp-indicador {
+    display: flex; flex-direction: column; gap: 2px; padding: 14px 16px; border-radius: var(--ac-raio);
+    background: #fff; border: 1px solid var(--ac-borda); box-shadow: var(--ac-sombra);
+}
+.trp-indicador span { color: var(--ac-cinza); font-size: .8rem; }
+.trp-indicador strong { color: var(--marca-profundo); font-size: 1.5rem; font-weight: 800; line-height: 1.2; }
+.trp-indicador small { color: var(--ac-cinza); font-size: .75rem; }
+.trp-indicador--volume { border-top: 4px solid var(--marca-azul); }
+.trp-indicador--volume strong { color: var(--marca-azul); }
+.trp-indicador--referencia { border-top: 4px solid #dc3545; }
+.trp-indicador--referencia strong { color: #b42318; }
+
+.trp-carregando { display: flex; align-items: center; gap: 10px; color: var(--ac-cinza); }
+
+.trp-selo { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: .75rem; font-weight: 700; white-space: nowrap; }
+.trp-selo--ok { background: #dcfce7; color: #166534; }
+.trp-selo--atencao { background: #fef3c7; color: #92400e; }
+.trp-selo--alerta { background: #fee2e2; color: #b42318; }
+.trp-selo--neutro { background: #eef2f6; color: #5b6b7b; }
+
+@media (max-width: 1199.98px) {
+    .trp-indicadores { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .trp-ano { grid-template-columns: 1fr; }
+}
+@media (max-width: 575.98px) {
+    .trp-indicadores { grid-template-columns: 1fr 1fr; }
+}
+
+/* Medidor do volume transferido (SVG): arco azul e o traço do limite anterior, como no PHP. */
+.trp-medidor { width: 100%; max-width: 340px; height: auto; display: block; margin: 0 auto 8px; }
+.trp-medidor__fundo { fill: none; stroke: #e3e9f1; stroke-width: 26; }
+.trp-medidor__valor { fill: none; stroke: var(--marca-azul); stroke-width: 26; }
+.trp-medidor__marca { stroke: #e8590c; stroke-width: 4; }
+.trp-medidor__marca-texto { fill: #e8590c; font-size: 14px; font-weight: 800; }
+.trp-medidor__numero { fill: var(--marca-profundo); font-size: 34px; font-weight: 800; }
+.trp-medidor__legenda { fill: var(--ac-cinza); font-size: 11px; }
+

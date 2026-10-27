@@ -19,8 +19,8 @@ export type Foto = { src: string; legenda: string };
 
 export type Depoimento = { texto: string; autor: string };
 
-/** Foto do topo (caminho em public/). Sem ela, aparece o cartão com o nome da Sala. */
-export const RETRATO: { src: string; legenda: string } | null = {
+/** Foto ao lado do texto "Conhecimento, dedicação e compromisso público" (caminho em public/). Sem ela, o texto ocupa a largura toda. */
+export const FOTO_SALA: Foto | null = {
   src: '/legado/img/sssp-daee.png',
   legenda: 'Alfredo Pisani apresentando na Sala de Situação, ainda no DAEE',
 };
@@ -32,8 +32,9 @@ export const CHAMADA = 'Uma homenagem da Sala de Situação São Paulo a um dos 
 export const MEMORIA = 'Em memória de Alfredo Pisani († 2025)';
 
 export const INTRODUCAO = [
-  'A história da Sala de Situação São Paulo está profundamente ligada à dedicação de profissionais que compreenderam a importância da informação hidrológica, do conhecimento técnico e do monitoramento contínuo para a proteção da população. Entre esses profissionais, destaca-se o engenheiro **Alfredo Pisani**, cuja trajetória deixou contribuições significativas para a gestão dos recursos hídricos no Estado de São Paulo.',
-  'Engenheiro civil, professor e servidor público de longa carreira, Alfredo Pisani dedicou décadas de sua vida ao Departamento de Águas e Energia Elétrica (DAEE), instituição que antecedeu a atual SP-Águas. Sua atuação esteve associada ao desenvolvimento e ao aperfeiçoamento de sistemas de monitoramento hidrometeorológico, à prevenção de enchentes e ao fortalecimento das ações de alerta e resposta a eventos críticos.',
+  '**Alfredo Pisani**, cujo percurso é exemplo de dedicação, rigor e serviço em prol da sociedade. Com formação sólida — graduado em Engenharia Civil pela Fundação Armando Álvares Penteado (1979); mestre (1988) e doutor (1996) em Engenharia Hidráulica e Sanitária pela Escola Politécnica da USP, ele sempre uniu teoria e prática com maestria.',
+  'Pioneiro em pesquisas como sensoriamento remoto, uso de satélites em bacias hidrográficas, medição de chuvas por radar e sistemas de alerta de inundações, Alfredo contribuiu para tornar real o monitoramento em tempo real e o alerta civil, salvaguardando vidas diante dos desafios meteorológicos e hidrológicos.',
+  'No serviço público, sua atuação como Engenheiro VI no DAEE-SP, onde foi o precursor da Sala de Situação, e essencial na aquisição do Radar Meteorológico de Biritiba-Mirim, responsável pela coordenação da SSSP do DAEE durante anos e permanecia como Coordenador Regional de Defesa Civil, assim demonstrando compromisso concreto: planejamento, prevenção e resposta. Ele não apenas projetava sistemas técnicos, mas fortalecia redes de proteção comunitária, preparava equipes, orientava políticas e ensinava as gerações que vêm atrás.',
 ];
 
 export const CONTRIBUICAO = [

@@ -11,7 +11,7 @@
     --sp-blue-dark:   var(--marca-profundo);   /* topo de gradientes / hover */
     --sp-blue-light:  #eaf4fb;   /* fundo suave azul */
     --sp-cyan:        #0d7ea4;
-    --sp-green:       var(--marca-verde);   /* situação normal */
+    --sp-green:       #198754;   /* situação normal (cor de status, fora do kit da marca) */
     --sp-warning:     #f4b400;   /* situação atenção */
     --sp-orange:      #e08600;   /* situação alerta */
     --sp-danger:      #dc3545;   /* situação crítica */

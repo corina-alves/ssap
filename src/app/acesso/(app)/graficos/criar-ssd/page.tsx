@@ -6,7 +6,7 @@ import { salasPainel } from '@/lib/acesso/painel';
 import { acl, exigirSala } from '@/lib/auth/acl';
 import { MAX_LINHAS } from '@/lib/graficos-tabela';
 import { PRIMEIRO_ANO, rotuloAno } from '@/lib/hidrologia/analise-mlt';
-import { AGREGACOES, dataCurta, FORMATOS, graficoSsd, MAX_SERIES, PERIODOS, TIPOS, type Catalogo } from '@/lib/hidrologia/grafico-ssd';
+import { AGREGACOES, dataCurta, ESTILOS_SERIE, FORMATOS, graficoSsd, MAX_SERIES, PERIODOS, TIPOS, type Catalogo } from '@/lib/hidrologia/grafico-ssd';
 import { hojeSp } from '@/lib/integracoes/comum';
 import { salvarGraficoSsdAcao } from '../actions';
 import { FormSalvarAnalise } from '../componentes';
@@ -44,6 +44,18 @@ function OpcoesVariaveis({ cat }: { cat: Catalogo | null }) {
         </option>
       ))}
     </>
+  );
+}
+
+/** Faixas do período chuvoso (dez–mai) e seco (jun–nov) no fundo do gráfico, com divisas tracejadas. */
+function CampoPeriodos({ marcado }: { marcado: boolean }) {
+  return (
+    <div className="form-check mb-1">
+      <input className="form-check-input" type="checkbox" id="periodos" name="periodos" value="1" defaultChecked={marcado} />
+      <label className="form-check-label small" htmlFor="periodos">
+        Marcar período chuvoso (dez–mai) e seco (jun–nov)
+      </label>
+    </div>
   );
 }
 
@@ -164,6 +176,17 @@ export default async function CriarSsd({ searchParams }: { searchParams: Promise
                       <select className="form-select" id={`var${i}`} name={`var${i}`} defaultValue={l.variavel} data-ssd-variavel-de={`local${i}`}>
                         <OpcoesVariaveis cat={cat} />
                       </select>
+                      <label className="visually-hidden" htmlFor={`estilo${i}`}>
+                        Como desenhar a série {i}
+                      </label>
+                      <select className="form-select ssd-estilo" id={`estilo${i}`} name={`estilo${i}`} defaultValue={l.estilo} title="Como desenhar esta série">
+                        <option value="">Padrão</option>
+                        {Object.entries(ESTILOS_SERIE).map(([k, n]) => (
+                          <option key={k} value={k}>
+                            {n}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                   </div>
                 );
@@ -182,10 +205,14 @@ export default async function CriarSsd({ searchParams }: { searchParams: Promise
                   ))}
                 </select>
               </div>
+              <div className="col-md-auto">
+                <CampoPeriodos marcado={g.periodos} />
+              </div>
               {montar}
             </div>
             <p className="small text-secondary mt-2 mb-0">
-              Escolha até {MAX_SERIES} séries. As variáveis listadas mudam conforme o local. Dados diários: até 10 anos.
+              Escolha até {MAX_SERIES} séries. As variáveis listadas mudam conforme o local. Dados diários: até 10 anos. Em cada série, &quot;Padrão&quot; segue o tipo do
+              gráfico; escolha outro para misturar, por exemplo, barras e linhas.
             </p>
           </>
         )}
@@ -223,9 +250,15 @@ export default async function CriarSsd({ searchParams }: { searchParams: Promise
                 <label className="form-label small" htmlFor="tipo">
                   Gráfico
                 </label>
-                <select className="form-select" id="tipo" name="tipo" defaultValue={g.tipo === 'barra' || g.tipo === 'barra-empilhada' ? 'barra' : 'linha'}>
-                  <option value="linha">Linhas</option>
-                  <option value="barra">Barras</option>
+                <select className="form-select" id="tipo" name="tipo" defaultValue={g.tipo.replace('-empilhada', '')}>
+                  {/* comparar anos: sem empilhar */}
+                  {Object.entries(TIPOS)
+                    .filter(([k]) => !k.endsWith('-empilhada'))
+                    .map(([k, n]) => (
+                      <option key={k} value={k}>
+                        {n}
+                      </option>
+                    ))}
                 </select>
               </div>
             </div>
@@ -264,6 +297,7 @@ export default async function CriarSsd({ searchParams }: { searchParams: Promise
                     Acumulado (só chuva)
                   </label>
                 </div>
+                <CampoPeriodos marcado={g.periodos} />
               </div>
               {montar}
             </div>
@@ -334,12 +368,21 @@ export default async function CriarSsd({ searchParams }: { searchParams: Promise
 
       {g.grafico && (
         <>
-          <section className="acesso-card mb-3">
-            <h2 className="h6 mb-2">{g.titulo}</h2>
-            <div className="acesso-grafico acesso-grafico--grande">
+          {/* <details>: o gráfico pode ser fechado e reaberto sem perder a escolha (o Chart.js se redimensiona ao reabrir) */}
+          <details className="acesso-card mb-3 ssd-quadro" open>
+            <summary className="ssd-quadro__cabeca">
+              <h2 className="h6 mb-0">{g.titulo}</h2>
+              <span className="btn btn-sm btn-outline-secondary ssd-quadro__fechar">
+                <i className="bi bi-x-lg" /> Fechar gráfico
+              </span>
+              <span className="btn btn-sm btn-outline-primary ssd-quadro__abrir">
+                <i className="bi bi-bar-chart-line" /> Mostrar gráfico
+              </span>
+            </summary>
+            <div className="acesso-grafico acesso-grafico--grande mt-2">
               <canvas data-grafico={JSON.stringify({ ...g.grafico, titulo: g.titulo })} role="img" aria-label={g.titulo} />
             </div>
-          </section>
+          </details>
 
           {a.pode('criar_graficos', sala.id) && (
             <FormSalvarAnalise

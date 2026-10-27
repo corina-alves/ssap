@@ -1,7 +1,7 @@
 import 'server-only';
 import { auditar } from './auditoria';
 import { query, queryOne, transacao } from './db';
-import { corValida, ErroValidacao, lerTabela, slug, TIPOS, type ConfigGrafico, type SerieGrafico } from './graficos-tabela';
+import { corValida, ErroValidacao, lerTabela, slug, TIPOS, type ConfigGrafico, type OpcoesDesenho, type SerieGrafico } from './graficos-tabela';
 import type { Origem } from './requisicao';
 
 /** Gráficos da sala (porte de GraficoService.php). Os dados entram como tabela colada. */
@@ -53,6 +53,8 @@ export type DadosGrafico = {
   dados: string;
   /** Cor fixa por nome de série (opcional; na edição, sem isso, mantém as que já havia). */
   cores?: Record<string, string>;
+  /** Estilo das linhas, tipo por série e faixas de período (gráficos do SSD; na edição, sem isso, mantém os que já havia). */
+  opcoes?: OpcoesDesenho;
 };
 
 /** Cria (id null) ou atualiza. Lança ErroValidacao com a lista de problemas. Devolve o id. */
@@ -85,9 +87,20 @@ export async function salvar(id: number | null, salaId: number, d: DadosGrafico,
   // Cores fixas por série: as informadas ou, na edição, as que o gráfico já tinha.
   const nomes = new Set(series.map((s) => s.nome));
   const cores = Object.fromEntries(Object.entries(d.cores ?? antes?.config?.cores ?? {}).filter(([nome, c]) => nomes.has(nome) && corValida(c)));
+  const op: OpcoesDesenho = d.opcoes ?? {
+    estilo: antes?.config?.estilo,
+    estilos: antes?.config?.estilos,
+    periodos: antes?.config?.periodos,
+    meses: antes?.config?.meses,
+  };
+  const estilos = Object.fromEntries(Object.entries(op.estilos ?? {}).filter(([nome]) => nomes.has(nome)));
   const config: ConfigGrafico = {
     fonte_dados: 'manual', rotulos, series, unidade, eixo_y: eixoY, empilhado: d.empilhado,
     ...(Object.keys(cores).length ? { cores } : {}),
+    ...(op.estilo ? { estilo: op.estilo } : {}),
+    ...(Object.keys(estilos).length ? { estilos } : {}),
+    // as faixas dependem do mês de cada rótulo: só valem se a tabela ainda tem o mesmo número de linhas
+    ...(op.periodos && op.meses?.length === rotulos.length ? { periodos: true, meses: op.meses } : {}),
   };
 
   return transacao(async (c) => {

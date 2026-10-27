@@ -9,13 +9,13 @@ import {
   CONTRIBUICAO,
   DEPOIMENTOS,
   ENCERRAMENTO,
+  FOTO_SALA,
   FOTOS,
   INTRODUCAO,
   LEGADO,
   LEMA,
   MARCOS,
   MEMORIA,
-  RETRATO,
 } from '@/conteudo/homenagem-alfredo-pisani';
 
 export const metadata: Metadata = {
@@ -40,31 +40,14 @@ export default function Pagina() {
             <i className="bi bi-chevron-right" />
             <span>Homenagem a Alfredo Pisani</span>
           </div>
-          <div className="hm-hero__grade">
-            <div>
-              <span className="hm-hero__kicker">Homenagem</span>
-              <h1>Alfredo Pisani</h1>
-              <p className="hm-hero__lema">{LEMA}</p>
-              <p>{CHAMADA}</p>
-              <p className="hm-hero__nota">
-                <i className="bi bi-star-fill" /> {MEMORIA}
-              </p>
-            </div>
-            {RETRATO ? (
-              <figure className="hm-hero__retrato">
-                <div className="hm-hero__imagem">
-                  <Image src={RETRATO.src} alt={RETRATO.legenda} fill sizes="(max-width: 991px) 90vw, 520px" priority />
-                </div>
-                <figcaption>{RETRATO.legenda}</figcaption>
-              </figure>
-            ) : (
-              <div className="hm-hero__cartao">
-                <i className="bi bi-water" />
-                <strong>Sala de Situação</strong>
-                <span>Alfredo Pisani</span>
-                <small>SP-Águas</small>
-              </div>
-            )}
+          <div className="hm-hero__texto">
+            <span className="hm-hero__kicker">Homenagem</span>
+            <h1>Alfredo Pisani</h1>
+            <p className="hm-hero__lema">{LEMA}</p>
+            <p>{CHAMADA}</p>
+            <p className="hm-hero__nota">
+              <i className="bi bi-star-fill" /> {MEMORIA}
+            </p>
           </div>
         </div>
       </section>
@@ -107,9 +90,21 @@ export default function Pagina() {
 
           <section className="hm-secao hm-texto">
             <h2 className="hm-titulo">Conhecimento, dedicação e compromisso público</h2>
-            {COMPROMISSO.map((t) => (
-              <Paragrafo key={t} texto={t} />
-            ))}
+            <div className={FOTO_SALA ? 'hm-texto__grade' : undefined}>
+              <div>
+                {COMPROMISSO.map((t) => (
+                  <Paragrafo key={t} texto={t} />
+                ))}
+              </div>
+              {FOTO_SALA && (
+                <figure className="hm-foto">
+                  <div className="hm-foto__imagem">
+                    <Image src={FOTO_SALA.src} alt={FOTO_SALA.legenda} fill sizes="(max-width: 991px) 90vw, 480px" />
+                  </div>
+                  <figcaption>{FOTO_SALA.legenda}</figcaption>
+                </figure>
+              )}
+            </div>
           </section>
 
           {FOTOS.length > 0 && (

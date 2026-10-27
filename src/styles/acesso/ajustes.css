@@ -82,3 +82,11 @@
 .acesso-conteudo .botao-secundario:hover { background: var(--ac-azul); color: #fff; }
 .acesso-conteudo .botao-perigo { background: #fff; color: #9b1c1c; border: 1px solid #9b1c1c; }
 .acesso-conteudo .botao-perigo:hover { background: #9b1c1c; color: #fff; }
+
+/* Gráficos com dados do SSD: seletor "como desenhar" de cada série, mais estreito que local e variável. */
+.ssd-estilo { flex: 0 0 8.5rem; }
+
+/* Quadro do gráfico do SSD que pode ser fechado e reaberto (<details>). */
+.ssd-quadro__cabeca { display: flex; align-items: center; justify-content: space-between; gap: 12px; list-style: none; cursor: pointer; }
+.ssd-quadro__cabeca::-webkit-details-marker { display: none; }
+.ssd-quadro[open] .ssd-quadro__abrir, .ssd-quadro:not([open]) .ssd-quadro__fechar { display: none; }

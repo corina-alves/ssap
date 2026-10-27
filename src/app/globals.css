@@ -13,6 +13,13 @@
   --marca-limao: #b9ff4f;
   --marca-profundo: #0a1633;
 
+  /* Fundo das faixas de topo (hero) das páginas: azul profundo em degradê,
+     com brilho do azul da marca no alto e um toque do verde embaixo. */
+  --fundo-hero:
+    radial-gradient(circle at 88% 12%, rgba(4, 84, 252, 0.38), transparent 45%),
+    radial-gradient(circle at 0% 100%, rgba(4, 180, 84, 0.16), transparent 38%),
+    linear-gradient(135deg, #0a1633 0%, #0e2251 58%, #0b2f80 100%);
+
   --fundo: #f4f6f9;
   --superficie: #ffffff;
   --texto: #1c2430;

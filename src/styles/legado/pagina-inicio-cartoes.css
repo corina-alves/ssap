@@ -1,0 +1,27 @@
+/* Início — refinamento dos cartões (Acesso rápido, Previsão dos Sistemas Produtores,
+   Destaques e serviços). Carregado por último em app/(site)/(inicio)/page.tsx. */
+
+/* Acesso rápido: fundo limpo com a faixa da cor no alto; o tom da cor aparece no hover.
+   Espaço embaixo para a seta não cobrir o texto. */
+.quick-card { padding: 22px 22px 58px; background: #fff; }
+.quick-card:hover { background: linear-gradient(165deg, var(--card-soft) 0%, #fff 60%); }
+.quick-card::before { width: 92px; height: 92px; right: -34px; top: -40px; opacity: .75; }
+.quick-card strong { color: var(--marca-profundo); font-size: .98rem; }
+.quick-card p { max-width: none; }
+.quick-arrow { right: 18px; bottom: 16px; }
+
+/* Previsão dos Sistemas Produtores: chuva de hoje em destaque, textos legíveis. */
+.previsao-card { padding: 18px 16px 16px; }
+.previsao-card h5 { color: var(--marca-profundo); }
+.previsao-card .text-info { display: inline-block; color: var(--marca-azul) !important; font-size: 1.45rem; font-weight: 800; line-height: 1.1; }
+.previsao-card small { font-size: .8rem; }
+.previsao-card small strong { color: var(--marca-profundo); font-size: .9rem; }
+
+/* Destaques e serviços: a imagem fica mais à direita e mais esmaecida, para o texto não ficar por cima dela. */
+.dq-card__fundo { inset: 0 0 0 42%; }
+.dq-card__fundo::after {
+    background:
+        linear-gradient(90deg, #fff 0%, rgba(255, 255, 255, .95) 40%, rgba(255, 255, 255, .45) 100%),
+        linear-gradient(0deg, #fff 0%, rgba(255, 255, 255, 0) 60%);
+}
+.dq-card p { max-width: 26ch; }

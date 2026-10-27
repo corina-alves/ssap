@@ -86,7 +86,18 @@ export async function montarMenu(a: Acl): Promise<Menu> {
   const visiveis = await salasPainel(a);
   // Painel interativo dos sistemas produtores (SSD): visualizar_dashboard na Sala Alfredo Pisani.
   const alfredo = visiveis.find((s) => s.slug === 'alfredo-pisani');
-  if (alfredo && a.pode('visualizar_dashboard', alfredo.id)) geral.push(item('Painel interativo', '/acesso/painel_interativo', 'bi-water'));
+  if (alfredo && a.pode('visualizar_dashboard', alfredo.id)) {
+    geral.push(item('Painel interativo', '/acesso/painel_interativo', 'bi-water'));
+    // Acompanhamentos dos sistemas (os próximos, como a transposição, entram como filhos).
+    geral.push({
+      ...item('Acompanhamento', '/acesso/acompanhamento', 'bi-clipboard-data'),
+      href: '/acesso/acompanhamento/volumes-espera',
+      filhos: [
+        item('Volumes de espera e operacional', '/acesso/acompanhamento/volumes-espera', 'bi-moisture'),
+        item('Transposição Paraíba do Sul', '/acesso/acompanhamento/transposicao', 'bi-arrow-left-right'),
+      ],
+    });
+  }
 
   const salas = visiveis.map((s) => {
     const filhos = [item('Visão geral', '/acesso/salas/sala', 'bi-grid', `/acesso/salas/sala?s=${s.slug}`)];

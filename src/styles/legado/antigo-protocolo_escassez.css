@@ -1,7 +1,7 @@
 /* protocolo_escassez.css do PHP, restrito a .doc-legado (gerado por scripts/capturar-legado.mjs). */
 .doc-legado {
 .hero-protocolo{
-    background:linear-gradient(135deg,#0f172a,#0b3b66);
+    background:var(--fundo-hero);
     color:#fff;
     padding:80px 0;
 }

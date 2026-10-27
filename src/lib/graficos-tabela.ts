@@ -23,7 +23,16 @@ export type ConfigGrafico = {
   eixo_y?: string;
   empilhado?: boolean;
   cores?: Record<string, string>;
+  /** linhas retas ou só pontos (sem: linhas suaves) */
+  estilo?: 'reta' | 'pontos';
+  /** como desenhar cada série, pelo nome: 'barra' | 'linha' | 'linha-reta' | 'area' | 'pontos' */
+  estilos?: Record<string, string>;
+  /** faixas do período chuvoso (dez–mai) e seco (jun–nov), com o mês (1–12) de cada rótulo */
+  periodos?: boolean;
+  meses?: number[];
 };
+/** Opções de desenho que vão no config além dos dados (gráficos do SSD). */
+export type OpcoesDesenho = Pick<ConfigGrafico, 'estilo' | 'estilos' | 'periodos' | 'meses'>;
 
 export class ErroValidacao extends Error {
   constructor(readonly erros: string[]) {
@@ -127,6 +136,9 @@ export function paraChart(g: { tipo: string; titulo: string; fonte: string | nul
     eixo_y: cfg.eixo_y ?? '',
     empilhado: !!cfg.empilhado,
     fonte: g.fonte,
+    ...(cfg.estilo ? { estilo: cfg.estilo } : {}),
+    ...(cfg.estilos ? { estilos: cfg.estilos } : {}),
+    ...(cfg.periodos && cfg.meses?.length === (cfg.rotulos ?? []).length ? { periodos: true, meses: cfg.meses } : {}),
   };
 }
 

@@ -1,12 +1,21 @@
 /* Início — faixa de abertura (hero) e cartão de previsão. Sobrepõe o .hero de index.css. */
 .public-page .hero {
     min-height: 520px; padding: 56px 0;
-    background-image:
-        linear-gradient(90deg, var(--marca-profundo) 0%, rgba(5, 40, 78, .94) 22%, rgba(6, 52, 98, .55) 42%, rgba(6, 52, 98, 0) 62%),
-        url('/legado/img/hero-barragem.jpg');
-    background-size: cover; background-position: center;
+    background: var(--fundo-hero); /* o mesmo degradê azul profundo das outras páginas (globals.css) */
 }
-.public-page .hero::before { background: radial-gradient(circle at 0% 100%, rgba(20, 169, 209, .22), transparent 32%); }
+/* Foto da barragem bem ao fundo: as cores continuam as do degradê (soft-light só dá textura,
+   sem clarear) e ela some aos poucos à esquerda, onde fica o texto. */
+.public-page .hero { isolation: isolate; overflow: hidden; }
+.public-page .hero::before {
+    background: url('/legado/img/hero-barragem.jpg') center / cover no-repeat;
+    mix-blend-mode: soft-light; opacity: .35;
+    -webkit-mask-image: linear-gradient(90deg, transparent 0%, rgba(0, 0, 0, .5) 40%, #000 75%);
+    mask-image: linear-gradient(90deg, transparent 0%, rgba(0, 0, 0, .5) 40%, #000 75%);
+}
+@media (max-width: 991.98px) {
+    /* no celular o texto ocupa a largura toda: a foto fica ainda mais discreta e por igual */
+    .public-page .hero::before { opacity: .25; -webkit-mask-image: none; mask-image: none; }
+}
 
 .public-page .hero .hero-tag {
     display: inline-flex; align-items: center; gap: 10px; margin-bottom: 22px; padding: 10px 18px;
@@ -15,14 +24,14 @@
 }
 .public-page .hero h1 { margin: 0 0 22px; color: #fff; font-size: clamp(2.4rem, 5.2vw, 4.4rem); font-weight: 800; line-height: 1.05; letter-spacing: -.03em; }
 .public-page .hero h1 span { display: block; color: #5ecbf5; }
-.public-page .hero .hero-content > p { max-width: 640px; margin: 0 0 22px; color: rgba(255, 255, 255, .94); font-size: var(--fonte-destaque); line-height: 1.55; }
+.public-page .hero .hero-content > p { max-width: 640px; margin: 0 0 22px; color: #fff; font-size: var(--fonte-destaque); line-height: 1.55; }
 
 .hp-estado { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 30px; margin-bottom: 26px; font-size: .98rem; }
 .hp-estado strong { display: inline-flex; align-items: center; gap: 12px; color: #fff; font-weight: 700; }
 .hp-estado strong::before { content: ''; width: 13px; height: 13px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 0 4px rgba(34, 197, 94, .25); }
 .hp-estado strong a { color: inherit; text-decoration: underline; text-underline-offset: 3px; }
 .hp-estado strong a:hover { color: #bbf7d0; }
-.hp-estado span { padding-left: 30px; border-left: 1px solid rgba(255, 255, 255, .4); color: rgba(255, 255, 255, .75); }
+.hp-estado span { padding-left: 30px; border-left: 1px solid rgba(255, 255, 255, .4); color: #fff; }
 
 .public-page .hero .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; }
 .public-page .hero .hero-actions .btn {
@@ -37,32 +46,32 @@
 /* Cartão de previsão meteorológica. */
 .public-page .hero .hero-weather-card {
     width: min(100%, 520px); min-height: 0; margin-left: auto; padding: 24px 28px 28px; border-radius: 24px;
-    background: rgba(244, 249, 253, .94); border: 1px solid rgba(255, 255, 255, .7);
+    background: linear-gradient(160deg, rgba(4, 84, 252, .28) 0%, rgba(10, 22, 51, .82) 70%); border: 2px solid rgba(185, 255, 79, .75); color: #fff; /* borda: verde-limão do kit */
     box-shadow: 0 22px 54px rgba(0, 27, 58, .28); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
 }
-.public-page .hero .hero-weather-header { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; padding-bottom: 16px; border-bottom: 1px solid #dfe8f0; }
-.public-page .hero .hero-weather-icon { flex: none; width: 34px; height: 34px; display: grid; place-items: center; border-radius: 9px; background: #1373e6; color: #fff; font-size: 1rem; }
-.public-page .hero .hero-weather-header h2 { margin: 0; color: var(--marca-profundo); font-size: 1.12rem; font-weight: 800; }
-.hp-data { margin-left: auto; display: inline-flex; align-items: center; gap: 8px; color: #5b6f85; font-size: .95rem; white-space: nowrap; }
-.public-page .hero .hero-weather-card .form-label { margin-bottom: 8px; color: #5b6f85; font-size: .86rem; font-weight: 500; }
+.public-page .hero .hero-weather-header { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; padding-bottom: 16px; border-bottom: 1px solid rgba(255, 255, 255, .16); }
+.public-page .hero .hero-weather-icon { flex: none; width: 34px; height: 34px; display: grid; place-items: center; border-radius: 9px; background: var(--marca-azul); color: #fff; font-size: 1rem; }
+.public-page .hero .hero-weather-header h2 { margin: 0; color: #fff; font-size: 1.12rem; font-weight: 800; }
+.hp-data { margin-left: auto; display: inline-flex; align-items: center; gap: 8px; color: #fff; font-size: .95rem; white-space: nowrap; }
+.public-page .hero .hero-weather-card .form-label { margin-bottom: 8px; color: #fff; font-size: .86rem; font-weight: 500; }
 .public-page .hero .hero-weather-card .form-select { height: 50px; border-radius: 12px; border-color: #e1e9f1; background-color: #fff; font-size: 1rem; color: var(--marca-profundo); }
-#boxPrevisaoMunicipioHero { margin-top: 18px; padding-top: 16px; border-top: 1px solid #dfe8f0; }
-.public-page .hero #boxPrevisaoMunicipioHero h2 { margin: 0 0 16px; color: var(--marca-profundo); font-size: 1.3rem; font-weight: 800; }
+#boxPrevisaoMunicipioHero { margin-top: 18px; padding-top: 16px; border-top: 1px solid rgba(255, 255, 255, .16); }
+.public-page .hero #boxPrevisaoMunicipioHero .text-secondary { color: #fff !important; }
+.public-page .hero #boxPrevisaoMunicipioHero h2 { margin: 0 0 16px; color: #fff; font-size: 1.3rem; font-weight: 800; }
 
 .hp-previsao { display: grid; grid-template-columns: 1.5fr 1fr 1fr; }
 .hp-previsao > div { padding: 0 14px; text-align: center; }
-.hp-previsao > div + div { border-left: 1px solid #dfe8f0; }
-.hp-previsao strong { display: inline-flex; align-items: center; gap: 10px; color: var(--marca-profundo); font-size: 1.15rem; font-weight: 800; white-space: nowrap; }
-.hp-previsao small { display: block; margin-top: 8px; color: #6b7f94; font-size: .84rem; line-height: 1.4; }
+.hp-previsao > div + div { border-left: 1px solid rgba(255, 255, 255, .16); }
+.hp-previsao strong { display: inline-flex; align-items: center; gap: 10px; color: #fff; font-size: 1.15rem; font-weight: 800; white-space: nowrap; }
+.hp-previsao small { display: block; margin-top: 8px; color: #fff; font-size: .84rem; line-height: 1.4; }
 .hp-previsao i { font-size: 1.5rem; }
 .hp-previsao .bi-sun-fill { color: #f59e0b; }
-.hp-previsao .bi-moon-fill { color: #7c5cf0; }
+.hp-previsao .bi-moon-fill { color: #c4b5fd; }
 .hp-previsao__chuva { display: flex; align-items: center; gap: 16px; padding-left: 0 !important; text-align: left !important; }
-.hp-previsao__chuva > i { font-size: 2.8rem; color: #7c8cf8; }
-.hp-previsao__chuva strong { color: #1565d8; font-size: 1.7rem; }
+.hp-previsao__chuva > i { font-size: 2.8rem; color: #9db8ff; }
+.hp-previsao__chuva strong { color: var(--marca-limao); font-size: 1.7rem; } /* destaque do kit da marca */
 
 @media (max-width: 991.98px) {
-    .public-page .hero { background-image: linear-gradient(180deg, rgba(4, 33, 63, .94) 0%, rgba(5, 40, 78, .82) 60%, rgba(6, 52, 98, .55) 100%), url('/legado/img/hero-barragem.jpg'); }
     .public-page .hero .hero-weather-card { margin: 0 auto; }
 }
 @media (max-width: 575.98px) {
@@ -74,5 +83,5 @@
 }
 
 /* Aviso enquanto a previsão do município escolhido é buscada. */
-.hp-carregando { float: right; display: inline-flex; align-items: center; gap: 6px; color: #1565d8; font-size: .8rem; }
+.hp-carregando { float: right; display: inline-flex; align-items: center; gap: 6px; color: #fff; font-size: .8rem; }
 #boxPrevisaoMunicipioHero { transition: opacity .15s ease; }

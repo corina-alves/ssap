@@ -103,6 +103,7 @@ export async function salvarGraficoSsdAcao(_: EstadoSalvarAnalise, form: FormDat
         titulo: texto(form, 'titulo').trim() || g.titulo, tipo: g.grafico.tipo, fonte: 'SSD SP Águas', unidade: g.grafico.unidade,
         eixo_y: g.grafico.eixo_y, empilhado: g.grafico.empilhado, dados: tabelaDe(g.grafico),
         cores: Object.fromEntries(g.grafico.series.filter((s) => s.cor).map((s) => [s.nome, s.cor!])),
+        opcoes: { estilo: g.grafico.estilo, estilos: g.grafico.estilos, periodos: g.grafico.periodos, meses: g.grafico.meses },
       },
       { id: a.usuario.id, nome: a.usuario.nome },
       await origemRequisicao(),

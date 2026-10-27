@@ -59,7 +59,24 @@ export const PERIODOS = {
   '5a': 'Últimos 5 anos',
   personalizado: 'Escolher as datas',
 } as const;
-export const TIPOS = { linha: 'Linhas', barra: 'Barras', 'barra-empilhada': 'Barras empilhadas', area: 'Área' } as const;
+export const TIPOS = {
+  linha: 'Linhas suaves',
+  'linha-reta': 'Linhas retas',
+  area: 'Áreas',
+  'area-empilhada': 'Áreas empilhadas',
+  barra: 'Barras',
+  'barra-empilhada': 'Barras empilhadas',
+  pontos: 'Pontos',
+} as const;
+/** Como desenhar cada série (sobrepõe o tipo do gráfico): permite misturar barras e linhas. */
+export const ESTILOS_SERIE = { barra: 'Barras', linha: 'Linha suave', 'linha-reta': 'Linha reta', area: 'Área', pontos: 'Pontos' } as const;
+export type EstiloSerie = keyof typeof ESTILOS_SERIE;
+/** Tipo da tela → tipo guardado (o banco aceita linha, barra e área) + estilo e empilhamento. */
+function baseDoTipo(t: keyof typeof TIPOS): { tipo: 'linha' | 'barra' | 'area'; estilo?: 'reta' | 'pontos'; empilhado: boolean } {
+  if (t === 'barra' || t === 'barra-empilhada') return { tipo: 'barra', empilhado: t === 'barra-empilhada' };
+  if (t === 'area' || t === 'area-empilhada') return { tipo: 'area', empilhado: t === 'area-empilhada' };
+  return { tipo: 'linha', empilhado: false, ...(t === 'linha-reta' ? { estilo: 'reta' as const } : t === 'pontos' ? { estilo: 'pontos' as const } : {}) };
+}
 export const MAX_SERIES = 6;
 const MAX_DIAS_DIARIO = 3660; // série diária: até ~10 anos
 
@@ -138,7 +155,21 @@ const dataValida = (v: string) => (/^\d{4}-\d{2}-\d{2}$/.test(v) && !Number.isNa
 export type Parametros = Record<string, string | string[] | undefined>;
 export type ResumoTempo = { nome: string; unidade: string; media: number | null; soma: number | null; minimo: number | null; maximo: number | null; ultimo: number | null; ultimaData: string | null; n: number };
 export type ResumoLocal = { nome: string; valor: number | null; n: number; ultimaData: string | null };
-export type Grafico = { tipo: string; unidade: string; eixo_y: string; empilhado: boolean; rotulos: string[]; series: SerieGrafico[] };
+export type Grafico = {
+  tipo: string;
+  unidade: string;
+  eixo_y: string;
+  empilhado: boolean;
+  rotulos: string[];
+  series: SerieGrafico[];
+  /** linhas retas ou só pontos (sem: linhas suaves) */
+  estilo?: 'reta' | 'pontos';
+  /** como desenhar cada série, pelo nome */
+  estilos?: Record<string, EstiloSerie>;
+  /** faixas do período chuvoso (dez–mai) e seco (jun–nov), com o mês (1–12) de cada rótulo */
+  periodos?: boolean;
+  meses?: number[];
+};
 
 /**
  * Monta a tela inteira a partir dos parâmetros (da URL ao mostrar, do
@@ -172,9 +203,11 @@ export async function graficoSsd(p: Parametros, hoje: string) {
   // Linhas "local + variável". Na primeira visita: descargas de Atibainha, Jaguari/Jacareí e Cachoeira (PCJ).
   const linhas = Array.from({ length: MAX_SERIES }, (_, i) => {
     const l = Number(texto(`local${i + 1}`)) || 0;
-    return { local: cat?.locais.has(l) ? l : 0, variavel: texto(`var${i + 1}`) };
+    const e = texto(`estilo${i + 1}`);
+    return { local: cat?.locais.has(l) ? l : 0, variavel: texto(`var${i + 1}`), estilo: (Object.hasOwn(ESTILOS_SERIE, e) ? e : '') as EstiloSerie | '' };
   });
-  if (primeiraVez) [12, 20, 15].forEach((space, i) => (linhas[i] = { local: space, variavel: 'Vazão descarregada|m³/s' }));
+  if (primeiraVez) [12, 20, 15].forEach((space, i) => (linhas[i] = { local: space, variavel: 'Vazão descarregada|m³/s', estilo: '' }));
+  const periodos = texto('periodos') === '1';
 
   // Comparar locais: uma variável, vários locais
   const varLocais = texto('var_locais') || 'Volume útil|%';
@@ -224,7 +257,7 @@ export async function graficoSsd(p: Parametros, hoje: string) {
         if (!mensal && (Date.parse(fim) - Date.parse(ini)) / 86_400_000 > MAX_DIAS_DIARIO) {
           throw new ErroValidacao(['Período longo demais para dados diários (máximo de 10 anos). Use a frequência mensal.']);
         }
-        const series: { local: number; variavel: string; pontos: Map<string, number> }[] = [];
+        const series: { local: number; variavel: string; estilo: EstiloSerie | ''; pontos: Map<string, number> }[] = [];
         for (const l of linhas) {
           if (!l.local || !l.variavel) continue;
           if (!cat.locais.get(l.local)?.variaveis[l.variavel]) {
@@ -245,18 +278,23 @@ export async function graficoSsd(p: Parametros, hoje: string) {
         const umaVar = vars.length === 1;
         if (unidades.length > 1) avisos.push(`As séries têm unidades diferentes (${unidades.join(', ')}) no mesmo eixo.`);
         const [nomeVar, unidade] = partes(vars[0]!);
+        const nomesSeries = series.map((s) => {
+          const [n, u] = partes(s.variavel);
+          return nomeLocal(s.local) + (umaVar ? '' : ` — ${n}${u ? ` (${u})` : ''}`);
+        });
+        const estilos = Object.fromEntries(series.flatMap((s, i) => (s.estilo ? [[nomesSeries[i]!, s.estilo]] : [])));
         grafico = {
-          tipo: tipo === 'barra-empilhada' ? 'barra' : tipo,
-          empilhado: tipo === 'barra-empilhada',
+          ...baseDoTipo(tipo),
+          ...(Object.keys(estilos).length ? { estilos } : {}),
+          ...(periodos ? { periodos, meses: datas.map((d) => Number(d.slice(5, 7))) } : {}),
           unidade: unidades.length === 1 ? unidade : '',
           eixo_y: umaVar ? nomeVar : 'Valor',
           rotulos: datas.map((d) => dataCurta(d, mensal)),
-          series: series.map((s) => {
-            const [n, u] = partes(s.variavel);
+          series: series.map((s, i) => {
             const cor = umaVar ? CORES_LOCAIS[s.local] : undefined;
             return {
               ...(cor ? { cor } : {}),
-              nome: nomeLocal(s.local) + (umaVar ? '' : ` — ${n}${u ? ` (${u})` : ''}`),
+              nome: nomesSeries[i]!,
               valores: datas.map((d) => arred3(s.pontos.get(d))),
             };
           }),
@@ -300,10 +338,11 @@ export async function graficoSsd(p: Parametros, hoje: string) {
         const anos = anosSel.map((a) => ({ y: a, valores: valoresPeriodo(porAno, periodoAno, a).map(arred3) }));
         tabelaAnos = { mlt: mltOrdem, anos };
         grafico = {
-          tipo: tipo === 'barra' || tipo === 'barra-empilhada' ? 'barra' : 'linha',
+          // comparar anos: sem empilhar (cada ano é uma série sobre a mesma MLT)
+          ...baseDoTipo(tipo === 'barra-empilhada' ? 'barra' : tipo === 'area-empilhada' ? 'area' : tipo),
           unidade,
           eixo_y: nomeVar + (acum ? ' acumulada' : ''),
-          empilhado: false,
+          ...(periodos ? { periodos, meses: ordem } : {}),
           rotulos: ordem.map((m) => MESES[m - 1]!),
           series: [
             { nome: `MLT (${mltDe}–${mltAte})${acum ? ' acumulada' : ''}`, valores: acum ? acumular(mltOrdem) : mltOrdem },
@@ -356,16 +395,17 @@ export async function graficoSsd(p: Parametros, hoje: string) {
   // Parâmetros atuais, para os campos ocultos do "salvar"
   const parametros: Record<string, string> = {
     formato, periodo, de: ini, ate: fim, freq, tipo, agregacao, hidro: hidro ? '1' : '0', acumulado: acumulado ? '1' : '0',
-    var_locais: varLocais, mlt_de: texto('mlt_de'), mlt_ate: texto('mlt_ate'),
+    var_locais: varLocais, mlt_de: texto('mlt_de'), mlt_ate: texto('mlt_ate'), periodos: periodos ? '1' : '',
   };
   linhas.forEach((l, i) => {
     parametros[`local${i + 1}`] = l.local ? String(l.local) : '';
     parametros[`var${i + 1}`] = l.variavel;
+    parametros[`estilo${i + 1}`] = l.estilo;
   });
   anosSel.forEach((a, i) => (parametros[`ano${i + 1}`] = String(a)));
 
   return {
-    cat, erro, avisos, formato, periodo, freq, mensal, tipo, agregacao, hidro, acumulado, linhas, varLocais, locaisSel, ini, fim,
+    cat, erro, avisos, formato, periodo, freq, mensal, tipo, agregacao, periodos, hidro, acumulado, linhas, varLocais, locaisSel, ini, fim,
     grafico, titulo: titulo.slice(0, 255), resumoTempo, resumoLocais, tabelaAnos, anosSel, mltDe, mltAte, parametros,
   };
 }
