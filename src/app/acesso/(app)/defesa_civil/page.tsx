@@ -62,6 +62,82 @@ function limiteUgrhi(u: number): Geometria | null {
   return f?.geometry ?? null;
 }
 
+/** Tabela dos pontos: situação, nível, tendência e cotas; `comUgrhi` acrescenta a UGRHI (lista do estado). */
+function TabelaPontos({ linhas, regional, comUgrhi = false }: { linhas: Posto[]; regional: (p: Posto) => string; comUgrhi?: boolean }) {
+  return (
+    <div className="table-responsive">
+      <table className="table table-sm align-middle mb-0 dc-tabela">
+        <thead>
+          <tr>
+            <th>Situação</th>
+            <th>Posto</th>
+            <th>Município</th>
+            {comUgrhi && <th>UGRHI</th>}
+            <th>Regional</th>
+            <th className="text-end">Nível (m)</th>
+            <th>Hora</th>
+            <th>Tendência (1 h)</th>
+            <th className="text-end">Atenção</th>
+            <th className="text-end">Alerta</th>
+            <th className="text-end">Emergência</th>
+            <th className="text-end">Extravas.</th>
+            <th className="text-end">Acima da cota</th>
+          </tr>
+        </thead>
+        <tbody>
+          {linhas.map((p) => (
+            <tr key={p.id}>
+              <td>
+                <span className={`dc-selo dc-selo--${p.situacao}`}>{SITUACOES[p.situacao]}</span>
+              </td>
+              <td>
+                <strong>{p.prefixo}</strong> {p.nome}
+                {p.piscinao && <span className="badge text-bg-light border ms-1">piscinão</span>}
+              </td>
+              <td>{p.cidade}</td>
+              {comUgrhi && (
+                <td className="text-nowrap">
+                  <strong>{p.ugrhi}</strong> {UGRHIS[p.ugrhi] ?? ''}
+                </td>
+              )}
+              <td className="text-nowrap">{regional(p)}</td>
+              <td className="text-end fw-semibold">{m(p.nivel, 3)}</td>
+              <td>
+                {p.hora ? (
+                  hora(p.hora)
+                ) : (
+                  <span className="text-secondary" title="Média da última hora">
+                    média 1 h
+                  </span>
+                )}
+              </td>
+              <td>
+                {p.tendencia ? (
+                  <>
+                    <i className={`bi ${SETAS[p.tendencia][0]}`} /> {SETAS[p.tendencia][1]}{' '}
+                    <small className="text-secondary">
+                      ({(p.variacao_1h ?? 0) >= 0 ? '+' : ''}
+                      {m(p.variacao_1h, 3)} m)
+                    </small>
+                  </>
+                ) : (
+                  <span className="text-secondary">—</span>
+                )}
+              </td>
+              {GRAVES.map((k) => (
+                <td key={k} className="text-end">
+                  {m(p.cotas[k], 2)}
+                </td>
+              ))}
+              <td className="text-end">{p.acima !== null ? `+${m(p.acima, 3)} m` : '—'}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 const fmtDataHora = new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit', year: 'numeric' });
 const fmtArquivo = new Intl.DateTimeFormat('sv-SE', { timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
 
@@ -229,6 +305,24 @@ export default async function DefesaCivil({ searchParams }: { searchParams: Prom
           aparecem com a altitude.
         </div>
       </form>
+
+      {/* lista do estado todo, qualquer que seja a UGRHI escolhida acima (já vem do extravasamento à atenção) */}
+      <section className="acesso-card mb-4" id="fora-do-normal">
+        <h2 className="acesso-card__titulo">
+          <i className="bi bi-exclamation-diamond" /> Pontos fora do normal no estado de São Paulo{' '}
+          <span className="fw-normal text-secondary small">
+            ({foraDoNormal} de {postos.length} {postos.length === 1 ? 'ponto monitorado' : 'pontos monitorados'}, em todas as UGRHIs · {quando})
+          </span>
+        </h2>
+        {foraDoNormal ? (
+          <TabelaPontos linhas={postos.filter((p) => p.situacao !== 'normal')} regional={nomeRegional} comUgrhi />
+        ) : (
+          <p className="mb-0">
+            <i className="bi bi-check-circle-fill text-success" />{' '}
+            {postos.length ? 'Todos os pontos monitorados do estado estão em condição normal.' : 'Sem dados do SIBH no momento.'}
+          </p>
+        )}
+      </section>
 
       {ugrhiEscolhida === null && (
         <section className="acesso-card mb-4">
@@ -560,70 +654,7 @@ export default async function DefesaCivil({ searchParams }: { searchParams: Prom
             {tabelas.map(([titulo, linhas, aberta]) => (
               <details key={titulo} className="dc-detalhes" open={aberta}>
                 <summary>{titulo}</summary>
-                <div className="table-responsive">
-                  <table className="table table-sm align-middle mb-0 dc-tabela">
-                    <thead>
-                      <tr>
-                        <th>Situação</th>
-                        <th>Posto</th>
-                        <th>Município</th>
-                        <th>Regional</th>
-                        <th className="text-end">Nível (m)</th>
-                        <th>Hora</th>
-                        <th>Tendência (1 h)</th>
-                        <th className="text-end">Atenção</th>
-                        <th className="text-end">Alerta</th>
-                        <th className="text-end">Emergência</th>
-                        <th className="text-end">Extravas.</th>
-                        <th className="text-end">Acima da cota</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {linhas.map((p) => (
-                        <tr key={p.id}>
-                          <td>
-                            <span className={`dc-selo dc-selo--${p.situacao}`}>{SITUACOES[p.situacao]}</span>
-                          </td>
-                          <td>
-                            <strong>{p.prefixo}</strong> {p.nome}
-                            {p.piscinao && <span className="badge text-bg-light border ms-1">piscinão</span>}
-                          </td>
-                          <td>{p.cidade}</td>
-                          <td className="text-nowrap">{nomeRegional(p)}</td>
-                          <td className="text-end fw-semibold">{m(p.nivel, 3)}</td>
-                          <td>
-                            {p.hora ? (
-                              hora(p.hora)
-                            ) : (
-                              <span className="text-secondary" title="Média da última hora">
-                                média 1 h
-                              </span>
-                            )}
-                          </td>
-                          <td>
-                            {p.tendencia ? (
-                              <>
-                                <i className={`bi ${SETAS[p.tendencia][0]}`} /> {SETAS[p.tendencia][1]}{' '}
-                                <small className="text-secondary">
-                                  ({(p.variacao_1h ?? 0) >= 0 ? '+' : ''}
-                                  {m(p.variacao_1h, 3)} m)
-                                </small>
-                              </>
-                            ) : (
-                              <span className="text-secondary">—</span>
-                            )}
-                          </td>
-                          {GRAVES.map((k) => (
-                            <td key={k} className="text-end">
-                              {m(p.cotas[k], 2)}
-                            </td>
-                          ))}
-                          <td className="text-end">{p.acima !== null ? `+${m(p.acima, 3)} m` : '—'}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                <TabelaPontos linhas={linhas} regional={nomeRegional} />
               </details>
             ))}
 

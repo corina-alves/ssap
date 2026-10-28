@@ -55,6 +55,7 @@ test('mensagem de WhatsApp: resumo, bloco por situação e chuva', () => {
   assert.match(textoChuvaWhatsapp([], 3), /Nenhum posto com chuva acima de 10 mm nas últimas 3 horas/);
 
   const z = textoWhatsapp([posto({ nome: 'Tatuí (Barragem)', nivel: 3.5, tendencia: 'elevacao' }), posto({ nome: 'N', nivel: 1 })], 'UGRHI 10', Date.parse('2026-10-05T13:35:00Z') / 1000, chuva);
+  assert.match(z, /^\*SP-Águas\* planilha atualizada\n🌊 \*SITUAÇÃO DOS /); // cabeçalho antes do título
   assert.match(z, /🗓️ 05\/10\/2026 {2}🕒 10h35/);
   assert.match(z, /🟠 1 em alerta\n🟢 1 em condição normal/);
   assert.match(z, /⬆️ subindo/);

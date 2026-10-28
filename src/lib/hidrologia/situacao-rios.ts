@@ -306,13 +306,16 @@ export const EMOJIS: Record<Situacao, string> = { extravasamento: '🔴', emerge
 
 const fmtDia = new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit', year: 'numeric' });
 
+/** Primeira linha das mensagens de WhatsApp, antes do título. */
+export const CABECALHO_ZAP = '*SP-Águas* planilha atualizada';
+
 /**
  * Mesma informação do texto(), formatada para WhatsApp: ícones, *negrito* e
  * _itálico_, um bloco por situação e uma linha por ponto.
  */
 export function textoWhatsapp(postos: Posto[], titulo: string, geradoEm: number, blocoChuva = '', tipo: TipoPonto = 'rios'): string {
   const por = porSituacao(postos);
-  const l = [`🌊 *SITUAÇÃO DOS ${TITULO_TIPO[tipo]}*`, `📍 *${titulo}*`, `🗓️ ${fmtDia.format(new Date(geradoEm * 1000))}  🕒 ${hora(geradoEm)}`, ''];
+  const l = [CABECALHO_ZAP, `🌊 *SITUAÇÃO DOS ${TITULO_TIPO[tipo]}*`, `📍 *${titulo}*`, `🗓️ ${fmtDia.format(new Date(geradoEm * 1000))}  🕒 ${hora(geradoEm)}`, ''];
   if (!postos.length) {
     l.push('ℹ️ Sem pontos monitorados com dados na última hora.');
   } else {
@@ -349,6 +352,7 @@ export function textoWhatsappEstado(postos: Posto[], geradoEm: number, tipo: Tip
   const fora = postos.length - por.normal.length;
   const nUgrhisFora = new Set(postos.filter((p) => p.situacao !== 'normal').map((p) => p.ugrhi)).size;
   const l = [
+    CABECALHO_ZAP,
     `🌊 *SITUAÇÃO DOS ${TITULO_TIPO[tipo]}*`,
     `📍 *Estado de São Paulo — ${todas ? 'todas as UGRHIs' : 'pontos fora do normal'}*`,
     `🗓️ ${fmtDia.format(new Date(geradoEm * 1000))}  🕒 ${hora(geradoEm)}`,

@@ -5,7 +5,9 @@
  * mesmos data-space-id / data-variable-id de lá.
  *
  * Coordenadas no espaço do viewBox de cada diagrama. Ligações vão sempre da
- * origem para o destino da água (a seta segue esse sentido).
+ * origem para o destino da água (a seta segue esse sentido). `ll` ([lat, lon])
+ * põe o nó no ponto real do mapa (represas: no espelho d'água, pelo
+ * OpenStreetMap); o resto do desenho acompanha (painel_interativo/posicoes-mapa.ts).
  */
 
 /** Variáveis do SSD usadas nos diagramas. */
@@ -14,7 +16,8 @@ export const VD = { chuva: 1, vazao: 3, descarregada: 5, natural: 6, captada: 8,
 export type Ancora = 'start' | 'middle' | 'end';
 /** Valor do SSD (local:variável) desenhado em (x, y). */
 export type Valor = { space: number; v: number; x: number; y: number; ancora?: Ancora; rotulo?: string };
-export type Texto = { texto: string; x: number; y: number; ancora?: Ancora; giro?: number };
+/** `semMapa`: só no esquema (sem sentido sobre o mapa, como a divisa entre bacias) */
+export type Texto = { texto: string; x: number; y: number; ancora?: Ancora; giro?: number; semMapa?: boolean };
 
 export type Ligacao = {
   /** rio/canal natural, túnel ou transferência, adução para ETA */
@@ -26,7 +29,7 @@ export type Ligacao = {
   rotulo?: Texto;
 };
 
-type Base = { nome: string; x: number; y: number };
+type Base = { nome: string; x: number; y: number; ll?: [number, number] };
 export type No =
   | (Base & { tipo: 'reservatorio'; space: number; num: number; prefixo?: string; rotulo?: 'acima' | 'abaixo' | 'direita' | 'esquerda' })
   | (Base & {
@@ -48,6 +51,8 @@ export type Diagrama = {
   valores?: Valor[];
   textos?: Texto[];
   notas?: string[];
+  /** zoom inicial do mapa com uma represa só (com mais, sai da distância entre elas) */
+  zoomMapa?: number;
 };
 
 const { vazao, descarregada: desc, natural, captada } = VD;
@@ -92,11 +97,11 @@ const altoTiete: Diagrama = {
     { tipo: 'aducao', pontos: [[205, 752], [104, 752]] },
   ],
   nos: [
-    { tipo: 'reservatorio', nome: 'Paraitinga', space: 23, num: 1, x: 1092, y: 70 },
-    { tipo: 'reservatorio', nome: 'Ponte Nova', space: 26, num: 2, x: 1092, y: 170 },
-    { tipo: 'reservatorio', nome: 'Biritiba', space: 14, num: 3, x: 1092, y: 335 },
-    { tipo: 'reservatorio', nome: 'Jundiaí', space: 21, num: 4, x: 620, y: 530 },
-    { tipo: 'reservatorio', nome: 'Taiaçupeba', space: 32, num: 5, x: 372, y: 670 },
+    { tipo: 'reservatorio', nome: 'Paraitinga', space: 23, ll: [-23.519, -45.8797], num: 1, x: 1092, y: 70 },
+    { tipo: 'reservatorio', nome: 'Ponte Nova', space: 26, ll: [-23.5797, -45.9362], num: 2, x: 1092, y: 170 },
+    { tipo: 'reservatorio', nome: 'Biritiba', space: 14, ll: [-23.6393, -46.0898], num: 3, x: 1092, y: 335 },
+    { tipo: 'reservatorio', nome: 'Jundiaí', space: 21, ll: [-23.6268, -46.1828], num: 4, x: 620, y: 530 },
+    { tipo: 'reservatorio', nome: 'Taiaçupeba', space: 32, ll: [-23.5821, -46.2781], num: 5, x: 372, y: 670 },
     { tipo: 'posto', prefixo: 'Posto', nome: 'AT-9', x: 72, y: 170, valor: { space: 69, v: vazao, dx: 0, dy: -60 } },
     { tipo: 'posto', prefixo: 'Captação Mogi', nome: 'SEMAE', x: 400, y: 170, valor: { space: 74, v: vazao, dx: 0, dy: -60 } },
     { tipo: 'posto', prefixo: 'Posto', nome: 'AT-7', x: 490, y: 170, valor: { space: 68, v: vazao, dx: 0, dy: -60 } },
@@ -147,12 +152,12 @@ const cantareira: Diagrama = {
     { tipo: 'tunel', pontos: [[1010, 452], [1100, 520], [1100, 660]], valor: { space: 41, v: vazao, x: 1088, y: 610, ancora: 'end', rotulo: 'Atibainha → PS' } },
   ],
   nos: [
-    { tipo: 'reservatorio', nome: 'Jaguari/Jacareí', space: 20, num: 1, x: 982, y: 80 },
-    { tipo: 'reservatorio', nome: 'Cachoeira', space: 15, num: 2, x: 982, y: 260 },
-    { tipo: 'reservatorio', nome: 'Atibainha', space: 12, num: 3, x: 982, y: 430 },
-    { tipo: 'reservatorio', nome: 'Paiva Castro', space: 22, num: 4, x: 660, y: 630 },
-    { tipo: 'reservatorio', nome: 'Águas Claras', space: 11, num: 5, x: 420, y: 740, rotulo: 'acima' },
-    { tipo: 'reservatorio', nome: 'UHE Jaguari', prefixo: 'Paraíba do Sul', space: 34, num: 6, x: 1122, y: 730, rotulo: 'abaixo' },
+    { tipo: 'reservatorio', nome: 'Jaguari/Jacareí', space: 20, ll: [-22.9853, -46.4082], num: 1, x: 982, y: 80 },
+    { tipo: 'reservatorio', nome: 'Cachoeira', space: 15, ll: [-23.0253, -46.2881], num: 2, x: 982, y: 260 },
+    { tipo: 'reservatorio', nome: 'Atibainha', space: 12, ll: [-23.1777, -46.3732], num: 3, x: 982, y: 430 },
+    { tipo: 'reservatorio', nome: 'Paiva Castro', space: 22, ll: [-23.334, -46.657], num: 4, x: 660, y: 630 },
+    { tipo: 'reservatorio', nome: 'Águas Claras', space: 11, ll: [-23.3991, -46.659], num: 5, x: 420, y: 740, rotulo: 'acima' },
+    { tipo: 'reservatorio', nome: 'UHE Jaguari', prefixo: 'Paraíba do Sul', space: 34, ll: [-23.213, -46.0791], num: 6, x: 1122, y: 730, rotulo: 'abaixo' },
     { tipo: 'posto', prefixo: 'Posto', nome: 'F-25BT', x: 1200, y: 80, valor: { space: 61, v: vazao, dx: 0, dy: -50 }, rotulo: 'abaixo' },
     { tipo: 'posto', prefixo: 'Posto', nome: 'Buenópolis', x: 650, y: 80, valor: { space: 58, v: vazao, dx: 0, dy: -50 }, rotulo: 'abaixo' },
     { tipo: 'posto', prefixo: 'Posto', nome: 'Atibaia', x: 470, y: 430, valor: { space: 60, v: vazao, dx: 0, dy: -50 }, rotulo: 'abaixo' },
@@ -164,7 +169,7 @@ const cantareira: Diagrama = {
     { texto: 'Rio Jaguari → Rio Piracicaba', x: 20, y: 102, ancora: 'start' },
     { texto: 'Rio Jacareí', x: 1220, y: 157 },
     { texto: 'Rio Atibaia → Rio Piracicaba', x: 20, y: 412, ancora: 'start' },
-    { texto: 'Bacia do Piracicaba ↑   Bacia do Alto Tietê ↓', x: 20, y: 545, ancora: 'start' },
+    { texto: 'Bacia do Piracicaba ↑   Bacia do Alto Tietê ↓', x: 20, y: 545, ancora: 'start', semMapa: true },
   ],
   notas: ['UHE Jaguari fica na bacia do Paraíba do Sul e não entra no Sistema Equivalente.'],
 };
@@ -184,7 +189,7 @@ const guarapiranga: Diagrama = {
     { tipo: 'aducao', pontos: [[410, 130], [270, 130]] },
   ],
   nos: [
-    { tipo: 'reservatorio', nome: 'Guarapiranga', space: 19, num: 1, x: 642, y: 300, rotulo: 'abaixo' },
+    { tipo: 'reservatorio', nome: 'Guarapiranga', space: 19, ll: [-23.7181, -46.7282], num: 1, x: 642, y: 300, rotulo: 'abaixo' },
     { tipo: 'eeab', prefixo: 'EEAB', nome: 'Taquacetuba ¹', x: 880, y: 486, rotulo: 'abaixo' },
     { tipo: 'eeab', prefixo: 'EEAB', nome: 'Capivari ²', x: 1060, y: 486, rotulo: 'abaixo' },
     { tipo: 'eta', prefixo: 'ETA', nome: 'Alto da Boa Vista', x: 436, y: 130, rotulo: 'acima' },
@@ -208,8 +213,8 @@ const cotia: Diagrama = {
     { tipo: 'aducao', pontos: [[1088, 242], [1088, 410]], valor: { space: 50, v: captada, x: 1104, y: 330, ancora: 'start', rotulo: 'Captação' } },
   ],
   nos: [
-    { tipo: 'reservatorio', nome: 'Pedro Beicht', space: 25, num: 1, x: 248, y: 380, rotulo: 'abaixo' },
-    { tipo: 'reservatorio', nome: 'Cachoeira da Graça', space: 27, num: 2, x: 658, y: 300, rotulo: 'abaixo' },
+    { tipo: 'reservatorio', nome: 'Pedro Beicht', space: 25, ll: [-23.7188, -46.9611], num: 1, x: 248, y: 380, rotulo: 'abaixo' },
+    { tipo: 'reservatorio', nome: 'Cachoeira da Graça', space: 27, ll: [-23.6547, -46.9659], num: 2, x: 658, y: 300, rotulo: 'abaixo' },
     { tipo: 'reservatorio', nome: 'Isolina', space: 30, num: 3, x: 1088, y: 220 },
     { tipo: 'eta', prefixo: 'ETA', nome: 'Alto Cotia', x: 658, y: 100, rotulo: 'acima' },
     { tipo: 'eta', prefixo: 'ETA', nome: 'Baixo Cotia', x: 1088, y: 430, rotulo: 'abaixo' },
@@ -239,7 +244,7 @@ const rioGrande: Diagrama = {
     { tipo: 'tunel', pontos: [[724, 560], [960, 560]], valor: { space: 38, v: vazao, x: 842, y: 548 }, rotulo: { texto: 'Transposição para Taiaçupeba (Alto Tietê)', x: 970, y: 564, ancora: 'start' } },
   ],
   nos: [
-    { tipo: 'reservatorio', nome: 'Rio Grande', space: 31, num: 1, x: 562, y: 420, rotulo: 'esquerda' },
+    { tipo: 'reservatorio', nome: 'Rio Grande', space: 31, ll: [-23.7574, -46.4898], num: 1, x: 562, y: 420, rotulo: 'esquerda' },
     { tipo: 'reservatorio', nome: 'Ribeirão da Estiva', space: 28, num: 2, x: 1022, y: 200, rotulo: 'abaixo' },
     { tipo: 'eta', prefixo: 'ETA', nome: 'Rio Grande', x: 562, y: 210, rotulo: 'acima' },
     { tipo: 'eta', prefixo: 'ETA', nome: 'Ribeirão da Estiva', x: 1022, y: 60, rotulo: 'direita' },
@@ -265,7 +270,7 @@ const rioClaro: Diagrama = {
     { tipo: 'tunel', pontos: [[884, 560], [620, 560], [620, 172]], valor: { space: 37, v: vazao, x: 752, y: 548 } },
   ],
   nos: [
-    { tipo: 'reservatorio', nome: 'Ribeirão do Campo', space: 29, num: 1, x: 1130, y: 510, rotulo: 'esquerda' },
+    { tipo: 'reservatorio', nome: 'Ribeirão do Campo', space: 29, ll: [-23.6425, -45.8305], num: 1, x: 1130, y: 510, rotulo: 'esquerda' },
     { tipo: 'posto', prefixo: 'Posto', nome: 'Km 76 (jusante)', x: 250, y: 170, valor: { space: 308, v: vazao, dx: 0, dy: -50 }, rotulo: 'abaixo' },
     { tipo: 'posto', prefixo: 'Captação', nome: 'Km 76', x: 400, y: 170, rotulo: 'acima' },
     { tipo: 'posto', prefixo: 'Captação', nome: 'Poço Preto', x: 760, y: 170, rotulo: 'acima' },
@@ -294,7 +299,7 @@ const saoLourenco: Diagrama = {
     { tipo: 'aducao', pontos: [[762, 270], [762, 150]], valor: { space: 55, v: captada, x: 778, y: 210, ancora: 'start', rotulo: 'Captação' } },
   ],
   nos: [
-    { tipo: 'reservatorio', nome: 'Cachoeira do França', space: 16, num: 1, x: 762, y: 420, rotulo: 'abaixo' },
+    { tipo: 'reservatorio', nome: 'Cachoeira do França', space: 16, ll: [-23.9217, -47.2065], num: 1, x: 762, y: 420, rotulo: 'abaixo' },
     { tipo: 'posto', prefixo: 'Posto', nome: 'Rio Juquiá', x: 1100, y: 420, valor: { space: 65, v: vazao, dx: 0, dy: -50 }, rotulo: 'abaixo' },
     { tipo: 'posto', prefixo: 'Posto', nome: 'Rio Bonito', x: 480, y: 220, valor: { space: 66, v: vazao, dx: -18, dy: 4, ancora: 'end' }, rotulo: 'direita' },
     { tipo: 'posto', prefixo: 'Posto', nome: 'UHE França Jusante', x: 220, y: 420, valor: { space: 67, v: vazao, dx: 0, dy: -50 }, rotulo: 'abaixo' },

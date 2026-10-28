@@ -43,6 +43,7 @@ export function GraficoPosto({ pontos, titulo }: { pontos: PontoGrafico[]; titul
       spanGaps: true,
     });
 
+    Chart.defaults.font.family = getComputedStyle(canvas.current).fontFamily; // Montserrat da página, não a Helvetica do Chart.js
     const grafico = new Chart(canvas.current, {
       type: 'line',
       data: {

@@ -29,7 +29,7 @@
   .nota-fonte { text-align: right; font-style: italic; }
   .grafico-tela { position: relative; margin-bottom: 10px; }
   .conteudo-boletim svg { max-width: 100%; height: auto; display: block; margin: 0 auto; }
-  .conteudo-boletim svg text { font-family: "Segoe UI", Arial, sans-serif; }
+  .conteudo-boletim svg text { font-family: var(--fonte); }
   
   /* Mapa */
   .mapa-titulo { text-align: center; font-weight: 700; font-style: italic; color: #C00000; font-size: 15px; margin-bottom: 8px; }

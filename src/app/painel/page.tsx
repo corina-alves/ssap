@@ -54,7 +54,7 @@ export default async function Painel({ searchParams }: { searchParams: Promise<R
             </Suspense>
           </div>
           <div className="pnl-atualiza">
-            <i className="bi bi-arrow-repeat" /> atualiza a cada 10 min · {dataHora(new Date())}
+            <i className="bi bi-arrow-repeat" /> atualiza a cada hora · {dataHora(new Date())}
           </div>
         </div>
       </header>

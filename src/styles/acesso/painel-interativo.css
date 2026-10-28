@@ -163,6 +163,36 @@
   transition: opacity .2s;
 }
 .un-desenho.is-carregando { opacity: .55; }
+/* min-width: 0: a coluna da grade encolhe com a tela (o mapa, com altura mínima e proporção, pediria mais largura) */
+.un-desenho { min-width: 0; }
+/* diagrama sobre o mapa (mapa-unifilar.tsx): só as imagens do mapa ficam esmaecidas na cor do diagrama,
+   para os valores seguirem legíveis; hidrografia, área do sistema e desenho por cima, sem véu */
+.un-mapa { position: relative; width: 100%; min-height: 420px; max-height: 78vh; border-radius: 10px; overflow: hidden; isolation: isolate; }
+.un-mapa.leaflet-container { background: var(--un-fundo); font-family: inherit; }
+.un-mapa .leaflet-tile-pane { opacity: .32; }
+.com-mapa--escuro .un-mapa .leaflet-tile-pane { opacity: .7; }
+.com-mapa--satelite .un-mapa .leaflet-tile-pane { opacity: .5; }
+.un-mapa .leaflet-control-attribution { background: rgba(30, 38, 47, .75); color: #9fb5cb; font-size: 10px; }
+.un-mapa .leaflet-control-attribution a { color: #c5d6e6; }
+.un-mapa .leaflet-bar a { background: #2b3541; color: #e6eef6; border-color: rgba(255, 255, 255, .14); }
+.un-mapa .leaflet-bar a:hover { background: #3a4756; }
+.un-mapa-enquadrar { display: flex !important; align-items: center; justify-content: center; font-size: 13px; }
+/* nome dos rios principais, em azul, sobre o rio */
+.un-mapa .un-rio-nome { background: none; border: 0; }
+.un-mapa .un-rio-nome span {
+  display: block; transform: translate(-50%, -135%); white-space: nowrap;
+  color: #35b6ff; font-size: 12px; font-weight: 600;
+  text-shadow: 0 0 3px #10161c, 0 0 3px #10161c, 0 0 1px #10161c;
+}
+@media (max-width: 700px) { .un-mapa .un-rio-nome span { font-size: 10px; } }
+/* o desenho: acima do mapa, abaixo dos botões do Leaflet; só os símbolos recebem o mouse (o resto arrasta o mapa) */
+.un-mapa-desenho { position: absolute; inset: 0; z-index: 450; pointer-events: none; }
+.un-svg-mapa { display: block; width: 100%; height: 100%; font-family: inherit; overflow: visible; }
+.un-svg-mapa .un-res, .un-svg-mapa .un-ponto { pointer-events: auto; }
+/* contorno escuro nos textos: legíveis sobre rios e imagem de satélite */
+.un-svg-mapa text { paint-order: stroke; stroke: rgba(30, 38, 47, .88); stroke-width: 3px; stroke-linejoin: round; }
+.un-bases { margin-left: auto; }
+.un-bases .un-hidro { margin-left: 8px; }
 /* menor que a largura toda do cartão: o diagrama inteiro cabe na tela (centralizado no fundo) */
 .un-svg { display: block; width: 100%; max-width: 1120px; max-height: 70vh; height: auto; margin: 0 auto; font-family: inherit; }
 /* .un-linhas: o brilho é uma polyline larga e translúcida sob cada trecho (sem filter, que pesaria com a animação) */

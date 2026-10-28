@@ -1,0 +1,21 @@
+PROMPT - consolidação de APIs
+
+Com base na auditoria de consumo de APIs externas da Sala de Situação SP-Águas, vamos iniciar somente a correção do problema de alta prioridade relacionado aos dados parciais armazenados como definitivos.
+
+Solicito:
+
+1. Analisar os arquivos `src/lib/integracoes/cache.ts` e `comum.ts`.
+2. Corrigir a lógica de consolidação para impedir que dados coletados durante um dia ainda em andamento sejam armazenados permanentemente como definitivos.
+3. Considerar possíveis correções retroativas realizadas pelas APIs fornecedoras.
+4. Criar testes automatizados para dados de hoje, ontem, períodos históricos e situações próximas à virada do dia.
+5. Identificar as entradas afetadas no cache e propor um procedimento seguro de revalidação, sem apagar todo o volume.
+6. Garantir que os dados não sejam apresentados como atuais quando estiverem desatualizados.
+7. Manter compatibilidade com todas as integrações existentes.
+
+Antes de implementar, apresente os arquivos que serão modificados, o comportamento esperado e os testes previstos.
+
+Não altere o PostgreSQL, o Docker Compose, as configurações globais do servidor ou outros projetos.
+
+Não execute limpeza de cache em produção sem autorização.
+
+Depois da implementação, apresente os resultados dos testes e as instruções para validação em desenvolvimento.

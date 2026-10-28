@@ -1,6 +1,6 @@
 :root {
   /* Fonte do site (Montserrat, do kit da marca; carregada em components/fonte.ts) e escala do texto corrido. */
-  --fonte: var(--font-montserrat, Montserrat), Verdana, sans-serif; /* refeita onde a classe da fonte é aplicada (site.css, ajustes.css) */
+  --fonte: var(--font-montserrat, Montserrat), Verdana, sans-serif; /* a classe da fonte está no <html> (app/layout.tsx) */
   --fonte-texto: 0.95rem; /* parágrafos */
   --fonte-destaque: 1.05rem; /* parágrafo de abertura das faixas de topo */
   --fonte-legenda: 0.8rem; /* legendas e textos curtos de cartões */
@@ -55,6 +55,22 @@
 
 * {
   box-sizing: border-box;
+}
+
+/* Montserrat também onde o Bootstrap (carregado depois) põe a fonte do sistema: corpo, dicas e popovers */
+html:root {
+  --bs-body-font-family: var(--fonte);
+  --bs-font-sans-serif: var(--fonte);
+}
+
+/* campos e botões herdam a fonte (fora do Bootstrap o navegador usa a do sistema); os mapas do Leaflet também */
+button,
+input,
+select,
+textarea,
+optgroup,
+html .leaflet-container {
+  font-family: var(--fonte);
 }
 
 body {

@@ -331,7 +331,7 @@ a.acesso-atalho:hover { border-color: var(--ac-azul); background: #f5f9fc; }
 .dc-detalhes > summary { cursor: pointer; font-weight: 700; font-size: .9rem; margin-bottom: 6px; }
 .dc-tabela { font-size: .82rem; }
 /* Caixa da mensagem de WhatsApp com cara de conversa */
-.dc-zap { background: #e7f8e0; border-color: #b9e3a8; font-family: "Segoe UI", "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", system-ui, sans-serif; white-space: pre-wrap; }
+.dc-zap { background: #e7f8e0; border-color: #b9e3a8; font-family: var(--fonte), "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif; white-space: pre-wrap; }
 .dc-zap:focus { background: #f1fbec; border-color: #25d366; box-shadow: 0 0 0 .2rem rgba(37, 211, 102, .2); }
 .dc-zap-icone { color: #25d366; }
 

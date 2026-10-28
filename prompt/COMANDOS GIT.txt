@@ -1,0 +1,30 @@
+COMANDOS GIT
+
+para atualizar o GitHub:
+git status
+..
+..
+git add .
+git commit -m "mensagem"
+git push origin main
+
+COMANDOS LINUX
+
+para atualizar o projeto no ssap no Docker no server Linux
+
+primeiro: git status
+..
+git pull
+..
+..
+
+Reconstrói as imagens necessárias
+atualiza os containers do projeto
+inicia os serviços em segundo plano
+preserva os volumes existentes do PostgreSQL e dos arquivos
+
+Docker composse -f composse.yaml up -d --build
+
+
+
+PARA

@@ -3,9 +3,13 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
-const ATUALIZAR_MS = 10 * 60 * 1000;
+// dados diários e mensais (Sabesp, SSD): uma atualização por hora basta
+const ATUALIZAR_MS = 60 * 60 * 1000;
 
-/** Relógio do topo; também recarrega os dados do painel a cada 10 minutos. */
+/**
+ * Relógio do topo; também recarrega os dados do painel uma vez por hora, só
+ * com a aba à vista (ao voltar para a aba depois de 1 h, recarrega na hora).
+ */
 export function Relogio() {
   const router = useRouter();
   const [hora, setHora] = useState('--:--');
@@ -13,11 +17,21 @@ export function Relogio() {
   useEffect(() => {
     const marcar = () => setHora(new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }));
     marcar();
-    const relogio = setInterval(marcar, 20_000);
-    const dados = setInterval(() => router.refresh(), ATUALIZAR_MS);
+    let ultima = Date.now();
+    const recarregar = () => {
+      if (document.visibilityState !== 'visible' || Date.now() - ultima < ATUALIZAR_MS) return;
+      ultima = Date.now();
+      router.refresh();
+    };
+    // o relógio confere também a hora de recarregar (sem requisição até passar 1 h)
+    const relogio = setInterval(() => {
+      marcar();
+      recarregar();
+    }, 20_000);
+    document.addEventListener('visibilitychange', recarregar);
     return () => {
       clearInterval(relogio);
-      clearInterval(dados);
+      document.removeEventListener('visibilitychange', recarregar);
     };
   }, [router]);
 

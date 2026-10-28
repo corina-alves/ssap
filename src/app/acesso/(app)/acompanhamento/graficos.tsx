@@ -1,6 +1,6 @@
 'use client';
 
-import type { ECharts, EChartsOption } from 'echarts';
+import type { ECharts, EChartsOption, TooltipComponentOption } from 'echarts';
 import { useEffect, useRef } from 'react';
 
 /**
@@ -24,16 +24,26 @@ const fmt = (v: unknown, casas = 2) =>
   typeof v === 'number' && Number.isFinite(v) ? v.toLocaleString('pt-BR', { minimumFractionDigits: casas, maximumFractionDigits: casas }) : '—';
 
 function base(el: HTMLElement, opcao: EChartsOption): EChartsOption {
+  const fonte = getComputedStyle(el).fontFamily;
+  // a dica de cada gráfico (formato dos valores) entra por cima da comum, sem apagar cores e fonte
+  const propria = opcao.tooltip as TooltipComponentOption | undefined;
   return {
     backgroundColor: 'transparent',
-    textStyle: { color: COR.texto, fontFamily: getComputedStyle(el).fontFamily },
+    textStyle: { color: COR.texto, fontFamily: fonte },
     animationDuration: 400,
-    tooltip: { trigger: 'axis', confine: true, backgroundColor: 'rgba(10,22,51,.95)', borderColor: 'rgba(255,255,255,.15)', textStyle: { color: '#fff' } },
     // clicar num item da legenda esconde a série; clicar de novo mostra
     legend: { top: 0, selectedMode: true, itemGap: 18, textStyle: { color: COR.profundo, fontSize: 13, fontWeight: 600 }, inactiveColor: '#c3ccd6' },
     toolbox: { right: 4, top: 0, feature: { saveAsImage: { title: 'Baixar PNG', pixelRatio: 2, backgroundColor: '#fff' } } },
     grid: { left: 52, right: 24, top: 52, bottom: 40 },
     ...opcao,
+    tooltip: {
+      trigger: 'axis',
+      confine: true,
+      backgroundColor: 'rgba(10,22,51,.95)',
+      borderColor: 'rgba(255,255,255,.15)',
+      ...propria,
+      textStyle: { color: '#fff', fontFamily: fonte, ...propria?.textStyle },
+    },
   };
 }
 

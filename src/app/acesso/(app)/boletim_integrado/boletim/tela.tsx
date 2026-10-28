@@ -78,6 +78,7 @@ function opcoesBase(titulo: string, unidade: string): Opcoes {
 
 /** Desenha o gráfico de um <canvas data-grafico>; devolve os gráficos criados (o hidrograma são dois). */
 function desenhar(canvas: HTMLCanvasElement, s: Spec): Chart[] {
+  Chart.defaults.font.family = getComputedStyle(canvas).fontFamily; // Montserrat da página, não a Helvetica do Chart.js
   const novo = (alvo: HTMLCanvasElement, tipo: 'bar' | 'line', rotulos: string[], conjuntos: Conjunto[], opcoes: Opcoes) =>
     new Chart(alvo, { type: tipo, data: { labels: rotulos, datasets: conjuntos }, options: opcoes as ChartOptions } as ChartConfiguration);
 

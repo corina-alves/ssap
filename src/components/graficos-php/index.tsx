@@ -142,6 +142,8 @@ export function Canvas({ montar, chave, rotulo, sssp = true, id, className }: { 
     Promise.all([carregarLibs(), document.fonts?.ready]).then(([l]) => {
       if (cancelado || !ref.current) return;
       const cfg = montarRef.current(l);
+      // Montserrat em todo gráfico (o padrão do Chart.js é Helvetica/Arial), também nos sem o padrão SSSP
+      l.Chart.defaults.font.family = fonteSite();
       grafico = new l.Chart(ref.current, sssp ? padraoSssp(cfg) : cfg);
     });
     return () => {

@@ -112,7 +112,7 @@ export function MolduraPainel({
             </Suspense>
           </div>
           <div className="pnl-atualiza">
-            <i className="bi bi-arrow-repeat" /> atualiza a cada 10 min · {dataHora(new Date())}
+            <i className="bi bi-arrow-repeat" /> atualiza a cada hora · {dataHora(new Date())}
           </div>
           <form action={sair} className="pi-usuario">
             <span title={usuario.email}>

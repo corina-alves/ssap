@@ -2,12 +2,16 @@
 
 import { useEffect, useId, useMemo, useState, type CSSProperties } from 'react';
 import { paresDoDiagrama, VD, type Ancora, type Diagrama, type Ligacao, type No, type Valor } from '@/conteudo/diagramas-unifilares';
+import { BASES, type NomeBase } from './bases-mapa';
+import { MapaUnifilar } from './mapa-unifilar';
 
 /**
  * Diagrama unifilar de um sistema produtor no tema escuro do painel: rios e
  * túneis tracejados com o sentido do escoamento, reservatórios com o nível de
  * água pelo volume útil, e os valores do SSD na data escolhida. Os modos
  * mostram vazões, volume (hm³), nível (m) ou chuva sobre o mesmo desenho.
+ * Com mapa de fundo, o desenho vai para cima das represas (mapa-unifilar.tsx);
+ * "Sem mapa" mostra o esquema.
  */
 
 export type ValoresSsd = Record<string, { valor: number; data: string } | null>;
@@ -296,6 +300,8 @@ export function DesenhoUnifilar({
   modo,
   destaque,
   aoEscolher,
+  classe = 'un-svg',
+  guias,
 }: {
   d: Diagrama;
   valores: ValoresSsd;
@@ -303,6 +309,9 @@ export function DesenhoUnifilar({
   modo: Modo;
   destaque?: number | null;
   aoEscolher?: (space: number) => void;
+  classe?: string;
+  /** no mapa: do ponto real da represa ao símbolo afastado da vizinha */
+  guias?: [[number, number], [number, number]][];
 }) {
   const vazoes = modo === 'vazao';
   // vazão de um ponto (EEAB, UHE): a dele ou a da ligação que começa ou termina nele
@@ -311,7 +320,7 @@ export function DesenhoUnifilar({
       ? valorDe(valores, n.valor)
       : valorDe(valores, d.ligacoes.find((l) => l.valor && [l.pontos[0], l.pontos.at(-1)].some((p) => p && Math.hypot(p[0] - n.x, p[1] - n.y) < 24))?.valor);
   return (
-    <svg className="un-svg" viewBox={`0 0 ${d.largura} ${d.altura}`} role="img" aria-label={`Diagrama unifilar — ${d.titulo}`}>
+    <svg className={classe} viewBox={`0 0 ${d.largura} ${d.altura}`} role="img" aria-label={`Diagrama unifilar — ${d.titulo}`}>
       <defs>
         <linearGradient id="un-agua" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stopColor="#4fc3f7" />
@@ -344,6 +353,12 @@ export function DesenhoUnifilar({
           );
         })}
       </g>
+      {guias?.map(([a, b], i) => (
+        <g key={i} className="un-guia">
+          <line x1={a[0]} y1={a[1]} x2={b[0]} y2={b[1]} stroke="#bfe9ff" strokeWidth={1.4} strokeDasharray="3 4" opacity={0.85} />
+          <circle cx={a[0]} cy={a[1]} r={5} fill="#bfe9ff" stroke={COR.fundoSimbolo} strokeWidth={2} />
+        </g>
+      ))}
       {d.ligacoes.map((l, i) => (
         <g key={i}>
           {l.rotulo && <Rotulo t={l.rotulo} />}
@@ -465,6 +480,8 @@ function Legenda({ nota }: { nota: string }) {
   );
 }
 
+const BASE_PADRAO: NomeBase = 'Satélite';
+
 const NOTA_FONTE = 'Vazões médias diárias (SSD SP Águas)';
 const NOTA_ANTIGOS = '* último dado disponível, anterior à data escolhida';
 
@@ -483,6 +500,8 @@ export function DiagramaUnifilar({
   aoEscolher?: (space: number) => void;
 }) {
   const [modo, setModo] = useState<Modo>('vazao');
+  const [base, setBase] = useState<NomeBase | null>(BASE_PADRAO);
+  const [hidro, setHidro] = useState(true);
   const st = useValoresSsd(d, data, tick);
   const reservatorios = d.nos.filter((n): n is Extract<No, { tipo: 'reservatorio' }> => n.tipo === 'reservatorio');
   const antigos = Object.values(st.valores).some((v) => v && v.data < data);
@@ -491,12 +510,31 @@ export function DiagramaUnifilar({
     <div className="un">
       <div className="un-topo">
         <BotoesModo modo={modo} aoMudar={setModo} />
+        <div className="mu-grupo un-bases" role="group" aria-label="Mapa de fundo">
+          <span>Mapa de fundo</span>
+          {[null, ...BASES.map((b) => b.nome)].map((nome) => (
+            <button key={nome ?? 'nenhum'} type="button" className={base === nome ? 'is-ativo' : ''} aria-pressed={base === nome} onClick={() => setBase(nome)}>
+              {nome ?? 'Sem mapa'}
+            </button>
+          ))}
+          {base && (
+            <button type="button" className={`un-hidro${hidro ? ' is-ativo' : ''}`} aria-pressed={hidro} onClick={() => setHidro((h) => !h)} title="Rios principais e represas do sistema (IBGE e OpenStreetMap)">
+              <i className="bi bi-water" aria-hidden /> Hidrografia
+            </button>
+          )}
+        </div>
         {st.carregando && <span className="un-status">Atualizando valores…</span>}
         {st.erro && <span className="un-status is-erro">Valores indisponíveis ({st.erro}).</span>}
       </div>
       <div className="un-corpo">
-        <div className={`un-desenho${st.carregando ? ' is-carregando' : ''}`}>
-          <DesenhoUnifilar d={d} valores={st.valores} data={data} modo={modo} destaque={destaque} aoEscolher={aoEscolher} />
+        <div className={`un-desenho${st.carregando ? ' is-carregando' : ''}${base ? ` com-mapa com-mapa--${base === 'Escuro' ? 'escuro' : base === 'Satélite' ? 'satelite' : 'claro'}` : ''}`}>
+          {base ? (
+            <MapaUnifilar d={d} base={base} hidro={hidro}>
+              {(dm, guias) => <DesenhoUnifilar d={dm} guias={guias} valores={st.valores} data={data} modo={modo} destaque={destaque} aoEscolher={aoEscolher} classe="un-svg-mapa" />}
+            </MapaUnifilar>
+          ) : (
+            <DesenhoUnifilar d={d} valores={st.valores} data={data} modo={modo} destaque={destaque} aoEscolher={aoEscolher} />
+          )}
         </div>
         {reservatorios.length > 0 && (
           <aside className="un-volumes" aria-label="Volumes dos reservatórios">

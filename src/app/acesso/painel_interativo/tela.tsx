@@ -23,7 +23,9 @@ import {
 } from './graficos';
 
 const API = '/api/acesso/painel_interativo';
-const ATUALIZAR_MS = 10 * 60 * 1000;
+// dados diários e mensais: uma atualização por hora basta (o servidor guarda o dia de hoje por 1 h)
+const ATUALIZAR_MS = 60 * 60 * 1000;
+const CONFERIR_MS = 5 * 60 * 1000;
 const PERIODOS = [7, 15, 30, 90, 365] as const;
 // variáveis do SSD (as mesmas de VAR em src/lib/hidrologia/painel-interativo.ts)
 const V = { chuva: 1, vazao: 3, afluente: 4, natural: 6, captada: 8, volumePct: 10, volumeHm3: 11, defluente: 13 };
@@ -135,11 +137,22 @@ export function TelaPainel({ data, hoje, sistemaInicial, vistaInicial }: { data:
   const [tick, setTick] = useState(0);
   const inicio = useRef<HTMLDivElement>(null);
 
-  // atualização automática (só olhando o dia de hoje)
+  // atualização automática: só olhando o dia de hoje e com a aba à vista, no máximo uma vez por hora
+  // (a conferência de 5 em 5 min não faz requisição; ao voltar para a aba depois de 1 h, atualiza na hora)
   useEffect(() => {
     if (data !== hoje) return;
-    const t = setInterval(() => setTick((x) => x + 1), ATUALIZAR_MS);
-    return () => clearInterval(t);
+    let ultima = Date.now();
+    const atualizar = () => {
+      if (document.visibilityState !== 'visible' || Date.now() - ultima < ATUALIZAR_MS) return;
+      ultima = Date.now();
+      setTick((x) => x + 1);
+    };
+    const t = setInterval(atualizar, CONFERIR_MS);
+    document.addEventListener('visibilitychange', atualizar);
+    return () => {
+      clearInterval(t);
+      document.removeEventListener('visibilitychange', atualizar);
+    };
   }, [data, hoje]);
 
   // sistema e sub-aba na URL, sem nova ida ao servidor
@@ -238,7 +251,7 @@ export function TelaPainel({ data, hoje, sistemaInicial, vistaInicial }: { data:
           </h2>
           <span className="pi-fonte">
             Fonte: SSD SP Águas · dado mais recente: <b>{atualizado ? dataBr(atualizado) : '—'}</b>
-            {data === hoje && ' · atualiza a cada 10 min'}
+            {data === hoje && ' · atualiza a cada hora'}
           </span>
         </div>
         <div className="pi-filtros">

@@ -13,6 +13,7 @@ export function GraficoDoisEixos({ rotulos, series, unidade, rotuloPct, descrica
 
   useEffect(() => {
     if (!canvas.current) return;
+    Chart.defaults.font.family = getComputedStyle(canvas.current).fontFamily; // Montserrat da página, não a Helvetica do Chart.js
     const grafico = new Chart(canvas.current, {
       type: 'line',
       data: {
