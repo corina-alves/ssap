@@ -1,6 +1,6 @@
 'use client';
 
-import type { EChartsOption, ECharts } from 'echarts';
+import type { EChartsOption, ECharts, TooltipComponentOption } from 'echarts';
 import { useEffect, useRef } from 'react';
 
 /** Cores e fonte do painel (fundo azul-marinho). */
@@ -13,13 +13,30 @@ export const TEMA = {
 
 const fonte = (el: HTMLElement | null) => (el ? getComputedStyle(el).fontFamily : 'sans-serif');
 
+/**
+ * Dica no mesmo visual da dos gráficos do painel (Chart.js, páginas pública e
+ * restrita): fundo preto translúcido, texto branco, cantos de 6 px, sem borda.
+ * As linhas que marcam o dia apontado ficam discretas sobre o fundo escuro.
+ */
+const DICA: TooltipComponentOption = {
+  trigger: 'axis',
+  confine: true,
+  backgroundColor: 'rgba(0,0,0,.8)',
+  borderWidth: 0,
+  borderRadius: 6,
+  padding: [6, 8],
+  extraCssText: 'box-shadow:none',
+  axisPointer: { lineStyle: { color: 'rgba(255,255,255,.35)' }, shadowStyle: { color: 'rgba(255,255,255,.06)' } },
+};
+
 /** Opções comuns: dica com todos os valores do dia, legenda clicável, zoom no tempo e exportação em PNG. */
 function base(el: HTMLElement | null, opcao: EChartsOption): EChartsOption {
+  // a dica de cada gráfico (formato dos valores) entra por cima da comum, sem apagar as cores
+  const propria = opcao.tooltip as TooltipComponentOption | undefined;
   return {
     backgroundColor: 'transparent',
     textStyle: { color: TEMA.texto, fontFamily: fonte(el) },
     animationDuration: 400,
-    tooltip: { trigger: 'axis', confine: true, backgroundColor: 'rgba(8,22,42,.95)', borderColor: 'rgba(255,255,255,.15)', textStyle: { color: '#fff' } },
     legend: { type: 'scroll', top: 0, textStyle: { color: TEMA.texto }, pageTextStyle: { color: TEMA.texto } },
     toolbox: {
       right: 4,
@@ -33,6 +50,12 @@ function base(el: HTMLElement | null, opcao: EChartsOption): EChartsOption {
     },
     grid: { left: 52, right: 24, top: 48, bottom: 56 },
     ...opcao,
+    tooltip: {
+      ...DICA,
+      ...propria,
+      textStyle: { color: '#fff', fontSize: 12, fontFamily: fonte(el), ...propria?.textStyle },
+      axisPointer: { ...DICA.axisPointer, ...propria?.axisPointer },
+    },
   };
 }
 

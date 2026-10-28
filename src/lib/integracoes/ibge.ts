@@ -103,3 +103,36 @@ export async function malhaMunicipiosSP(): Promise<Dado<MalhaMunicipio[]>> {
   );
   return comoDado(FONTE, l);
 }
+
+/** Limite de um município em qualidade intermediária (anéis [lon, lat]), para destacá-lo num mapa. Cache de 30 dias. */
+export async function contornoMunicipio(codigo: number): Promise<Dado<[number, number][][]>> {
+  const ponto = z.tuple([z.number(), z.number()]);
+  const l = await lembrar(
+    'ibge',
+    `contorno-municipio:${codigo}`,
+    TTL.cadastro,
+    async () => {
+      const r = z
+        .object({
+          features: z
+            .array(
+              z.object({
+                geometry: z.discriminatedUnion('type', [
+                  z.object({ type: z.literal('Polygon'), coordinates: z.array(z.array(ponto)) }),
+                  z.object({ type: z.literal('MultiPolygon'), coordinates: z.array(z.array(z.array(ponto))) }),
+                ]),
+              }),
+            )
+            .min(1),
+        })
+        .safeParse(
+          await buscarJson(`https://servicodados.ibge.gov.br/api/v3/malhas/municipios/${codigo}?formato=application/vnd.geo%2Bjson&qualidade=intermediaria`, { timeoutMs: 15_000 }),
+        );
+      if (!r.success) throw new Error('contorno do município em formato inesperado');
+      const g = r.data.features[0]!.geometry;
+      return (g.type === 'Polygon' ? g.coordinates : g.coordinates.flat()) as [number, number][][];
+    },
+    { validadeMaxSeg: 365 * 24 * 60 * 60 },
+  );
+  return comoDado(FONTE, l);
+}

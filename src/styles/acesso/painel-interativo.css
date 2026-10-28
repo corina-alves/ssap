@@ -65,6 +65,7 @@
 .pi-cartao-nome { font-weight: 700; font-size: clamp(.72rem, .85vw, .9rem); color: var(--pi-fraco); }
 .pi-cartao-v { font-weight: 900; font-size: clamp(1.2rem, 2vw, 2.1rem); line-height: 1.1; min-height: 1.1em; }
 .pi-cartao-var { display: flex; flex-direction: column; font-size: .7rem; color: var(--pi-fraco); }
+.pi-cartao-fonte { font-size: .66rem; color: #ffd27a; }
 .pi-faixa { font-size: .68rem; font-weight: 800; padding: 1px 8px; border-radius: 99px; color: #10233d; }
 .pi-faixa.is-normal { background: var(--pi-normal); color: #fff; }
 .pi-faixa.is-atencao { background: var(--pi-atencao); }
@@ -141,3 +142,210 @@
 @media (max-width: 640px) {
   .pi-cartoes, .pi-foco-itens, .pi-res-grade { grid-template-columns: repeat(2, 1fr); }
 }
+
+/* Diagrama unifilar (src/app/acesso/painel_interativo/unifilar.tsx) */
+.un { --un-fundo: #35414e; --un-borda: rgba(255, 255, 255, .10); display: flex; flex-direction: column; gap: 10px; }
+.un-topo { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.un-modos { display: flex; gap: 8px; flex-wrap: wrap; }
+.un-modos button {
+  display: inline-flex; align-items: center; gap: 7px; padding: 7px 15px; border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, .16); background: rgba(255, 255, 255, .04); color: #d6e4f0;
+  font: inherit; font-size: .85rem; font-weight: 700; cursor: pointer;
+}
+.un-modos button:hover { background: rgba(255, 255, 255, .09); }
+.un-modos button.is-ativo { background: #1e88ff; border-color: #1e88ff; color: #fff; box-shadow: 0 0 14px rgba(30, 136, 255, .45); }
+.un-status { color: #9fb5cb; font-size: .8rem; }
+.un-status.is-erro { color: #ffb3bd; }
+.un-corpo { display: grid; grid-template-columns: minmax(0, 1fr) 250px; gap: 14px; align-items: start; }
+.un-desenho {
+  border-radius: 14px; padding: 6px; border: 1px solid var(--un-borda);
+  background: radial-gradient(900px 400px at 70% 0%, rgba(18, 168, 210, .07), transparent 60%), var(--un-fundo);
+  transition: opacity .2s;
+}
+.un-desenho.is-carregando { opacity: .55; }
+/* menor que a largura toda do cartão: o diagrama inteiro cabe na tela (centralizado no fundo) */
+.un-svg { display: block; width: 100%; max-width: 1120px; max-height: 70vh; height: auto; margin: 0 auto; font-family: inherit; }
+/* .un-linhas: o brilho é uma polyline larga e translúcida sob cada trecho (sem filter, que pesaria com a animação) */
+.un-sombra { paint-order: stroke; stroke: rgba(30, 38, 47, .9); stroke-width: 3px; }
+.un-res { cursor: pointer; outline: none; }
+.un-res:hover polygon, .un-res:focus-visible polygon { filter: brightness(1.25); }
+.un-volumes { padding: 14px; border-radius: 14px; border: 1px solid var(--un-borda); background: var(--un-fundo); }
+.un-volumes h4 { margin: 0 0 10px; font-size: .9rem; color: #fff; }
+.un-volumes p { margin: 10px 0 0; color: #8fa6bd; font-size: .74rem; }
+.un-barra {
+  display: grid; grid-template-columns: 92px 1fr auto; align-items: center; gap: 8px; width: 100%;
+  padding: 6px 4px; border: 0; border-radius: 8px; background: transparent; color: #d6e4f0; font: inherit; font-size: .8rem; cursor: pointer; text-align: left;
+}
+.un-barra:hover, .un-barra.is-ativo { background: rgba(255, 255, 255, .07); }
+.un-barra-nome { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.un-barra-trilho { height: 10px; border-radius: 5px; background: rgba(255, 255, 255, .10); overflow: hidden; }
+.un-barra-trilho span { display: block; height: 100%; border-radius: 5px; }
+.un-barra b { font-variant-numeric: tabular-nums; color: #fff; }
+.un-legenda {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px 18px; padding: 9px 14px; border-radius: 12px;
+  background: rgba(255, 255, 255, .04); color: #c5d6e6; font-size: .76rem;
+}
+.un-legenda span { display: inline-flex; align-items: center; gap: 7px; }
+.un-legenda-nota { margin-left: auto; color: #8fa6bd; }
+.un-notas { margin: 0; padding-left: 18px; color: #8fa6bd; font-size: .76rem; }
+@media (max-width: 1100px) {
+  .un-corpo { grid-template-columns: 1fr; }
+}
+
+/* Dentro do Painel de Situação Hídrica (página .pnl): a análise usa as cores e os cartões do painel do site. */
+.pi-pnl .pi {
+  --pi-fundo: transparent;
+  --pi-card: rgba(255, 255, 255, .055);
+  --pi-card2: rgba(255, 255, 255, .08);
+  --pi-borda: rgba(255, 255, 255, .10);
+  --pi-ciano: #12a8d2;
+  padding: 0; border-radius: 0;
+}
+.pi-pnl .pi-topo h2 { display: flex; align-items: center; gap: 10px; font-size: clamp(1rem, 1.3vw, 1.35rem); }
+.pi-pnl .pi-topo h2 i { color: var(--pnl-cyan, #12a8d2); }
+.pi-analise { scroll-margin-top: 12px; }
+.pi-pnl .pnl-top-meta .pi-usuario { justify-content: flex-end; margin-top: 4px; }
+.pi-res-grade--poucos { grid-template-columns: repeat(auto-fill, minmax(260px, 340px)); }
+/* campos com fundo opaco: a lista aberta do select usa essa cor (translúcida, saía branca com texto branco) */
+.pi-pnl .pi select, .pi-pnl .pi input { background-color: #26303b; }
+.pi select option { background-color: #26303b; color: #fff; }
+
+/* Páginas do painel interativo (moldura.tsx): abas no topo, acima dos cards */
+.pi-abas {
+  display: flex; gap: 6px; flex-wrap: wrap; padding: 5px; border-radius: 14px;
+  background: rgba(255, 255, 255, .04); border: 1px solid var(--pnl-panel-border);
+}
+.pi-aba {
+  display: inline-flex; align-items: center; gap: 8px; padding: 9px 18px; border-radius: 10px;
+  color: var(--pnl-muted); font-weight: 700; font-size: clamp(.8rem, .9vw, .95rem); text-decoration: none; white-space: nowrap;
+  transition: background .15s, color .15s;
+}
+.pi-aba i { color: var(--pnl-cyan); }
+.pi-aba:hover { background: rgba(255, 255, 255, .07); color: #fff; }
+.pi-aba.is-ativo { background: var(--pnl-cyan); color: #04222c; box-shadow: 0 6px 18px rgba(18, 168, 210, .30); }
+.pi-aba.is-ativo i { color: #04222c; }
+@media (max-width: 640px) {
+  .pi-abas { flex-wrap: nowrap; overflow-x: auto; }
+}
+
+/* cards do topo levam à análise do sistema */
+.pi-pnl a.pnl-sist-card { color: inherit; text-decoration: none; transition: transform .15s, background .15s; }
+.pi-pnl a.pnl-sist-card:hover { transform: translateY(-2px); background: rgba(255, 255, 255, .09); }
+
+/* grade de cada página: sem esticar até o fim da tela, gráficos maiores (há menos cartões por página) */
+.pi-pnl .pi-grade { flex: 0 0 auto; grid-auto-rows: auto; }
+.pi-pnl .pi-kpis { grid-template-columns: 1fr; }
+.pi-pnl .pi-grade #pnlMapa,
+.pi-pnl .pi-grade .pnl-card--vol .pnl-chart,
+.pi-pnl .pi-grade .pnl-card--pizza .pnl-chart { min-height: clamp(320px, 50vh, 600px); }
+.pi-pnl .pi-grade .pnl-card--wide .pnl-chart { min-height: clamp(280px, 34vh, 420px); }
+@media (min-width: 901px) {
+  .pi-pnl .pi-grade .pnl-transp-row { height: clamp(280px, 42vh, 480px); }
+}
+
+/* sub-abas da análise por sistema */
+.pi-vistas { display: flex; gap: 6px; flex-wrap: wrap; border-bottom: 1px solid var(--pi-borda); padding-bottom: 8px; }
+.pi-vistas button {
+  display: inline-flex; align-items: center; gap: 7px; padding: 7px 14px; border-radius: 10px;
+  border: 1px solid var(--pi-borda); background: transparent; color: var(--pi-fraco);
+  font: inherit; font-size: .85rem; font-weight: 700; cursor: pointer;
+}
+.pi-vistas button i { color: var(--pi-ciano); }
+.pi-vistas button:hover { background: rgba(255, 255, 255, .06); color: #fff; }
+.pi-vistas button.is-ativo { background: rgba(18, 168, 210, .16); border-color: var(--pi-ciano); color: #fff; }
+.pi-linha--2i { grid-template-columns: 1fr 1fr; }
+@media (max-width: 1000px) {
+  .pi-linha--2i { grid-template-columns: 1fr; }
+}
+@media (max-width: 900px) {
+  .pi-pnl .pi-grade #pnlMapa,
+  .pi-pnl .pi-grade .pnl-card--vol .pnl-chart,
+  .pi-pnl .pi-grade .pnl-card--pizza .pnl-chart { min-height: 340px; }
+  .pi-pnl .pi-grade .pnl-card--wide .pnl-chart { min-height: 300px; }
+}
+
+/* visão SIM: botões que abrem o diagrama unifilar de um sistema (um por vez) */
+.pi-diagramas { margin: 6px 0 10px; }
+.pi-diagramas > span { color: var(--pi-fraco); font-size: .78rem; font-weight: 700; margin-right: 4px; display: inline-flex; align-items: center; gap: 6px; }
+.pi-diagramas > span i { color: var(--pi-ciano); }
+.pi-diagramas button:hover { background: var(--pi-ciano); color: #062038; border-color: var(--pi-ciano); }
+/* animação dos diagramas unifilares (unifilar.tsx): água correndo no sentido do escoamento, com a
+   velocidade pela vazão (duração no style); represas enchendo até o volume útil; EEABs girando
+   quando bombeiam; gotas caindo onde choveu no dia. Os passos de un-fluxo-* = ESTILO_LINHA.passo. */
+.un-fluxo { animation: un-fluxo-rio 1.5s linear infinite; }
+.un-fluxo--rio { animation-name: un-fluxo-rio; }
+.un-fluxo--tunel { animation-name: un-fluxo-tunel; }
+.un-fluxo--aducao { animation-name: un-fluxo-aducao; }
+@keyframes un-fluxo-rio { to { stroke-dashoffset: -30; } }
+@keyframes un-fluxo-tunel { to { stroke-dashoffset: -16; } }
+@keyframes un-fluxo-aducao { to { stroke-dashoffset: -22; } }
+.un-parado { opacity: .4; }
+.un-agua-nivel { transition: y 1.6s cubic-bezier(.2, .7, .2, 1), height 1.6s cubic-bezier(.2, .7, .2, 1), transform 1.6s cubic-bezier(.2, .7, .2, 1), opacity .4s; }
+.un-rotor { animation: un-girar 2.4s linear infinite; }
+@keyframes un-girar { to { transform: rotate(360deg); } }
+.un-gotas { animation: un-gotas 1.1s linear infinite; }
+@keyframes un-gotas { 0% { transform: translateY(-3px); opacity: 0; } 30% { opacity: 1; } 100% { transform: translateY(4px); opacity: 0; } }
+.un-pulso { animation: un-pulso 1.6s ease-in-out infinite; }
+@keyframes un-pulso { 50% { opacity: .35; } }
+@media (prefers-reduced-motion: reduce) {
+  .un-fluxo, .un-rotor, .un-gotas, .un-pulso { animation: none; }
+  .un-agua-nivel { transition: none; }
+}
+
+/* mapa da visão SIM: áreas dos sistemas com o volume útil, capital e municípios da RMSP (mapa-sim.tsx) */
+.mu { display: flex; flex-direction: column; gap: 10px; }
+.mu-barra { display: flex; align-items: center; gap: 10px 18px; flex-wrap: wrap; }
+.mu-grupo { display: inline-flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+.mu-grupo > span { color: #8fa6bd; font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; margin-right: 4px; }
+.mu-grupo button, .mu-grupo label {
+  display: inline-flex; align-items: center; gap: 6px; margin: 0; padding: 5px 11px; border-radius: 8px; cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, .14); background: rgba(255, 255, 255, .04); color: #c5d6e6; font: inherit; font-size: .78rem; font-weight: 700;
+}
+.mu-grupo button:hover, .mu-grupo label:hover { background: rgba(255, 255, 255, .09); }
+.mu-grupo button.is-ativo { background: rgba(18, 168, 210, .18); border-color: #12a8d2; color: #fff; }
+.mu-grupo label.is-ativo { color: #fff; }
+.mu-grupo input { accent-color: #12a8d2; margin: 0; }
+.mu-tela { margin-left: auto; padding: 5px 10px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, .14); background: rgba(255, 255, 255, .04); color: #c5d6e6; cursor: pointer; }
+.mu-tela:hover { background: rgba(255, 255, 255, .09); color: #fff; }
+.mu-mapa { height: clamp(520px, 70vh, 900px); border-radius: 14px; overflow: hidden; border: 1px solid rgba(255, 255, 255, .10); background: #1e262f; }
+.mu:fullscreen { background: #1e262f; padding: 14px; }
+.mu:fullscreen .mu-mapa { height: calc(100vh - 110px); }
+.mu .leaflet-container { font-family: inherit; background: #1e262f; }
+.mu .leaflet-control-zoom a { background: #26303b; color: #eaf2fa; border-color: rgba(255, 255, 255, .14); }
+.mu .leaflet-control-zoom a:hover { background: #313c47; }
+.mu .leaflet-control-attribution { background: rgba(30, 38, 47, .75); color: #9fb5cb; font-size: 10px; }
+.mu .leaflet-control-attribution a { color: #c5d6e6; }
+.mu-dica { background: rgba(28, 36, 45, .94); border: 1px solid rgba(255, 255, 255, .2); color: #eef2f6; border-radius: 8px; font-size: .8rem; box-shadow: 0 6px 16px rgba(0, 0, 0, .35); }
+.mu-dica::before { display: none; }
+.mu-dica small { color: #9fb5cb; }
+/* rótulos (o transform do próprio marcador é do Leaflet; centraliza no filho) */
+.mu-capital > div {
+  transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; line-height: 1.05; white-space: nowrap;
+  color: #ffd166; text-shadow: 0 0 4px #000, 0 0 8px rgba(0, 0, 0, .8); pointer-events: none;
+}
+.mu-capital span { font-size: 15px; font-weight: 900; letter-spacing: .02em; }
+.mu-capital small { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .12em; }
+.mu-vol > div {
+  transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; line-height: 1.1; white-space: nowrap; cursor: pointer;
+  padding: 5px 10px 6px; border-radius: 10px; background: rgba(24, 31, 39, .9); border: 1px solid var(--c); border-top: 4px solid var(--c);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, .45); color: #eef2f6; transition: transform .15s;
+}
+.mu-vol > div:hover { transform: translate(-50%, -50%) scale(1.06); }
+.mu-vol b { font-size: 11px; font-weight: 800; color: #c5d6e6; }
+.mu-vol strong { font-size: 19px; font-weight: 900; color: #fff; }
+.mu-vol small { font-size: 10px; font-weight: 700; color: var(--c); }
+.mu-legenda { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; padding: 8px 14px; border-radius: 12px; background: rgba(255, 255, 255, .04); color: #c5d6e6; font-size: .76rem; }
+.mu-legenda span { display: inline-flex; align-items: center; gap: 6px; }
+.mu-legenda i { width: 14px; height: 14px; border-radius: 4px; display: inline-block; }
+.mu-legenda i.mu-legenda-capital { background: rgba(255, 209, 102, .15); border: 2px solid #ffd166; }
+.mu-legenda-nota { margin-left: auto; color: #8fa6bd; }
+@media (max-width: 640px) {
+  .mu-mapa { height: 65vh; }
+  .mu-tela { margin-left: 0; }
+  .mu-vol strong { font-size: 15px; }
+}
+
+/* botão de voltar ao topo (BotaoTopo, estilo .acesso-subir) na cor do painel */
+.pi-pnl .pi-subir { background: #12a8d2; color: #04222c; box-shadow: 0 6px 18px rgba(18, 168, 210, .4); }
+.pi-pnl .pi-subir:hover { background: #4fc3f7; }
+.pi-pnl .pi-subir:focus-visible { outline-color: rgba(79, 195, 247, .5); }
