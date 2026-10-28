@@ -9,20 +9,20 @@ const ALTURA_DIAGRAMA = 1048;
 // Topo do diagrama do SIBH a esconder (menu do site), na escala original — igual ao sumário tradicional.
 const RECORTE_TOPO = 64;
 
-/** Recarrega os dados da página a cada 5 minutos, só com a aba visível. */
-export function AtualizacaoAutomatica() {
+/** Recarrega os dados da página a cada 5 minutos (ou `intervaloMs`), só com a aba visível. */
+export function AtualizacaoAutomatica({ intervaloMs = ATUALIZAR_MS }: { intervaloMs?: number }) {
   const router = useRouter();
   useEffect(() => {
     const t = setInterval(() => {
       if (document.visibilityState === 'visible') router.refresh();
-    }, ATUALIZAR_MS);
+    }, intervaloMs);
     return () => clearInterval(t);
-  }, [router]);
+  }, [router, intervaloMs]);
   return null;
 }
 
 /** Diagrama unifilar ao vivo do SIBH, ajustado à largura do quadro. */
-export function DiagramaUnifilar({ src }: { src: string }) {
+export function DiagramaUnifilar({ src, titulo = 'Diagrama unifilar Sistema Tietê-Pinheiros' }: { src: string; titulo?: string }) {
   const quadro = useRef<HTMLDivElement>(null);
   const frame = useRef<HTMLIFrameElement>(null);
   useEffect(() => {
@@ -42,7 +42,7 @@ export function DiagramaUnifilar({ src }: { src: string }) {
   }, []);
   return (
     <div className="sat-diagrama" ref={quadro}>
-      <iframe ref={frame} src={src} title="Diagrama unifilar Sistema Tietê-Pinheiros" loading="lazy" width={LARGURA_DIAGRAMA} height={ALTURA_DIAGRAMA} />
+      <iframe ref={frame} src={src} title={titulo} loading="lazy" width={LARGURA_DIAGRAMA} height={ALTURA_DIAGRAMA} />
     </div>
   );
 }

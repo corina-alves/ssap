@@ -21,6 +21,18 @@ export async function register() {
     global_.__ssapColetaTp = setInterval(rodar, 10 * 60_000);
     global_.__ssapColetaTp.unref();
   }
+
+  // Boletim Executivo Público — Vale do Ribeira: SIBH e Open-Meteo a cada 10 min (o cache
+  // de cada fonte segura as repetições) e as leituras das 07h gravadas mesmo sem visitas.
+  // BOLETIM_RIBEIRA_COLETA=off desliga.
+  const globalRibeira = globalThis as { __ssapColetaRibeira?: ReturnType<typeof setInterval> };
+  if (process.env.BOLETIM_RIBEIRA_COLETA !== 'off' && !globalRibeira.__ssapColetaRibeira) {
+    const { coletar } = await import('./lib/boletins-sala/boletim-ribeira');
+    const rodar = () => void coletar();
+    setTimeout(rodar, 45_000).unref(); // depois da coleta do Tietê/Pinheiros, sem disputar o SIBH
+    globalRibeira.__ssapColetaRibeira = setInterval(rodar, 10 * 60_000);
+    globalRibeira.__ssapColetaRibeira.unref();
+  }
 }
 
 export const onRequestError: Instrumentation.onRequestError = async (erro, request, contexto) => {

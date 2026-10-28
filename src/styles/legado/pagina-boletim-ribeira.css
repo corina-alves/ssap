@@ -1,0 +1,53 @@
+/* Boletim Executivo Público — Vale do Ribeira (/boletins/automatico/vale-do-ribeira).
+   Usa as folhas, tabelas e cartões do sumário automático (pagina-sumario-automatico.css, classes sat-);
+   aqui só o que é próprio deste boletim (classes bri-). */
+
+.bri-botoes { display: inline-flex; flex-wrap: wrap; gap: 8px 18px; }
+
+/* Destaque dos pontos em situação crítica (alerta, emergência, extravasamento) */
+.bri-critico {
+    display: flex; align-items: flex-start; gap: 10px;
+    margin: 0 0 10px; padding: 10px 12px; border: 1px solid #f3b4ae; border-left: 5px solid var(--sat-extravasamento);
+    border-radius: 6px; background: #fdecea; font-size: 13.5px; line-height: 1.45; color: #7a1f17;
+}
+.bri-critico i { margin-top: 2px; color: var(--sat-extravasamento); font-size: 16px; }
+
+.bri-pontos td { vertical-align: middle; }
+.bri-pontos td:not(:first-child), .bri-barramentos td:not(:first-child) { white-space: nowrap; }
+.bri-linha--alerta td { background: #fff4e5; }
+.bri-linha--emergencia td { background: #f5ecfa; }
+.bri-linha--extravasamento td { background: #fdecea; }
+.bri-linha td:first-child { box-shadow: inset 4px 0 0 var(--sat-alerta); }
+.bri-linha--emergencia td:first-child { box-shadow: inset 4px 0 0 var(--sat-emergencia); }
+.bri-linha--extravasamento td:first-child { box-shadow: inset 4px 0 0 var(--sat-extravasamento); }
+.bri-linha--extravasamento .sat-acima { background: #fbd9d5; }
+
+.bri-trecho { display: block; margin-top: 1px; font-size: 11.5px; color: #64757f; }
+.bri-prefixo { font-size: 11.5px; color: #64757f; white-space: nowrap; }
+.bri-hora { display: block; font-size: 11px; color: #64757f; white-space: nowrap; }
+.bri-hora--atrasada { color: #b35c00; font-weight: 700; }
+.bri-copel { font-weight: 700; color: #6b4e00; text-align: center; }
+
+.sat-nome--semdado { color: #64757f; }
+.sat-sintese p { text-align: left; }
+
+.bri-observacoes { margin: 0; padding-left: 20px; font-size: 13px; line-height: 1.5; }
+.bri-observacoes li { margin-bottom: 4px; }
+
+.bri-fontes { max-width: 297mm; margin: 0 auto 18px; padding: 4px 26px 16px; border: 1px solid #d8e3ed; border-radius: 12px; background: #fff; }
+.bri-fontes ul { margin: 0; padding-left: 20px; font-size: 13px; line-height: 1.55; color: #3b4f5c; }
+
+/* Telas de monitoramento (TV, sala de situação): tudo um pouco maior */
+@media (min-width: 1800px) {
+    .sat-pagina { max-width: 250mm; }
+    .sat-tabela th, .sat-tabela td { font-size: 15px; }
+    .sat-diagnostico, .sat-sintese p, .bri-critico { font-size: 15px; }
+    .sat-card__num { font-size: 34px; }
+    .sat-card__rotulo { font-size: 12px; }
+}
+
+@media (max-width: 767.98px) {
+    .bri-critico { font-size: 12.5px; }
+    .bri-pontos { min-width: 680px; }
+    .bri-fontes { padding: 4px 12px 12px; }
+}

@@ -18,6 +18,8 @@ export const SUMARIOS = {
     salas: ['alfredo-pisani', 'ribeira'],
     // Tipo de boletim em que o PDF é cadastrado, por sala.
     tipos: { 'alfredo-pisani': 'sumario-ribeira', ribeira: 'sumario-cheias' } as Record<string, string>,
+    // Versão pública e automática (sem login e sem edição): botão no cabeçalho da página.
+    publico: '/boletins/automatico/vale-do-ribeira',
   },
   tiete_pinheiros: {
     titulo: 'Sumário Executivo — Alto Tietê / Pinheiros',

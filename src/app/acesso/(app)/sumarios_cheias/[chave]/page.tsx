@@ -31,6 +31,7 @@ export default async function PaginaSumario({ params, searchParams }: { params: 
   }
   const idTipo = await idTipoBoletim(sala.id, sumario.tipos[sala.slug] ?? '');
   const hrefSala = `/acesso/salas/sala?s=${sala.slug}`;
+  const publico = 'publico' in sumario ? sumario.publico : null;
 
   return (
     <div>
@@ -55,6 +56,11 @@ export default async function PaginaSumario({ params, searchParams }: { params: 
               <Link className="btn btn-outline-secondary" href={`/acesso/boletins/novo?tipo=${idTipo}`}>
                 <i className="bi bi-upload me-1" /> Cadastrar PDF como boletim
               </Link>
+            )}
+            {publico && (
+              <a className="btn btn-primary" href={publico} target="_blank" rel="noopener">
+                <i className="bi bi-broadcast me-1" /> Visualizar Boletim Público
+              </a>
             )}
           </>
         }
