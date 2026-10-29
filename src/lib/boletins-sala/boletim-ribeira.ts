@@ -397,6 +397,29 @@ async function volumeCopelHora(fim: number): Promise<VolumeCopel> {
   return { estado: 'indisponivel', motivo, ultima: null };
 }
 
+/** Até 3h de defasagem: a Copel publica de hora em hora e a hora mais recente costuma vir vazia. */
+const COPEL_DEFASAGEM = 3 * HORA;
+
+/**
+ * Sumário emitido (sumario_executivo_ribeira_iguape.html): o registro mais
+ * recente com valor até `ref` (Referência 2), com até 3h de defasagem. Para
+ * datas anteriores a hoje, só a leitura das 07h guardada daquele dia. Nunca lança.
+ */
+export async function volumeCopelAte(ref: number): Promise<VolumeCopel> {
+  const dia = paraCampo(ref).slice(0, 10);
+  const [registros, guardada] = await Promise.all([registrosCopel().catch(() => null), copelGuardada(dia)]);
+  const r = registros?.filter((x) => x.volume !== null && x.em <= ref + 60_000).sort((a, b) => a.em - b.em).at(-1);
+  if (r && ref - r.em <= COPEL_DEFASAGEM) return { estado: 'ok', valor: r.volume!, lidoEm: r.em };
+  if (guardada && guardada.lidoEm <= ref + 60_000 && ref - guardada.lidoEm <= COPEL_DEFASAGEM) return { estado: 'ok', valor: guardada.valor, lidoEm: guardada.lidoEm };
+  const anterior = await copelAnterior(dia);
+  const motivo = !registros
+    ? 'A Copel não respondeu agora.'
+    : Math.min(...registros.map((x) => x.em)) > ref
+      ? 'A Copel só disponibiliza o dia corrente: não há registro para a data escolhida.'
+      : 'A Copel não publicou registro nas 3h anteriores a este horário.';
+  return { estado: 'indisponivel', motivo, ultima: anterior ? { valor: anterior.valor, lidoEm: anterior.lidoEm } : null };
+}
+
 // ---------------------------------------------------------------- chuva na UGRHI 11
 
 export type Chuva = { ultimas3h: number | null; ultimas24h: number | null; previsao24h: number | null; postos: number; pontosPrevisao: number };
