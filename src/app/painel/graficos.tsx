@@ -92,13 +92,15 @@ export function GraficoVolume({
   rotuloAtual,
   rotuloAnterior,
 }: {
-  labels: string[];
+  /** Nome do sistema; com a fonte embaixo quando for o caso (ex.: ['Cantareira', 'Dado: ANA']). */
+  labels: (string | string[])[];
   atual: (number | null)[];
   anterior: (number | null)[];
   cores: string[];
   rotuloAtual: string;
   rotuloAnterior: string;
 }) {
+  const nomes = labels.map((l) => [l].flat().join(' ')); // texto corrido para o leitor de tela
   // linhas das faixas do protocolo (60 / 40 / 30 / 20 %), só o tracejado
   const faixa = (y: number, cor: string) => ({ type: 'line' as const, yMin: y, yMax: y, borderColor: cor, borderWidth: 1.5, borderDash: [6, 5] });
   // afasta a legenda das barras: o valor de um sistema perto de 100% ficava em cima dela
@@ -117,7 +119,7 @@ export function GraficoVolume({
   return (
     <Grafico
       chave={[rotuloAtual, ...atual, ...anterior].join()}
-      rotulo={`Volume útil em ${rotuloAtual}: ${resumo(labels, atual, '%')}. Em ${rotuloAnterior}: ${resumo(labels, anterior, '%')}.`}
+      rotulo={`Volume útil em ${rotuloAtual}: ${resumo(nomes, atual, '%')}. Em ${rotuloAnterior}: ${resumo(nomes, anterior, '%')}.`}
       montar={({ ChartDataLabels }) => ({
         type: 'bar',
         data: {

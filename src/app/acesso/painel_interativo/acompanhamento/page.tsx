@@ -4,7 +4,7 @@ import { abrirPainel, linksSistemas, MolduraPainel } from '../moldura';
 import '@/styles/painel.css';
 import '@/styles/acesso/painel-interativo.css';
 
-export const metadata: Metadata = { title: 'Painel interativo — acompanhamento' };
+export const metadata: Metadata = { title: 'Painel de Segurança Hídrica — acompanhamento' };
 
 /** Tabela de acompanhamento: volume, estágio, chuva e vazão de cada sistema. */
 export default async function Acompanhamento({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {

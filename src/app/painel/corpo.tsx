@@ -133,7 +133,7 @@ async function Avisos({ data }: { data: string }) {
 
 async function KpiJaguari({ data }: { data: string }) {
   const v = await volumeDe(data);
-  return <Kpi rotulo="Volume UHE Jaguari (PS)" valor={v?.jaguari.ok ? fmt(v.jaguari.dados.volumePct, 2, '%') : '—'} sub="reservatório do Paraíba do Sul · ANA" cor="#12a8d2" />;
+  return <Kpi rotulo="Volume UHE Jaguari (PS)" valor={v?.jaguari.ok ? fmt(v.jaguari.dados.volumePct, 2, '%') : '—'} sub="reservatório do Paraíba do Sul · Dado: ANA" cor="#12a8d2" />;
 }
 
 async function KpiTransferencia({ data }: { data: string }) {
@@ -186,6 +186,7 @@ async function CartoesSistemas({ data, links }: { data: string; links?: Record<n
           <>
             <small>{s.nome}</small>
             <div className="v">{fmt(s.volume, 2, '%')}</div>
+            {s.fonte === 'ana' && <small className="pnl-fonte">Dado: ANA</small>}
             <Estagio s={s} />
             {s.difAno !== null && (
               <div className={`dif ${s.difAno >= 0 ? 'up' : 'down'}`}>
@@ -227,7 +228,7 @@ async function Mapa({ data }: { data: string }) {
         area,
         cor: corEstagio(s.estagio.classe),
         linhas: [
-          ['Volume do sistema', fmt(s.volume, 1, '%')],
+          ['Volume do sistema', `${fmt(s.volume, 1, '%')}${s.fonte === 'ana' ? ' (Dado: ANA)' : ''}`],
           ['Estágio', s.estagio.nome],
           ['Chuva do dia', fmt(linhaDe(p, s.id)?.dia ?? s.chuvaDia, 1, ' mm')],
           ['Vazão do dia', fmt(linhaDe(q, s.id)?.dia, 1, ' m³/s')],
@@ -260,7 +261,7 @@ async function CartaoVolume({ data }: { data: string }) {
     <Cartao classe="pnl-card--vol" icone="bi-bar-chart-fill" titulo={`Volume útil por sistema — atual × ${ano} (%)`}>
       <div className="pnl-chart">
         <GraficoVolume
-          labels={produtores.map((s) => s.nome)}
+          labels={produtores.map((s) => (s.fonte === 'ana' ? [s.nome, 'Dado: ANA'] : s.nome))}
           atual={produtores.map((s) => s.volume)}
           anterior={produtores.map((s) => s.volumeAnoAnterior)}
           cores={produtores.map((s) => corEstagio(s.estagio.classe))}
@@ -392,7 +393,10 @@ async function TabelaSistemas({ data }: { data: string }) {
         return (
           <tr key={s.id} className={ehSim ? 'pnl-sim' : undefined}>
             <td>{s.nome}</td>
-            <td>{fmt(s.volume, 1, '%')}</td>
+            <td>
+              {fmt(s.volume, 1, '%')}
+              {s.fonte === 'ana' && <small className="pnl-fonte"> Dado: ANA</small>}
+            </td>
             <Dif v={s.difAno} />
             <Dif v={s.difDia} />
             <td>

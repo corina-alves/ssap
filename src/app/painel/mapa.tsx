@@ -2,7 +2,11 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { carregarLeaflet } from '@/components/graficos/mapa-sistemas';
+import capital from '@/conteudo/capital-sao-paulo.json';
 import type { Contorno } from '@/lib/integracoes/ibge';
+
+/** Marco Zero da cidade de São Paulo (Praça da Sé). */
+const MARCO_ZERO: [number, number] = [-23.5503, -46.634];
 
 export type SistemaPainel = {
   nome: string;
@@ -66,6 +70,20 @@ export function MapaPainel({ sistemas, chave }: { sistemas: SistemaPainel[]; cha
       camada.on('mouseover', () => camada.setStyle({ weight: 2.4, fillOpacity: 0.92 }));
       camada.on('mouseout', () => camada.setStyle(estilo));
     }
+    // Destaque da capital: contorno do município (por cima dos sistemas, sem capturar o clique,
+    // para os popups continuarem) e o Marco Zero, na Praça da Sé, com o rótulo.
+    L.geoJSON({ type: 'Feature', properties: {}, geometry: { type: capital.tipo, coordinates: capital.coordenadas } }, {
+      style: { color: '#ffd166', weight: 2.6, dashArray: '6 4', fillColor: '#ffd166', fillOpacity: 0.08 },
+      interactive: false,
+    }).addTo(mapa);
+    L.marker(MARCO_ZERO, {
+      icon: L.divIcon({ className: 'pnl-capital', html: '<i class="bi bi-star-fill"></i>', iconSize: [22, 22], iconAnchor: [11, 11] }),
+      keyboard: false,
+      zIndexOffset: 1000,
+    })
+      .bindTooltip('São Paulo — Capital', { permanent: true, direction: 'top', offset: [0, -10], className: 'pnl-tip pnl-tip--capital' })
+      .addTo(mapa);
+
     // A caixa muda de tamanho com a grade do painel: reenquadra os sistemas a cada mudança.
     const enquadrar = () => {
       mapa.invalidateSize();

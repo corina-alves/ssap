@@ -245,6 +245,9 @@
 .pnl-pop .lin b { font-weight: 800; }
 .pnl-tip { background: rgba(28, 36, 45, .82); border: 1px solid rgba(255, 255, 255, .25); color: #fff; font-weight: 800; font-size: .8rem; border-radius: 8px; padding: 3px 8px; }
 .pnl-tip::before { display: none; }
+/* Destaque da capital: estrela no Marco Zero e rótulo em amarelo */
+.pnl-capital { display: grid; place-items: center; color: #ffd166; font-size: 1.15rem; text-shadow: 0 0 4px rgba(0, 0, 0, .85); }
+.pnl-tip--capital { border-color: #ffd166; color: #ffd166; }
 
 /* ------------------------------------------------------------ responsivo */
 @media (max-width: 1400px) {
@@ -269,3 +272,7 @@
 .pnl-legenda i.is-alerta { background: #e08600; }
 .pnl-legenda i.is-critico { background: #dc3545; }
 .pnl-legenda i.is-emergencia { background: #800080; }
+
+/* Volume do Cantareira vindo da ANA (regra da Sala): a fonte vai escrita junto ao valor */
+.pnl-fonte { display: block; color: #9fb5cb; font-size: .7rem; font-weight: 700; letter-spacing: .02em; }
+td .pnl-fonte { display: inline; }

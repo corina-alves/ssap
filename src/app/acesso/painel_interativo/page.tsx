@@ -4,7 +4,7 @@ import { abrirPainel, linksSistemas, MolduraPainel } from './moldura';
 import '@/styles/painel.css';
 import '@/styles/acesso/painel-interativo.css';
 
-export const metadata: Metadata = { title: 'Painel interativo — visão geral' };
+export const metadata: Metadata = { title: 'Painel de Segurança Hídrica — visão geral' };
 
 /**
  * Painel interativo da área restrita (exige login e visualizar_dashboard na

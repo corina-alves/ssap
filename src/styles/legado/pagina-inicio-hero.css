@@ -22,6 +22,10 @@
     border: 1px solid rgba(255, 255, 255, .28); border-radius: 999px; background: rgba(255, 255, 255, .12);
     color: #fff; font-size: .88rem; font-weight: 700; letter-spacing: 0; text-transform: none;
 }
+/* Selo em destaque: link para a homenagem a Alfredo Pisani (institucional/alfredo-pisani). */
+.public-page .hero a.hero-tag.hero-tag--pisani { border-color: rgba(255, 209, 102, .85); background: rgba(255, 209, 102, .16); color: #fff; text-decoration: none; transition: background .2s, transform .2s; }
+.public-page .hero a.hero-tag.hero-tag--pisani .bi-award-fill { color: #ffd166; }
+.public-page .hero a.hero-tag.hero-tag--pisani:hover, .public-page .hero a.hero-tag.hero-tag--pisani:focus-visible { background: rgba(255, 209, 102, .3); color: #fff; transform: translateY(-1px); }
 .public-page .hero h1 { margin: 0 0 22px; color: #fff; font-size: clamp(2.4rem, 5.2vw, 4.4rem); font-weight: 800; line-height: 1.05; letter-spacing: -.03em; }
 .public-page .hero h1 span { display: block; color: #5ecbf5; }
 .public-page .hero .hero-content > p { max-width: 640px; margin: 0 0 22px; color: #fff; font-size: var(--fonte-destaque); line-height: 1.55; }

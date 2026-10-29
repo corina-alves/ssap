@@ -67,13 +67,14 @@ const GRUPOS: Grupo[] = [
       { href: '/nota_informativa', rotulo: 'Nota Informativa', icone: 'bi-info-circle' },
     ],
   },
-  {
-    rotulo: 'Institucional',
-    icone: 'bi-bank',
-    cabecalho: 'Institucional',
-    ativos: ['/institucional'],
-    itens: [{ href: '/institucional/alfredo-pisani', rotulo: 'Homenagem a Alfredo Pisani', icone: 'bi-heart' }],
-  },
+  // Fora do menu: a homenagem a Alfredo Pisani é aberta pelo selo do hero da página inicial.
+  // {
+  //   rotulo: 'Institucional',
+  //   icone: 'bi-bank',
+  //   cabecalho: 'Institucional',
+  //   ativos: ['/institucional'],
+  //   itens: [{ href: '/institucional/alfredo-pisani', rotulo: 'Homenagem a Alfredo Pisani', icone: 'bi-heart' }],
+  // },
   {
     rotulo: 'Outorgas',
     icone: 'bi-droplet',

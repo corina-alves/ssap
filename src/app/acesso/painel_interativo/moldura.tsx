@@ -82,7 +82,7 @@ export function MolduraPainel({
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/legado/logo/spaguas_white.png" alt="SP Águas" />
           <div>
-            <h1>Painel interativo</h1>
+            <h1>Painel de Segurança Hídrica</h1>
             <span>Situação hídrica e análise dos sistemas produtores da RMSP - Sala de Situação Alfredo Pisani</span>
           </div>
         </div>

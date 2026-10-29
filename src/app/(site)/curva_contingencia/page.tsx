@@ -42,7 +42,8 @@ async function Grafico({ inicio, fim }: { inicio: string; fim: string }) {
         <GraficoCurvaContingencia inicio={d.inicio} fim={d.fim} curvaSim={d.curvaSim} curvaCantareira={d.curvaCantareira} observado={d.observado} fonteCantareira={d.fonteCantareira} />
       </div>
       <div className="credito-grafico mt-3 text-end">
-        Volume observado — SIM: Sabesp · Cantareira: {d.fonteCantareira}. Elaborado pela Sala de Situação Alfredo Pisani
+        Volume observado — SIM: Sabesp · Cantareira: {d.fonteCantareira.startsWith('ANA') ? `Dado: ${d.fonteCantareira}` : d.fonteCantareira}. Elaborado pela Sala de Situação Alfredo
+        Pisani
       </div>
     </>
   );

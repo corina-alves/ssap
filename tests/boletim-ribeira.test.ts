@@ -5,11 +5,12 @@ import {
   diagnostico,
   inicioDaSituacao,
   montarPonto,
-  observacoes,
   saidaDoExtravasamento,
   serieDoPosto,
   sintese,
+  sinteseResumo,
   tendencia,
+  textoSintese,
   textoVolumeCopel,
   type Leitura,
   type PontoRibeira,
@@ -102,60 +103,76 @@ test('desde quando em extravasamento e saída do extravasamento nas últimas 24 
   assert.equal(saidaDoExtravasamento(s, cotas, 'EXTRAVASAMENTO', AGORA), null);
 });
 
-test('diagnóstico executivo: só fatos (contagem, movimento desde as 07h, maior excedência)', () => {
-  const normais = ESTACOES_RIBEIRA.map((e) => ponto(e, [['07:00', 1], ['15:50', 1]]));
-  assert.equal(
-    diagnostico(normais, T07),
-    'Às 15h50 de 28/10, os 8 pontos monitorados no Vale do Ribeira de Iguape estão em condição normal; nenhum está acima da cota de extravasamento. Desde as 07h de 28/10, o nível ficou estável em 8 pontos.',
-  );
+/** O boletim fechado: Referência 1 = 07h de 27/10, Referência 2 = 07h de 28/10. */
+const INI = t('-1 07:00');
+const fechado = (e = SETE_BARRAS!, s: [string, number][]) => montarPonto(e, serie(s), cotas, INI, T07, null);
+
+test('período fechado: as 07h do dia vêm da reserva do banco quando o SIBH não as tem', () => {
+  const p = montarPonto(SETE_BARRAS!, serie([['-1 07:00', 2.1]]), cotas, INI, T07, null, { nivel: 2.4, em: T07 });
+  assert.equal(p.nivel07, 2.1);
+  assert.equal(p.atual, 2.4);
+  assert.equal(p.variacao, 0.3);
+  assert.equal(p.situacao, 'ATENÇÃO');
+  assert.equal(p.atrasado, false);
+});
+
+test('diagnóstico executivo: o modelo do sumário emitido, às 07h do dia', () => {
+  const normais = ESTACOES_RIBEIRA.map((e) => fechado(e, [['-1 07:00', 1], ['07:00', 1]]));
+  assert.equal(diagnostico(normais, T07), 'Nenhum dos 8 pontos monitorados no Vale do Ribeira de Iguape está acima da cota de extravasamento às 07h de 28/10.');
 
   const mistos: PontoRibeira[] = [
-    ponto(SETE_BARRAS, [['07:00', 4.8], ['15:50', 5.2]]),
-    ponto(PARIQUERA, [['07:00', 6.4], ['15:50', 6.3]]),
-    ponto(REGISTRO, [['07:00', 3.1], ['15:50', 3.4]]),
-    ponto(RIBEIRA, [['-1 01:00', 1]]),
+    fechado(SETE_BARRAS, [['-1 07:00', 4.8], ['07:00', 5.2]]),
+    fechado(PARIQUERA, [['-1 07:00', 6.4], ['07:00', 6.3]]),
+    fechado(REGISTRO, [['-1 07:00', 3.1], ['07:00', 3.4]]),
+    fechado(RIBEIRA, [['-1 01:00', 1]]),
   ];
-  const d = diagnostico(mistos, T07);
-  assert.match(d, /^Às 15h50 de 28\/10, entre os 3 pontos com situação classificada, 2 em extravasamento e 1 em alerta\./);
-  assert.match(d, /1 ponto está sem leitura recente\./);
-  assert.match(d, /Desde as 07h de 28\/10, o nível subiu em 2 pontos e caiu em 1 ponto\./);
-  assert.match(d, /Maior excedência da cota de extravasamento em Pariquera-Açu \(\+1,30 m\)\.$/);
-  assert.doesNotMatch(d, /montante|jusante|em geral/); // sem interpretação que os dados não dão
-
-  assert.match(diagnostico([ponto(RIBEIRA, [['-1 01:00', 1]])], T07), /^Sem leituras recentes/);
-});
-
-test('síntese por ponto nos modelos do sumário tradicional', () => {
-  const extrav = ponto(SETE_BARRAS, [['07:00', 4.8], ['11:00', 5.05], ['15:50', 5.2]]);
-  assert.equal(sintese(extrav), 'em extravasamento desde 11h00 de 28/10. Às 15h50 de 28/10, o posto registrava nível de 5,20 m, 0,20 m acima da cota de extravasamento de 5,00 m, subida de 0,40 m desde as 07h.');
-
-  const longo = ponto(SETE_BARRAS, [['07:00', 5.3], ['15:50', 5.2]]);
-  assert.match(sintese(longo), /^em extravasamento desde antes de 07h00 de 28\/10 \(início do período consultado\)\./);
-
-  const saiu = ponto(SETE_BARRAS, [['07:00', 5.3], ['09:00', 4.9], ['15:50', 4.5]]);
-  assert.equal(sintese(saiu), 'saiu do extravasamento às 09h00 de 28/10 e está em emergência. Às 15h50 de 28/10, o posto registrava nível de 4,50 m, queda de 0,80 m desde as 07h.');
-
-  assert.equal(sintese(ponto(SETE_BARRAS, [['07:00', 1], ['15:50', 1]])), 'em condição normal. Às 15h50 de 28/10, o posto registrava nível de 1,00 m, estável desde as 07h.');
-  assert.match(sintese(ponto(SETE_BARRAS, [['09:00', 1], ['15:50', 1]])), /sem a leitura das 07h, a variação do dia não foi calculada\.$/);
-  assert.equal(sintese(ponto(SETE_BARRAS, [['-1 01:00', 1]])), 'sem leitura disponível no SIBH nas últimas 12 horas.');
-});
-
-test('observações automáticas: registros ausentes ou incompletos', () => {
-  const o = observacoes(
-    [ponto(RIBEIRA, [['-1 01:00', 1]]), ponto(REGISTRO, [['07:00', 1], ['13:10', 1]]), ponto(SETE_BARRAS, [['09:00', 1], ['15:50', 1]])],
-    T07,
+  assert.equal(
+    diagnostico(mistos, T07),
+    'Às 07h de 28/10, 2 de 4 pontos monitorados permanecem em extravasamento no Vale do Ribeira de Iguape, com redução de nível em 1 deles e elevação em 2 pontos. Maior excedência em Pariquera-Açu (+1,30 m acima da cota).',
   );
-  assert.deepEqual(o, [
-    'Sem leitura nas últimas 12 horas: Ribeira – Ponte Divisa Estadual.',
-    'Última leitura recebida há mais de 1 hora: Registro (13h10 de 28/10).',
-    'Sem leitura das 07h de 28/10 (até 30 minutos antes ou depois): Sete Barras — variação e tendência não calculadas.',
-  ]);
-  assert.match(observacoes([ponto(SETE_BARRAS, [['07:00', 1], ['15:50', 1]])], T07)[0]!, /enviaram leitura na última hora/);
+  assert.doesNotMatch(diagnostico(mistos, T07), /montante|jusante|em geral/); // sem interpretação que os dados não dão
+  assert.equal(
+    sinteseResumo(mistos),
+    'Das 4 estações monitoradas, 2 permanecem em extravasamento, 1 em alerta. 0 estações apresentam condição de normalidade.',
+  );
+  assert.equal(diagnostico([fechado(RIBEIRA, [['-1 01:00', 1]])], T07), 'Sem dados suficientes para diagnóstico no momento.');
+});
+
+test('síntese por ponto nos modelos do sumário emitido (extravasamento, saída, demais)', () => {
+  const extrav = sintese(fechado(SETE_BARRAS, [['-1 07:00', 4.8], ['-1 11:00', 5.05], ['07:00', 5.2]]), T07);
+  assert.equal(
+    textoSintese(extrav),
+    'permanece em extravasamento desde 27/10, às 11h00. Às 07h00 de 28/10, o posto registrava nível de 5,20 m, aproximadamente 0,20 m acima da cota de extravasamento de 5,00 m, com variação de +0,40 m no período em análise. O monitoramento dos dados mais recentes indica que o nível permanece em subida.',
+  );
+  // os mesmos destaques em negrito do sumário emitido
+  assert.deepEqual(
+    extrav.filter((x) => x.b).map((x) => x.t),
+    ['0,20 m acima', '+0,40 m', 'subida'],
+  );
+
+  const longo = sintese(fechado(SETE_BARRAS, [['-1 07:00', 5.3], ['07:00', 5.2]]), T07);
+  assert.match(textoSintese(longo), /^permanece em extravasamento desde antes de 27\/10, às 07h00 \(início do período consultado\)\./);
+
+  const saiu = sintese(fechado(SETE_BARRAS, [['-1 07:00', 5.3], ['-1 09:00', 4.9], ['07:00', 4.5]]), T07);
+  assert.equal(
+    textoSintese(saiu),
+    'Saiu de extravasamento às 09h00 de 27/10. Às 07h00 de 28/10, o posto registrava nível de 4,50 m, com variação de -0,80 m no período em análise. O monitoramento dos dados mais recentes indica que o nível permanece em queda.',
+  );
+
+  assert.equal(
+    textoSintese(sintese(fechado(SETE_BARRAS, [['-1 07:00', 1], ['07:00', 1]]), T07)),
+    'permanece em normalidade. Às 07h00 de 28/10, o posto registrava nível de 1,00 m, com variação de 0,00 m no período em análise. O monitoramento dos dados mais recentes indica que o nível permanece em estável.',
+  );
+  assert.equal(
+    textoSintese(sintese(fechado(SETE_BARRAS, [['-1 09:00', 1], ['07:00', 1]]), T07)),
+    'permanece em normalidade. Às 07h00 de 28/10, o posto registrava nível de 1,00 m, sem variação registrada no período em análise.',
+  );
+  assert.equal(textoSintese(sintese(fechado(SETE_BARRAS, [['-1 01:00', 1]]), T07)), 'sem leitura disponível no SIBH às 07h00 de 28/10.');
 });
 
 test('volume útil da Copel: só o registro das 07h, aguardando ou indisponível', () => {
   assert.deepEqual(textoVolumeCopel({ estado: 'ok', valor: 81.26, lidoEm: T07 }), { valor: '81,3%', detalhe: 'Registro das 07h de 28/10 (horário de Brasília).' });
-  assert.equal(textoVolumeCopel({ estado: 'aguardando' }).detalhe, 'Volume útil das 07h: aguardando atualização da Copel.');
+  assert.equal(textoVolumeCopel({ estado: 'aguardando' }).detalhe, 'Aguardando a publicação do registro pela Copel.');
   const ind = textoVolumeCopel({ estado: 'indisponivel', motivo: 'Fonte fora do ar.', ultima: { valor: 80, lidoEm: t('-1 07:00') } });
   assert.equal(ind.valor, 'Indisponível');
   assert.equal(ind.detalhe, 'Fonte fora do ar. Última medição válida: 80,0% em 27/10 às 07h00.');
@@ -188,4 +205,37 @@ test('PDF: gera um documento válido com dados e com as fontes fora do ar', asyn
     endereco: 'x',
   });
   assert.equal(Buffer.from(vazio.subarray(0, 5)).toString(), '%PDF-');
+});
+
+test('período: padrão das 07h às 07h; escolhido pelo usuário; valores inválidos voltam ao padrão', async () => {
+  const { escolherPeriodo, paraCampo } = await import('../src/lib/boletins-sala/boletim-ribeira');
+  // padrão: o dia operacional de hoje (referencias() usa o relógio), 07h → 07h, 24 h
+  const padrao = escolherPeriodo(undefined, undefined);
+  assert.equal(padrao.erro, null);
+  assert.equal(padrao.ref.personalizado, false);
+  assert.equal(padrao.ref.t07 - padrao.ref.t07Ontem, 24 * 3_600_000);
+  assert.match(paraCampo(padrao.ref.t07), /T07:00$/);
+  // o mesmo período do padrão, escolhido no formulário, continua sendo o padrão (usa a reserva das 07h)
+  assert.equal(escolherPeriodo(paraCampo(padrao.ref.t07Ontem), paraCampo(padrao.ref.t07)).ref.personalizado, false);
+
+  const agora = t('15:50');
+
+  const esc = escolherPeriodo('2026-10-27T13:20', '2026-10-28T13:20', agora);
+  assert.equal(esc.erro, null);
+  assert.equal(esc.ref.personalizado, true);
+  assert.equal(esc.ref.t07Ontem, t('-1 13:20'));
+  assert.equal(esc.ref.t07, t('13:20'));
+  assert.equal(esc.ref.dia, '2026-10-28');
+  assert.equal(paraCampo(esc.ref.t07), '2026-10-28T13:20');
+
+  for (const [ini, fim, msg] of [
+    ['2026-10-28T10:00', '2026-10-28T09:00', /anterior ao fim/],
+    ['2026-10-28T10:00', '2026-10-28T18:00', /depois de agora/],
+    ['2026-10-10T10:00', '2026-10-28T10:00', /no máximo 7 dias/],
+    ['ontem', '2026-10-28T10:00', /dia e a hora/],
+  ] as const) {
+    const r = escolherPeriodo(ini, fim, agora);
+    assert.match(r.erro ?? '', msg);
+    assert.equal(r.ref.personalizado, false); // volta ao padrão
+  }
 });

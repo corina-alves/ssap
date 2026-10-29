@@ -124,6 +124,9 @@ const inteiroVazio = (v: unknown) => {
   return Number.isNaN(n) ? '' : Math.round(n).toLocaleString('pt-BR');
 };
 const umaCasa = (v: unknown, suf = '') => num(v, 1, suf);
+const duasCasas = (v: unknown, suf = '') => num(v, 2, suf);
+/** Rótulo de eixo em uma ou mais linhas (ex.: ['Cantareira', 'Dado: ANA']) como texto corrido, para o leitor de tela. */
+const emLinha = (rotulos: (string | string[])[]) => rotulos.map((r) => [r].flat().join(' '));
 
 // ------------------------------------------------------------ componente base
 
@@ -165,15 +168,15 @@ const resumo = (rotulos: string[], valores: (number | null)[], suf: string) =>
 // ======================================================== Home (index.php)
 
 /** "Principais Sistemas" — barras horizontais (graficoResumoCantareiraSim). */
-export function GraficoResumoSistemas({ cantareira, altoTiete, sim }: { cantareira: number | null; altoTiete: number | null; sim: number | null }) {
+export function GraficoResumoSistemas({ cantareira, altoTiete, sim, cantareiraAna = false }: { cantareira: number | null; altoTiete: number | null; sim: number | null; cantareiraAna?: boolean }) {
   const dados = [cantareira ?? 0, altoTiete ?? 0, sim ?? 0];
-  const rotulos = ['Cantareira', 'Alto Tietê', 'SIM'];
+  const rotulos: (string | string[])[] = [cantareiraAna ? ['Cantareira', 'Dado: ANA'] : 'Cantareira', 'Alto Tietê', 'SIM'];
   return (
     <Canvas
       id="graficoResumoCantareiraSim"
       sssp={false}
       chave={dados.join()}
-      rotulo={`Volume útil atual: ${resumo(rotulos, [cantareira, altoTiete, sim], '%')}`}
+      rotulo={`Volume útil atual: ${resumo(emLinha(rotulos), [cantareira, altoTiete, sim], '%')}`}
       montar={({ ChartDataLabels }) => ({
         type: 'bar',
         data: {
@@ -292,7 +295,8 @@ export function GraficoVolumeSistemas({
   rotuloAtual,
   rotuloAnterior,
 }: {
-  labels: string[];
+  /** Nome do sistema; com a fonte embaixo quando for o caso (ex.: ['Cantareira', 'Dado: ANA']). */
+  labels: (string | string[])[];
   volAtual: (number | null)[];
   volAnterior: (number | null)[];
   rotuloAtual: string;
@@ -302,7 +306,7 @@ export function GraficoVolumeSistemas({
     <Canvas
       id="grafSistema"
       chave={[rotuloAtual, ...volAtual, ...volAnterior].join()}
-      rotulo={`Volume útil em ${rotuloAtual}: ${resumo(labels, volAtual, '%')}. Em ${rotuloAnterior}: ${resumo(labels, volAnterior, '%')}.`}
+      rotulo={`Volume útil em ${rotuloAtual}: ${resumo(emLinha(labels), volAtual, '%')}. Em ${rotuloAnterior}: ${resumo(emLinha(labels), volAnterior, '%')}.`}
       montar={({ ChartDataLabels }) => ({
         type: 'bar',
         data: {
@@ -319,8 +323,8 @@ export function GraficoVolumeSistemas({
           interaction: { mode: 'index', intersect: false },
           plugins: {
             legend: { position: 'top' },
-            datalabels: { anchor: 'end', align: 'top', offset: 4, formatter: (v: number | null) => umaCasa(v, '') },
-            tooltip: { callbacks: { label: (c) => c.dataset.label + ': ' + umaCasa(c.parsed.y, '%') } },
+            datalabels: { anchor: 'end', align: 'top', offset: 4, formatter: (v: number | null) => duasCasas(v, '') },
+            tooltip: { callbacks: { label: (c) => c.dataset.label + ': ' + duasCasas(c.parsed.y, '%') } },
             annotation: { annotations: faixas() },
           },
           scales: {
@@ -756,7 +760,7 @@ export function GraficoCurvaContingencia({
             serie('SIM', 'Curva de Contingência', curvaSim.map((p) => ({ x: emMs(p.data), y: p.valor })), '#00a8ff', 3, ultimoSim, 1),
             serie('SIM', 'Observado', obsSim.map((o) => ({ x: emMs(o.data), y: o.sim! })), '#0047d6', 2.5, ultimoSim, 0),
             serie('Cantareira', 'Curva de Contingência', curvaCantareira.map((p) => ({ x: emMs(p.data), y: p.valor })), '#2ecc71', 3, ultimoCant, 1),
-            serie('Cantareira', fonteCantareira ? `Observado (${fonteCantareira.split(';')[0]})` : 'Observado', obsCant.map((o) => ({ x: emMs(o.data), y: o.cantareira! })), '#00953f', 2.5, ultimoCant, 0),
+            serie('Cantareira', fonteCantareira ? `Observado (${fonteCantareira.startsWith('ANA') ? 'Dado: ANA' : fonteCantareira.split(';')[0]})` : 'Observado', obsCant.map((o) => ({ x: emMs(o.data), y: o.cantareira! })), '#00953f', 2.5, ultimoCant, 0),
           ],
         },
         options: {

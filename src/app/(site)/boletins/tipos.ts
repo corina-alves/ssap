@@ -30,12 +30,19 @@ export const TIPOS_PUBLICOS = {
     tipos: ['integrado-ugrhi6', 'sumario-tiete-pinheiros', 'integrado-diario', 'integrado-mensal'],
     // Botão para a versão automática (a lista de PDFs continua como está).
     // Comentado até a EMAE liberar o acesso à planilha: basta descomentar a linha abaixo.
-    // acao: { href: '/boletins/automatico/tiete-pinheiros', rotulo: 'Acessar Sumário Automático', icone: 'bi-broadcast' },
+    // acao: { href: '/boletins/automatico/tiete-pinheiros', rotulo: 'Acessar Sumário Automático', icone: 'bi-broadcast', texto: 'Situação do sistema Tietê-Pinheiros atualizada automaticamente com dados do SIBH e da EMAE.' },
   },
   ribeira: {
     titulo: 'Sumário Executivo Vale do Ribeira',
     descricao: 'Sumários executivos de cheias da bacia do Ribeira de Iguape e Litoral Sul.',
     tipos: ['sumario-ribeira', 'sumario-cheias'],
+    // Botão para a versão automática, acima da lista de PDFs publicados.
+    acao: {
+      href: '/boletins/automatico/vale-do-ribeira',
+      rotulo: 'Sumário Ribeira',
+      icone: 'bi-broadcast',
+      texto: 'Sumário Executivo do dia, fechado das 07h às 07h e gerado automaticamente com dados do SIBH, da Open-Meteo e da Copel.',
+    },
   },
 } as const;
 

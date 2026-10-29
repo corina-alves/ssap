@@ -47,7 +47,8 @@ const DESLOCAR: Record<string, [number, number]> = {
   'Rio Claro': [-0.02, 0.12],
   'Rio Grande': [-0.06, 0.05],
 };
-const POSICAO_CAPITAL: [number, number] = [-23.7, -46.66]; // abaixo do nome "São Paulo" do mapa base
+/** Marco Zero da cidade de São Paulo (Praça da Sé): a estrela do destaque da capital, como no /painel. */
+const MARCO_ZERO: [number, number] = [-23.5503, -46.634];
 
 const latLon = (aneis: [number, number][][]) => aneis.map((a) => a.map(([lon, lat]) => [lat, lon]));
 const num = (v: number | null | undefined, casas: number, suf: string) =>
@@ -95,7 +96,7 @@ export function MapaSim({ sistemas, aoAbrir }: { sistemas: CartaoSistema[]; aoAb
       // rolagem do mouse só depois de clicar no mapa (para não prender a rolagem da página)
       m.on('focus', () => m.scrollWheelZoom.enable());
       m.on('blur', () => m.scrollWheelZoom.disable());
-      for (const [nome, z] of [['mu-municipios', 405], ['mu-capital', 410], ['mu-sistemas', 415], ['mu-rotulos', 620]] as const) m.createPane(nome).style.zIndex = String(z);
+      for (const [nome, z] of [['mu-municipios', 405], ['mu-sistemas', 415], ['mu-capital', 418], ['mu-rotulos', 620]] as const) m.createPane(nome).style.zIndex = String(z);
 
       const c = camadas.current;
       for (const b of BASES)
@@ -144,13 +145,17 @@ export function MapaSim({ sistemas, aoAbrir }: { sistemas: CartaoSistema[]; aoAb
               .addTo(c.municipios);
           if (cam.capital) {
             const anel = latLon(cam.capital);
-            L.polygon(anel, { pane: 'mu-capital', interactive: false, color: COR_CAPITAL, weight: 9, opacity: 0.18, fill: false }).addTo(c.capital);
-            L.polygon(anel, { pane: 'mu-capital', interactive: false, color: COR_CAPITAL, weight: 2.5, opacity: 0.95, fillColor: COR_CAPITAL, fillOpacity: 0.1 }).addTo(c.capital);
-            L.marker(POSICAO_CAPITAL, {
-              pane: 'mu-capital',
+            // Mesmo destaque do /painel: contorno tracejado por cima dos sistemas (sem capturar o
+            // clique) e a estrela no Marco Zero com o rótulo.
+            L.polygon(anel, { pane: 'mu-capital', interactive: false, color: COR_CAPITAL, weight: 2.6, dashArray: '6 4', fillColor: COR_CAPITAL, fillOpacity: 0.08 }).addTo(c.capital);
+            L.marker(MARCO_ZERO, {
+              pane: 'mu-rotulos',
               interactive: false,
-              icon: L.divIcon({ className: 'mu-capital', html: '<div><span>São Paulo</span><small>capital</small></div>', iconSize: null }),
-            }).addTo(c.capital);
+              keyboard: false,
+              icon: L.divIcon({ className: 'mu-capital', html: '<i class="bi bi-star-fill"></i>', iconSize: [22, 22], iconAnchor: [11, 11] }),
+            })
+              .bindTooltip('São Paulo — Capital', { permanent: true, direction: 'top', offset: [0, -10], className: 'mu-dica mu-dica--capital' })
+              .addTo(c.capital);
           }
         })
         .catch(() => {});

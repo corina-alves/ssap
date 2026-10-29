@@ -112,7 +112,7 @@ export function Secoes({ d, ano }: { d: PainelReservatorios | null; ano: number 
             {d ? (
               <div className="rsv-grafico-wrap">
                 <GraficoVolumeSistemas
-                  labels={d.sistemas.map((s) => s.nome)}
+                  labels={d.sistemas.map((s) => (s.fonte === 'ana' ? [s.nome, 'Dado: ANA'] : s.nome))}
                   volAtual={d.sistemas.map((s) => s.volume)}
                   volAnterior={d.sistemas.map((s) => s.volumeAnoAnterior)}
                   rotuloAtual={dataBr(d.dataUsada)}

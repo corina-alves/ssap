@@ -1,20 +1,21 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { PDFDocument, rgb, StandardFonts, type PDFFont, type PDFImage, type PDFPage, type RGB } from 'pdf-lib';
-import { CAPIVARI } from '@/conteudo/boletim-ribeira';
+import { CAPIVARI, PROPAGACAO_RIBEIRA } from '@/conteudo/boletim-ribeira';
 import type { Dado } from '../integracoes/comum';
 import type { Chuva, Estruturas, Niveis, Referencias } from './boletim-ribeira';
 import {
-  classificados,
+  dataHoraCab,
   dataHoraH,
   diagnostico,
   diaMes,
   fmt,
   fmtSinal,
-  horaH,
-  observacoes,
+  hora,
+  periodo,
   rotuloSituacao,
   sintese,
+  sinteseResumo,
   SITUACOES,
   TEXTO_TENDENCIA,
   textoVolumeCopel,
@@ -24,8 +25,9 @@ import {
 } from './boletim-ribeira-regras';
 
 /**
- * PDF do Boletim Executivo Público — Vale do Ribeira, gerado no servidor com
- * os mesmos dados e textos da página (sem navegador e sem edição manual).
+ * PDF do Sumário Executivo — Vale do Ribeira (período fechado das 07h às 07h),
+ * gerado no servidor com os mesmos dados, textos e seções da página e do
+ * sumário que a Sala emite (sem navegador e sem edição manual).
  * Fontes padrão do PDF (Helvetica): os textos passam por `limpar`, que tira os
  * caracteres fora do WinAnsi (setas etc.).
  */
@@ -71,12 +73,6 @@ const COR_SITUACAO: Record<string, RGB> = {
   'SEM DADO': cor('#9aa7ae'),
   'SEM COTAS': cor('#9aa7ae'),
 };
-const FUNDO_SITUACAO: Record<string, RGB> = {
-  ALERTA: cor('#fff4e5'),
-  EMERGÊNCIA: cor('#f5ecfa'),
-  EXTRAVASAMENTO: cor('#fdecea'),
-};
-
 /** Só caracteres que a Helvetica padrão (WinAnsi) codifica. */
 export const limpar = (t: string) => t.replace(/[  ]/g, ' ').replace(/[^\n\x20-\x7e\xa0-\xff–—‘’“”•…]/g, '');
 
@@ -88,6 +84,17 @@ async function bytesLogo(): Promise<Uint8Array | null> {
     return null; // sem o logo, o PDF sai só com o título
   }
   return logo;
+}
+
+const imagens = new Map<string, Uint8Array>();
+/** Outra imagem de public/boletins/automatico (o esquema da bacia); sem ela, a seção sai só com o título. */
+async function bytesImagem(nome: string): Promise<Uint8Array | null> {
+  try {
+    if (!imagens.has(nome)) imagens.set(nome, new Uint8Array(await readFile(/*turbopackIgnore: true*/ join(process.cwd(), 'public', 'boletins', 'automatico', nome))));
+  } catch {
+    return null;
+  }
+  return imagens.get(nome)!;
 }
 
 type Trecho = { t: string; negrito?: boolean; cor?: RGB };
@@ -254,8 +261,10 @@ class Escritor {
 
 const tendenciaTexto = (t: Tendencia | null) => (t ? TEXTO_TENDENCIA[t] : '—');
 const corVariacao = (v: number | null) => (v === null ? undefined : v > 0 ? C.sobe : v < 0 ? C.azul : C.cinza);
+const metros = (n: number | null) => (n === null ? '—' : `${fmt(n)} m`);
 
-function cabecalho(e: Escritor, imagem: PDFImage | null, c: ConteudoPdf, referencia: number | null) {
+/** Cabeçalho de página do sumário emitido: título, subtítulo, "RÓTULO | valor" e o logo. */
+function cabecalho(e: Escritor, imagem: PDFImage | null, titulo: string, subtitulo: string, rotulo: string, valor: string) {
   const p = e.pagina;
   const topo = e.y;
   if (imagem) {
@@ -263,20 +272,21 @@ function cabecalho(e: Escritor, imagem: PDFImage | null, c: ConteudoPdf, referen
     const h = (imagem.height / imagem.width) * w;
     p.drawImage(imagem, { x: M + L - w, y: topo - h, width: w, height: h });
   }
-  p.drawText('BOLETIM EXECUTIVO — VALE DO RIBEIRA', { x: M, y: topo - 17, size: 16, font: e.negrito, color: C.azul });
-  p.drawText(limpar('Operação de controle de cheias — Sala de Situação São Paulo · SP Águas'), { x: M, y: topo - 31, size: 9, font: e.negrito, color: C.cinza });
-  p.drawText(limpar(`REFERÊNCIA | ${referencia ? dataHoraH(referencia) : dataHoraH(c.ref.agora)} (horário de Brasília)`), { x: M, y: topo - 45, size: 9, font: e.negrito, color: C.texto });
-  p.drawText(limpar(`Gerado automaticamente em ${dataHoraH(c.geradoEm)}, a partir das fontes oficiais, sem edição manual.`), { x: M, y: topo - 57, size: 7.5, font: e.normal, color: C.cinza });
-  e.y = topo - 64;
+  p.drawText(limpar(titulo), { x: M, y: topo - 17, size: 15, font: e.negrito, color: C.azul });
+  p.drawText(limpar(subtitulo), { x: M, y: topo - 31, size: 9, font: e.negrito, color: C.cinza });
+  p.drawText(limpar(`${rotulo} | ${valor}`), { x: M, y: topo - 45, size: 9, font: e.negrito, color: C.texto });
+  e.y = topo - 54;
   p.drawLine({ start: { x: M, y: e.y }, end: { x: M + L, y: e.y }, thickness: 2, color: C.azul });
   e.y -= 6;
 }
 
+/** Cartões do sumário emitido: pontos monitorados (com leitura) e a contagem por situação. */
 function cartoes(e: Escritor, pontos: PontoRibeira[]) {
-  const com = classificados(pontos);
+  const com = pontos.filter((p) => !p.semDado);
+  const situacao = (p: PontoRibeira) => (p.semCotas ? 'NORMAL' : p.situacao);
   const itens: [string, string, RGB][] = [
-    [String(pontos.filter((p) => !p.semDado).length), 'COM LEITURA', cor('#1481b7')],
-    ...SITUACOES.map((s): [string, string, RGB] => [String(com.filter((p) => p.situacao === s).length), s, COR_SITUACAO[s]!]),
+    [String(com.length), 'PONTOS MONITORADOS', cor('#1481b7')],
+    ...SITUACOES.map((s): [string, string, RGB] => [String(com.filter((p) => situacao(p) === s).length), s, COR_SITUACAO[s]!]),
   ];
   const w = L / itens.length;
   const h = 40;
@@ -287,160 +297,185 @@ function cartoes(e: Escritor, pontos: PontoRibeira[]) {
     const wn = e.negrito.widthOfTextAtSize(n, 18);
     e.pagina.drawText(n, { x: x + (w - wn) / 2, y: e.y - 21, size: 18, font: e.negrito, color: c });
     const r = limpar(rotulo);
-    const wr = e.negrito.widthOfTextAtSize(r, 6.8);
-    e.pagina.drawText(r, { x: x + (w - wr) / 2, y: e.y - 33, size: 6.8, font: e.negrito, color: C.texto });
+    const wr = e.negrito.widthOfTextAtSize(r, 6.4);
+    e.pagina.drawText(r, { x: x + (w - wr) / 2, y: e.y - 33, size: 6.4, font: e.negrito, color: C.texto });
   }
   e.y -= h + 6;
 }
 
+/** Imagem centralizada, até `altMax` de altura (o esquema da bacia: a página 1 inteira cabe numa folha). */
+function imagemLargura(e: Escritor, img: PDFImage, altMax = 180) {
+  const h = Math.min(altMax, (img.height / img.width) * L);
+  const w = (img.width / img.height) * h;
+  e.garantir(h + 4);
+  e.pagina.drawImage(img, { x: M + (L - w) / 2, y: e.y - h, width: w, height: h });
+  e.y -= h + 6;
+}
+
 export async function gerarPdf(c: ConteudoPdf): Promise<Uint8Array> {
+  const { ref } = c;
+  const fechamento = dataHoraCab(ref.t07);
+  const per = periodo(ref.t07Ontem, ref.t07);
   const doc = await PDFDocument.create();
-  doc.setTitle(`Boletim Executivo — Vale do Ribeira — ${dataHoraH(c.geradoEm)}`);
+  doc.setTitle(`Sumário Executivo — Vale do Ribeira — ${fechamento}`);
   doc.setAuthor('Sala de Situação São Paulo — SP Águas');
-  doc.setSubject('Situação hidrológica dos pontos de monitoramento do Vale do Ribeira de Iguape, gerada automaticamente com dados do SIBH.');
-  doc.setCreator('Sala de Situação São Paulo — boletim automático');
+  doc.setSubject(`Operação de controle de cheias no Vale do Ribeira de Iguape, período de ${per}, gerado automaticamente com dados do SIBH, da Open-Meteo e da Copel.`);
+  doc.setCreator('Sala de Situação São Paulo — sumário automático');
   doc.setProducer('SSAP (pdf-lib)');
   doc.setLanguage('pt-BR');
   doc.setCreationDate(new Date(c.geradoEm));
-  const [normal, negrito, bytes] = await Promise.all([doc.embedFont(StandardFonts.Helvetica), doc.embedFont(StandardFonts.HelveticaBold), bytesLogo()]);
+  const [normal, negrito, bytes, bytesEsquema] = await Promise.all([
+    doc.embedFont(StandardFonts.Helvetica),
+    doc.embedFont(StandardFonts.HelveticaBold),
+    bytesLogo(),
+    bytesImagem('diagrama-ribeira.png'),
+  ]);
   const imagem = bytes ? await doc.embedPng(bytes).catch(() => null) : null;
+  const esquema = bytesEsquema ? await doc.embedPng(bytesEsquema).catch(() => null) : null;
   const e = new Escritor(doc, normal, negrito);
 
-  const n = c.niveis;
-  const pontos = n.ok ? [...n.dados.pontos].sort((a, b) => a.ordemRio - b.ordemRio) : [];
-  cabecalho(e, imagem, c, n.ok ? n.dados.atualizadoEm : null);
+  // ================================================== página 1 — estruturas
+  cabecalho(e, imagem, 'SUMÁRIO EXECUTIVO', 'OPERAÇÃO DE CONTROLE DE CHEIAS', 'SITUAÇÃO GERAL', fechamento);
 
-  // ---- situação geral
-  e.secao('SITUAÇÃO GERAL DOS PONTOS DE MONITORAMENTO');
-  if (!n.ok) e.aviso(`Níveis: ${n.mensagem}`);
-  else {
-    if (n.desatualizado && n.dados.atualizadoEm) e.aviso(`Atenção: a leitura mais recente recebida do SIBH é de ${dataHoraH(n.dados.atualizadoEm)}.`);
-    cartoes(e, pontos);
-    e.quadro([{ t: 'DIAGNÓSTICO EXECUTIVO  ', negrito: true, cor: cor('#e48a00') }, { t: diagnostico(pontos, c.ref.t07) }], C.laranja, C.laranjaFundo);
+  e.secao("BACIA DO RIO RIBEIRA DO IGUAPE: PRINCIPAIS CURSOS D'ÁGUA E ESTRUTURAS");
+  if (esquema) imagemLargura(e, esquema);
 
-    // ---- tabela dos 8 pontos
-    e.secao('PONTOS DE MONITORAMENTO (NÍVEL) — DE MONTANTE PARA JUSANTE');
-    e.tabela(
-      [
-        { titulo: 'Ponto', largura: 24 },
-        { titulo: 'Situação', largura: 16, centro: true },
-        { titulo: `Nível 07h ${diaMes(c.ref.t07)}`, largura: 10, centro: true },
-        { titulo: 'Nível atual', largura: 13, centro: true },
-        { titulo: 'Variação desde 07h', largura: 10, centro: true },
-        { titulo: 'Acima da cota de extravasamento', largura: 12, centro: true },
-        { titulo: 'Tendência', largura: 9, centro: true },
-      ],
-      pontos.map((p): Celula[] => {
-        const r = rotuloSituacao(p);
-        const fundo = FUNDO_SITUACAO[r];
-        const destaque = (t: string, extra: object = {}): Celula => ({ t, fundo, ...extra });
-        return [
-          destaque(`${p.nome} — ${p.prefix}\n${p.trecho}`, { negrito: !!fundo }),
-          { t: r, fundo: COR_SITUACAO[r], cor: C.branco, negrito: true, centro: true },
-          destaque(p.nivel07 === null ? '—' : `${fmt(p.nivel07)} m`),
-          destaque(p.atual === null ? '—' : `${fmt(p.atual)} m (${horaH(p.atualEm!)})`),
-          destaque(p.variacao === null ? '—' : `${fmtSinal(p.variacao)} m`, { cor: corVariacao(p.variacao), negrito: true }),
-          destaque(p.situacao === 'EXTRAVASAMENTO' && !p.semDado && p.acima !== null ? `${fmtSinal(p.acima)} m` : '—', { cor: C.sobe, negrito: true }),
-          destaque(tendenciaTexto(p.tendencia), { cor: corVariacao(p.variacao), negrito: true }),
-        ];
-      }),
-    );
-    e.nota(
-      `Situação: nível atual comparado às cotas de referência cadastradas no SIBH (atenção, alerta, emergência e extravasamento). Variação: nível atual menos o das 07h de ${diaMes(c.ref.t07)}; tendência pelo sinal da variação (0,00 m = estável). Acima da cota: só para os pontos em extravasamento.`,
-    );
-  }
-
-  // ---- chuva
-  e.secao('CHUVA NA BACIA DO RIO RIBEIRA DE IGUAPE (UGRHI 11)');
+  e.secao('CHUVA NA BACIA DO RIO RIBEIRA DO IGUAPE (UGRHI 11)');
   if (!c.chuva.ok) e.aviso(c.chuva.mensagem);
   else {
     const d = c.chuva.dados;
     e.tabela(
       [
-        { titulo: 'Últimas 3 h (média)', largura: 1, centro: true },
-        { titulo: 'Últimas 24 h (média)', largura: 1, centro: true },
-        { titulo: 'Previsão 24 h (média)', largura: 1, centro: true },
+        { titulo: 'Últimas 3hrs (mm)', largura: 1, centro: true },
+        { titulo: 'Últimas 24hrs (mm)', largura: 1, centro: true },
+        { titulo: 'Previsão 24hrs (mm)', largura: 1, centro: true },
       ],
       [[`${fmt(d.ultimas3h, 1)} mm`, `${fmt(d.ultimas24h, 1)} mm`, `${fmt(d.previsao24h, 1)} mm`].map((t) => ({ t, negrito: true }))],
     );
-    e.nota(`Chuva observada: rede telemétrica do SIBH (${d.postos} postos na UGRHI 11). Previsão: Open-Meteo, média de ${d.pontosPrevisao} pontos de grade na UGRHI 11. Consulta de ${dataHoraH(c.chuva.obtidoEm.getTime())}.`);
+    e.nota(
+      `Fontes: Previsão - Open-Meteo (média na área da UGRHI 11, ${d.pontosPrevisao} pontos de grade, 24 h seguintes às ${hora(ref.t07)}) | Chuva observada - rede telemétrica SP-ÁGUAS (${d.postos} postos, acumulado até as ${hora(ref.t07)}) | Atualizado em ${fechamento}`,
+    );
   }
 
-  // ---- Capivari
-  e.secao('RESERVATÓRIO CAPIVARI — UHE GOVERNADOR PARIGOT DE SOUZA');
+  e.secao('SITUAÇÃO ATUAL DE ESTRUTURAS DE INTERESSE');
   const vol = textoVolumeCopel(c.copel);
   const est = c.estruturas;
   const cap = est.ok ? est.dados.capivari : null;
   e.tabela(
     [
-      { titulo: 'Volume útil (%) — Copel, 07h', largura: 22, centro: true },
-      { titulo: 'Cota atual (m)', largura: 16, centro: true },
-      { titulo: 'Vazão defluente (m³/s)', largura: 18, centro: true },
-      { titulo: 'Variação da cota desde 07h (m)', largura: 22, centro: true },
-      { titulo: 'Variação da vazão desde 07h (m³/s)', largura: 22, centro: true },
+      { titulo: 'Eixo', largura: 12 },
+      { titulo: 'Estrutura', largura: 22 },
+      { titulo: 'Volume útil (%)', largura: 12, centro: true },
+      { titulo: 'Cota atual (1) (m)', largura: 14, centro: true },
+      { titulo: 'Vazão defluente (m³/s)', largura: 14, centro: true },
+      { titulo: `Variação (m) (${per})`, largura: 13, centro: true },
+      { titulo: `Variação (m³/s) (${per})`, largura: 13, centro: true },
     ],
     [
       [
+        'Rio Capivari',
+        `Barragem Capivari — UHE Gov. Parigot de Souza (${CAPIVARI.prefix})`,
         { t: vol.valor, negrito: true },
-        cap?.cota === null || !cap ? '—' : `${fmt(cap.cota)} (${horaH(cap.cotaEm!)})`,
+        fmt(cap?.cota),
         fmt(cap?.vazao),
         { t: fmtSinal(cap?.variacaoCota ?? null), cor: corVariacao(cap?.variacaoCota ?? null), negrito: true },
         { t: fmtSinal(cap?.variacaoVazao ?? null), cor: corVariacao(cap?.variacaoVazao ?? null), negrito: true },
       ],
     ],
   );
-  e.nota(`${vol.detalhe} Cota e vazão: SIBH — SP Águas / ANA (posto ${CAPIVARI.prefix}). Nível máximo de operação: ${fmt(CAPIVARI.nivelMaximoOperacao)} m; nível máximo maximorum: ${fmt(CAPIVARI.nivelMaximoMaximorum)} m.`);
+  e.nota(
+    `(1) Nível máximo de operação (m): ${fmt(CAPIVARI.nivelMaximoOperacao)}; Nível máximo maximorum (m): ${fmt(CAPIVARI.nivelMaximoMaximorum)}. Fonte dos dados: SIBH-SPÁGUAS / ANA (posto ${CAPIVARI.prefix}). Volume útil: ${vol.detalhe} Fonte: Copel — Monitoramento Hidrológico de Bacias.`,
+  );
   if (!est.ok) e.aviso(`Capivari e barramentos: ${est.mensagem}`);
 
-  // ---- barramentos
   if (est.ok) {
-    e.secao('BARRAMENTOS DE INTERESSE — UHEs/PCHs NAS CABECEIRAS DO RIO JUQUIÁ');
+    e.secao('SITUAÇÃO DOS BARRAMENTOS DE INTERESSE — UHEs/PCHs NAS CABECEIRAS DO RIO JUQUIÁ');
     e.tabela(
       [
-        { titulo: 'Barramento', largura: 34 },
-        { titulo: `Nível 07h ${diaMes(c.ref.t07)}`, largura: 13, centro: true },
-        { titulo: 'Nível atual', largura: 15, centro: true },
-        { titulo: 'Jusante (m³/s)', largura: 12, centro: true },
-        { titulo: 'Variação', largura: 12, centro: true },
-        { titulo: 'Tendência', largura: 14, centro: true },
+        { titulo: 'PONTO', largura: 28 },
+        { titulo: 'NÍVEL ANTERIOR', largura: 15, centro: true },
+        { titulo: 'NÍVEL ATUAL', largura: 15, centro: true },
+        { titulo: 'JUSANTE', largura: 13, centro: true },
+        { titulo: 'VARIAÇÃO', largura: 15, centro: true },
+        { titulo: 'TENDÊNCIA', largura: 14, centro: true },
       ],
       est.dados.barramentos.map((b): Celula[] => [
-        `${b.nome} — ${b.prefix}`,
-        b.anterior === null ? '—' : `${fmt(b.anterior)} m`,
-        b.atual === null ? '—' : `${fmt(b.atual)} m (${horaH(b.atualEm!)})`,
-        fmt(b.jusante),
+        b.nome,
+        metros(b.anterior),
+        metros(b.atual),
+        b.jusante === null ? '—' : `${fmt(b.jusante)} m³/s`,
         { t: b.variacao === null ? '—' : `${fmtSinal(b.variacao)} m`, cor: corVariacao(b.variacao), negrito: true },
         { t: tendenciaTexto(b.tendencia), cor: corVariacao(b.variacao), negrito: true },
       ]),
     );
-    e.nota('Os barramentos não têm cotas de referência publicadas no SIBH: a tabela mostra só nível, vazão de jusante e tendência.');
+    e.nota(`Fonte: SIBH-SPÁGUAS / ANA. Nível anterior: 07h de ${diaMes(ref.t07Ontem)}; nível atual: 07h de ${diaMes(ref.t07)}.`);
   }
 
-  // ---- síntese
-  if (n.ok) {
-    e.secao('SÍNTESE POR PONTO DE MONITORAMENTO');
+  // ================================================== página 2 — pontos de monitoramento
+  e.novaPagina();
+  cabecalho(e, imagem, 'SITUAÇÃO DOS PONTOS DE MONITORAMENTO (NÍVEL)', 'VALE DO RIBEIRA DE IGUAPE — DADOS AUTOMÁTICOS VIA API SIBH-SPÁGUAS', 'ATUALIZADO EM', fechamento);
+  const n = c.niveis;
+  if (!n.ok) e.aviso(`Níveis dos pontos de monitoramento: ${n.mensagem}`);
+  else {
+    const pontos = [...n.dados.pontos].sort((a, b) => a.ordemRio - b.ordemRio);
+    if (n.desatualizado && n.dados.atualizadoEm) e.aviso(`Atenção: a leitura mais recente recebida do SIBH até as ${hora(ref.t07)} de ${diaMes(ref.t07)} é de ${dataHoraCab(n.dados.atualizadoEm)}.`);
+    cartoes(e, pontos);
+
+    e.secao('LEITURA DO SISTEMA — PROPAGAÇÃO DA CHEIA NO VALE DO RIBEIRA');
+    const extravasando = PROPAGACAO_RIBEIRA.filter((x) => {
+      const p = pontos.find((q) => q.id === x.id);
+      return p && !p.semDado && !p.semCotas && p.situacao === 'EXTRAVASAMENTO';
+    });
+    if (extravasando.length) {
+      e.tabela(
+        extravasando.map((x) => ({ titulo: x.rotulo, largura: 1, centro: true })),
+        [extravasando.map(() => ({ t: 'EXTRAVASAMENTO', fundo: COR_SITUACAO.EXTRAVASAMENTO, cor: C.branco, negrito: true, centro: true }))],
+      );
+    } else {
+      e.tabela([{ titulo: 'Nenhum ponto do eixo principal em extravasamento', largura: 1, centro: true }], [[{ t: 'NORMAL', fundo: COR_SITUACAO.NORMAL, cor: C.branco, negrito: true, centro: true }]]);
+    }
+
+    const emExtrav = (p: PontoRibeira) => !p.semDado && !p.semCotas && p.situacao === 'EXTRAVASAMENTO' && p.acima !== null;
+    e.tabela(
+      [
+        { titulo: 'PONTOS CRÍTICOS', largura: 32 },
+        { titulo: `NÍVEL ${hora(ref.t07Ontem).toUpperCase()}/${diaMes(ref.t07Ontem)}`, largura: 14, centro: true },
+        { titulo: `NÍVEL ${hora(ref.t07).toUpperCase()}/${diaMes(ref.t07)}`, largura: 14, centro: true },
+        { titulo: 'VARIAÇÃO', largura: 13, centro: true },
+        { titulo: 'ACIMA DA COTA', largura: 13, centro: true },
+        { titulo: 'TENDÊNCIA', largura: 14, centro: true },
+      ],
+      pontos.map((p): Celula[] => [
+        p.nome,
+        metros(p.nivel07),
+        metros(p.atual),
+        { t: p.variacao === null ? '—' : `${fmtSinal(p.variacao)} m`, cor: corVariacao(p.variacao), negrito: true },
+        emExtrav(p) ? { t: `${fmtSinal(p.acima)} m`, cor: C.sobe, negrito: true } : '—',
+        { t: tendenciaTexto(p.tendencia), cor: corVariacao(p.variacao), negrito: true },
+      ]),
+    );
+
+    e.quadro([{ t: 'DIAGNÓSTICO EXECUTIVO  ', negrito: true, cor: cor('#e48a00') }, { t: diagnostico(pontos, ref.t07) }], C.laranja, C.laranjaFundo);
+
+    e.secao('SÍNTESE DA SITUAÇÃO NOS PONTOS COM EXTRAVASAMENTO');
+    e.paragrafo(sinteseResumo(pontos), { tamanho: 8.5, depois: 4 });
     for (const p of pontos) {
       const r = rotuloSituacao(p);
-      e.paragrafo([{ t: `${p.nome.replace(/\s*\(([^)]+)\)\s*$/, ', $1')}: `, negrito: true, cor: r === 'NORMAL' ? C.texto : COR_SITUACAO[r] }, { t: sintese(p) }], { tamanho: 8.5, depois: 4 });
+      e.paragrafo(
+        [
+          { t: `${p.nome.replace(/\s*\(([^)]+)\)\s*$/, ', $1')}: `, negrito: true, cor: r === 'NORMAL' ? C.texto : COR_SITUACAO[r] },
+          ...sintese(p, ref.t07).map((x) => ({ t: x.t, negrito: x.b })),
+        ],
+        { tamanho: 8.5, depois: 4 },
+      );
     }
-    e.secao('OBSERVAÇÕES AUTOMÁTICAS');
-    for (const o of observacoes(pontos, c.ref.t07)) e.paragrafo(o, { tamanho: 8, recuo: 10, marcador: '•' });
   }
-
-  // ---- fontes
-  e.secao('FONTES DOS DADOS');
-  const fontes = [
-    `Níveis, cotas de referência, barramentos, Capivari (cota e vazão) e chuva observada: SIBH — SP Águas (apps.spaguas.sp.gov.br/sibh)${n.ok && n.dados.atualizadoEm ? `; leitura mais recente dos pontos: ${dataHoraH(n.dados.atualizadoEm)}` : ''}.`,
-    `Previsão de chuva: Open-Meteo (open-meteo.com)${c.chuva.ok ? `; consulta de ${dataHoraH(c.chuva.obtidoEm.getTime())}` : ''}.`,
-    'Volume útil do Reservatório Capivari: Copel — Monitoramento Hidrológico de Bacias (registro das 07h); sem integração automática autorizada até o momento.',
-    `Versão on-line, atualizada automaticamente: ${c.endereco}`,
-  ];
-  for (const f of fontes) e.paragrafo(f, { tamanho: 8, recuo: 10, marcador: '•' });
+  e.nota(`Diagrama unifilar em tempo real (plataforma SIBH-SPÁGUAS) e versão on-line deste sumário: ${c.endereco}`);
 
   // ---- rodapé
   const paginas = doc.getPages();
   for (const [i, p] of paginas.entries()) {
-    const t = limpar(`Boletim Executivo — Vale do Ribeira · gerado automaticamente em ${dataHoraH(c.geradoEm)} · página ${i + 1} de ${paginas.length}`);
+    const t = limpar(`Sumário Executivo — Vale do Ribeira · período de ${per} · gerado automaticamente em ${dataHoraH(c.geradoEm)} · página ${i + 1} de ${paginas.length}`);
     p.drawLine({ start: { x: M, y: M + 14 }, end: { x: M + L, y: M + 14 }, thickness: 0.5, color: C.borda });
     p.drawText(t, { x: M, y: M + 4, size: 7, font: normal, color: C.cinzaClaro });
   }

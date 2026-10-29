@@ -109,6 +109,9 @@ function PrevisaoSistemasEsqueleto() {
   );
 }
 
+/** Intensidade da chuva em 1 hora (mm/h), só para a cor de destaque do TOP 5. */
+const intensidade = (mm: number | null) => (mm === null || mm < 5 ? 'fraca' : mm < 10 ? 'moderada' : mm < 25 ? 'forte' : 'muito-forte');
+
 async function ChuvaAgora() {
   const r = await chuvaAgora(0.2);
   const cabeca = (titulo: string, sub: string, selo: string) => (
@@ -143,16 +146,19 @@ async function ChuvaAgora() {
       <div className="sibh-now-body">
         <div className="sibh-metrics">
           <div className="sibh-metric is-rain">
+            <i className="bi bi-cloud-rain-heavy-fill sibh-metric__icone" />
             <small>Maior chuva registrada</small>
             <strong>{fmt(c.maximaMm)} mm</strong>
             <span>maior valor entre os postos com leitura</span>
           </div>
           <div className="sibh-metric is-green">
+            <i className="bi bi-droplet-half sibh-metric__icone" />
             <small>Postos com chuva</small>
             <strong>{c.postosComChuva.toLocaleString('pt-BR')}</strong>
             <span>postos com valor acima de 0,2 mm</span>
           </div>
-          <div className="sibh-metric">
+          <div className="sibh-metric is-purple">
+            <i className="bi bi-broadcast-pin sibh-metric__icone" />
             <small>Postos com leitura</small>
             <strong>{c.postosMonitorados.toLocaleString('pt-BR')}</strong>
             <span>leituras válidas recebidas do SIBH</span>
@@ -162,17 +168,21 @@ async function ChuvaAgora() {
           <div className="sibh-top">
             <div className="sibh-top-head">
               <strong> TOP 5 DA ÚLTIMA 1 HORA </strong>
-              <small className="text-secondary">mm</small>
+              <span className="sibh-legenda" aria-label="Intensidade em 1 hora">
+                <i className="sibh-int--fraca" title="até 5 mm" /> fraca <i className="sibh-int--moderada" title="5 a 10 mm" /> moderada{' '}
+                <i className="sibh-int--forte" title="10 a 25 mm" /> forte <i className="sibh-int--muito-forte" title="25 mm ou mais" /> muito forte
+              </span>
             </div>
             <ul className="sibh-top-list">
               {c.maiores.length ? (
                 c.maiores.map((p, i) => (
-                  <li key={p.prefixo}>
+                  <li key={p.prefixo} className={`sibh-top-item sibh-int--${intensidade(p.chuvaMm)}`}>
+                    <span className="sibh-rank">{i + 1}</span>
                     <div className="sibh-station">
-                      <strong>
-                        {i + 1}. {p.nome}
-                      </strong>
+                      <strong>{p.nome}</strong>
                       <small>{p.municipio ?? p.prefixo}</small>
+                      {/* barra proporcional à maior chuva da hora */}
+                      <span className="sibh-barra" style={{ width: `${c.maximaMm ? Math.max(6, (100 * p.chuvaMm) / c.maximaMm) : 0}%` }} aria-hidden />
                     </div>
                     <div className="sibh-rain-value">{fmt(p.chuvaMm)} mm</div>
                   </li>
@@ -268,10 +278,12 @@ export default async function Inicio({ searchParams }: { searchParams: Promise<R
           <div className="row align-items-center g-5">
             <div className="col-lg-7">
               <div className="hero-content">
-                <div className="hero-tag">
-                  <i className="bi bi-broadcast-pin" />
-                  Monitoramento hidrológico e meteorológico
-                </div>
+                {/* Homenagem ao patrono da Sala de Situação */}
+                <Link href="/institucional/alfredo-pisani" className="hero-tag hero-tag--pisani">
+                  <i className="bi bi-award-fill" />
+                  Quem foi Alfredo Pisani
+                  <i className="bi bi-arrow-right" />
+                </Link>
                 <h1>
                   Sala de Situação
                   <span>Alfredo Pisani</span>

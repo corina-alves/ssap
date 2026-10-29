@@ -4,7 +4,7 @@ import { abrirPainel, linksSistemas, MolduraPainel } from '../moldura';
 import '@/styles/painel.css';
 import '@/styles/acesso/painel-interativo.css';
 
-export const metadata: Metadata = { title: 'Painel interativo — Paraíba do Sul' };
+export const metadata: Metadata = { title: 'Painel de Segurança Hídrica — Paraíba do Sul' };
 
 /** UHE Jaguari, transferência e transposição da bacia do Paraíba do Sul. */
 export default async function ParaibaDoSul({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {

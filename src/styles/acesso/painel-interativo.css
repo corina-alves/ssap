@@ -349,12 +349,9 @@
 .mu-dica::before { display: none; }
 .mu-dica small { color: #9fb5cb; }
 /* rótulos (o transform do próprio marcador é do Leaflet; centraliza no filho) */
-.mu-capital > div {
-  transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; line-height: 1.05; white-space: nowrap;
-  color: #ffd166; text-shadow: 0 0 4px #000, 0 0 8px rgba(0, 0, 0, .8); pointer-events: none;
-}
-.mu-capital span { font-size: 15px; font-weight: 900; letter-spacing: .02em; }
-.mu-capital small { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .12em; }
+/* destaque da capital (o mesmo do /painel): estrela no Marco Zero e rótulo */
+.mu-capital { display: grid; place-items: center; color: #ffd166; font-size: 1.15rem; text-shadow: 0 0 4px rgba(0, 0, 0, .85); pointer-events: none; }
+.mu-dica--capital { border-color: #ffd166; color: #ffd166; font-weight: 800; }
 .mu-vol > div {
   transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; line-height: 1.1; white-space: nowrap; cursor: pointer;
   padding: 5px 10px 6px; border-radius: 10px; background: rgba(24, 31, 39, .9); border: 1px solid var(--c); border-top: 4px solid var(--c);
@@ -367,7 +364,7 @@
 .mu-legenda { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; padding: 8px 14px; border-radius: 12px; background: rgba(255, 255, 255, .04); color: #c5d6e6; font-size: .76rem; }
 .mu-legenda span { display: inline-flex; align-items: center; gap: 6px; }
 .mu-legenda i { width: 14px; height: 14px; border-radius: 4px; display: inline-block; }
-.mu-legenda i.mu-legenda-capital { background: rgba(255, 209, 102, .15); border: 2px solid #ffd166; }
+.mu-legenda i.mu-legenda-capital { background: rgba(255, 209, 102, .15); border: 2px dashed #ffd166; }
 .mu-legenda-nota { margin-left: auto; color: #8fa6bd; }
 @media (max-width: 640px) {
   .mu-mapa { height: 65vh; }

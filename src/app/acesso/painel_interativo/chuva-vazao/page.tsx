@@ -4,7 +4,7 @@ import { abrirPainel, linksSistemas, MolduraPainel } from '../moldura';
 import '@/styles/painel.css';
 import '@/styles/acesso/painel-interativo.css';
 
-export const metadata: Metadata = { title: 'Painel interativo — chuva e vazão' };
+export const metadata: Metadata = { title: 'Painel de Segurança Hídrica — chuva e vazão' };
 
 /** Chuva e vazão natural do dia no SIM e por sistema produtor. */
 export default async function ChuvaVazao({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {

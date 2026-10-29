@@ -23,7 +23,7 @@ export default async function PaginaTipo({ params, searchParams }: Props) {
   if (!Object.hasOwn(TIPOS_PUBLICOS, tipo)) notFound();
   const t = TIPOS_PUBLICOS[tipo as TipoPublico];
   // Tipo explícito: continua valendo quando nenhuma página de tipos.ts tem "acao".
-  const acao = 'acao' in t ? (t.acao as { href: string; rotulo: string; icone: string }) : null;
+  const acao = 'acao' in t ? (t.acao as { href: string; rotulo: string; icone: string; texto: string }) : null;
   return (
     <>
       <Hero kicker="Boletins oficiais" titulo={t.titulo} texto={t.descricao} icone="bi-file-earmark-pdf" />
@@ -33,7 +33,7 @@ export default async function PaginaTipo({ params, searchParams }: Props) {
             <Link href={acao.href} className="blt-acao__botao">
               <i className={`bi ${acao.icone}`} /> {acao.rotulo} <i className="bi bi-arrow-right" />
             </Link>
-            <span>Situação do sistema Tietê-Pinheiros atualizada automaticamente com dados do SIBH e da EMAE.</span>
+            <span>{acao.texto}</span>
           </div>
         )}
         <ListaBoletins base={`/boletins/${tipo}`} sp={await searchParams} tipos={[...t.tipos]} rotuloSecao="Publicações disponíveis" />

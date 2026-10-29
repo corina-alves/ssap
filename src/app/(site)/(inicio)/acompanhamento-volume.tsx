@@ -67,7 +67,12 @@ async function ResumoSistemas() {
   return (
     <>
       <div className="grafico-resumo-wrapper">
-        <GraficoResumoSistemas cantareira={d.cantareira?.volume ?? null} altoTiete={d.altoTiete?.volume ?? null} sim={d.sim?.volume ?? null} />
+        <GraficoResumoSistemas
+          cantareira={d.cantareira?.volume ?? null}
+          cantareiraAna={d.cantareira?.fonte === 'ana'}
+          altoTiete={d.altoTiete?.volume ?? null}
+          sim={d.sim?.volume ?? null}
+        />
       </div>
       <div className="resumo-atualizacao">Dados de {dataBr(d.dataUsada)}</div>
     </>
@@ -105,7 +110,10 @@ async function IndicadoresCantareira() {
           <div className={`vol-ind vol-ind--situacao vol-ind--${c.estagio.classe}`}>
             <i className={`bi ${c.estagio.codigo === 'E0' ? 'bi-check-circle-fill' : 'bi-exclamation-triangle-fill'}`} />
             <div>
-              <small>Situação atual · {fmt(c.volume, '%')}</small>
+              <small>
+                Situação atual · {fmt(c.volume, '%')}
+                {c.fonte === 'ana' && ' · Dado: ANA'}
+              </small>
               <strong>{c.estagio.nome}</strong>
               <span>Faixa: {FAIXA_ESTAGIO[c.estagio.codigo]}</span>
             </div>

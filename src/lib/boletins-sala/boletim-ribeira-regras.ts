@@ -5,13 +5,14 @@ import { classificar, SITUACOES, type Situacao } from './sumario-automatico-tp';
 
 /**
  * Regras do Boletim Executivo Público — Vale do Ribeira, sem acesso a rede ou
- * banco (testadas em tests/boletim-ribeira.test.ts). As regras hidrológicas são
- * as do Sumário Executivo tradicional do Ribeira:
- *   situação   nível atual × cotas de referência do SIBH (a cota entra na faixa)
- *   variação   nível atual − nível das 07h
+ * banco (testadas em tests/boletim-ribeira.test.ts). Segue o Sumário Executivo
+ * que a Sala emite (sumarios_cheias/ribeira_iguape), com o período FECHADO em
+ * 24 h: Referência 1 = 07h do dia anterior, Referência 2 = 07h do dia.
+ *   situação   nível das 07h × cotas de referência do SIBH (a cota entra na faixa)
+ *   variação   nível das 07h − nível das 07h do dia anterior
  *   tendência  sinal da variação arredondada a 2 casas (0,00 = estável)
- *   acima      nível atual − cota de extravasamento, só em extravasamento
- * Os textos dizem só o que os números dizem: nada de interpretação.
+ *   acima      nível das 07h − cota de extravasamento, só em extravasamento
+ * Os textos são os modelos do sumário emitido, preenchidos com os números.
  */
 
 export { SITUACOES, type Situacao };
@@ -41,6 +42,18 @@ export const diaMes = (ms: number) => {
   const p = partes(ms);
   return `${p.day}/${p.month}`;
 };
+/** 07h (só a hora, como nos cabeçalhos do sumário emitido); 13h20 fora da hora cheia */
+export const hora = (ms: number) => {
+  const p = partes(ms);
+  return `${p.hour}h${p.minute === '00' ? '' : p.minute}`;
+};
+/** 29/10/2026 - 07:00 (cabeçalho do sumário emitido) */
+export const dataHoraCab = (ms: number) => {
+  const p = partes(ms);
+  return `${p.day}/${p.month}/${p.year} - ${p.hour}:${p.minute}`;
+};
+/** "07h/28/10 a 07h/29/10": o período do boletim */
+export const periodo = (ini: number, fim: number) => `${hora(ini)}/${diaMes(ini)} a ${hora(fim)}/${diaMes(fim)}`;
 /** 28/10/2026, 15h50 */
 export const dataHoraH = (ms: number) => {
   const p = partes(ms);
@@ -134,32 +147,41 @@ export function saidaDoExtravasamento(serie: Leitura[], cotas: Cotas, situacao: 
 
 export type PontoRibeira = EstacaoRibeira & {
   cotas: Cotas | null;
+  /** nível na Referência 1 (07h do dia anterior) */
   nivel07: number | null;
   nivel07Em: number | null;
+  /** nível na Referência 2 (07h do dia; a leitura mais recente até as 07h) */
   atual: number | null;
   atualEm: number | null;
-  /** atual − 07h (m) */
+  /** Referência 2 − Referência 1 (m) */
   variacao: number | null;
-  /** atual − cota de extravasamento (m) */
+  /** Referência 2 − cota de extravasamento (m) */
   acima: number | null;
   situacao: Situacao;
   tendencia: Tendencia | null;
-  /** sem leitura nas últimas 12 h */
+  /** sem leitura nas 12 h antes da Referência 2 */
   semDado: boolean;
   /** sem cotas de referência no SIBH: situação não classificada */
   semCotas: boolean;
-  /** última leitura com mais de 1 h */
+  /** leitura usada com mais de 1 h antes da Referência 2 */
   atrasado: boolean;
   desde: Desde | null;
   saiuEm: number | null;
 };
 
-/** Monta o ponto a partir da série recente (e do nível das 07h guardado no banco, se o SIBH não tiver). */
-export function montarPonto(e: EstacaoRibeira, serie: Leitura[], cotas: Cotas | null, t07: number, agora: number, nivel07Guardado: { nivel: number; em: number | null } | null): PontoRibeira {
+type Guardado = { nivel: number; em: number | null } | null;
+
+/**
+ * Monta o ponto do período fechado `ini` → `fim` (07h → 07h). Se o SIBH não
+ * tiver a leitura de uma das referências, usa a guardada no banco.
+ */
+export function montarPonto(e: EstacaoRibeira, serie: Leitura[], cotas: Cotas | null, ini: number, fim: number, guardadoIni: Guardado, guardadoFim: Guardado = null): PontoRibeira {
+  const t07 = ini;
+  const agora = fim;
   const l07 = maisProxima(serie, t07, TOLERANCIA_07H);
-  const nivel07 = l07?.nivel ?? nivel07Guardado?.nivel ?? null;
-  const nivel07Em = l07?.em ?? nivel07Guardado?.em ?? null;
-  const agoraL = ultima(serie, agora);
+  const nivel07 = l07?.nivel ?? guardadoIni?.nivel ?? null;
+  const nivel07Em = l07?.em ?? guardadoIni?.em ?? null;
+  const agoraL = ultima(serie, agora) ?? (guardadoFim ? { nivel: guardadoFim.nivel, em: guardadoFim.em ?? agora, vazao: null } : null);
   const atual = agoraL?.nivel ?? null;
   const classificavel = temCotas(cotas);
   const situacao = classificar(atual, classificavel ? cotas : null);
@@ -184,9 +206,6 @@ export function montarPonto(e: EstacaoRibeira, serie: Leitura[], cotas: Cotas | 
   };
 }
 
-/** Pontos com situação classificada (com leitura e com cotas). */
-export const classificados = (pontos: PontoRibeira[]) => pontos.filter((p) => !p.semDado && !p.semCotas);
-
 /** Rótulo da situação para selos e tabelas. */
 export function rotuloSituacao(p: PontoRibeira): string {
   if (p.semDado) return 'SEM DADO';
@@ -202,98 +221,94 @@ const TEXTO_SITUACAO: Record<Situacao, string> = {
   EXTRAVASAMENTO: 'extravasamento',
 };
 
-/** Situações de destaque (pedem atenção visual). */
-export const CRITICAS: Situacao[] = ['ALERTA', 'EMERGÊNCIA', 'EXTRAVASAMENTO'];
 
 // ---------------------------------------------------------------- textos
 
-/** Diagnóstico executivo: contagem por situação, movimento desde as 07h e maior excedência. */
-export function diagnostico(pontos: PontoRibeira[], t07: number): string {
-  const com = classificados(pontos);
-  const semLeitura = pontos.filter((p) => p.semDado).length;
-  if (!com.length) {
-    return pontos.length && semLeitura === pontos.length
-      ? 'Sem leituras recentes dos pontos monitorados: o diagnóstico volta a ser gerado quando o SIBH enviar novos dados.'
-      : 'Sem dados suficientes para o diagnóstico no momento.';
-  }
-  const ref = Math.max(...com.map((p) => p.atualEm ?? 0));
-  const contagem = [...SITUACOES].reverse().flatMap((s) => {
-    const k = com.filter((p) => p.situacao === s).length;
-    return k ? [`${k} em ${TEXTO_SITUACAO[s]}`] : [];
-  });
+/** Trecho de texto; `b` = negrito (os mesmos destaques do sumário emitido). */
+export type Trecho = { t: string; b?: boolean };
+
+const comDado = (pontos: PontoRibeira[]) => pontos.filter((p) => p.atual !== null && p.variacao !== null);
+
+/**
+ * DIAGNÓSTICO EXECUTIVO: o modelo do sumário emitido, às 07h do dia (`fim`).
+ * Subida e queda contam os pontos com leitura nas duas referências.
+ */
+export function diagnostico(pontos: PontoRibeira[], fim: number): string {
+  const com = comDado(pontos);
+  if (!com.length) return 'Sem dados suficientes para diagnóstico no momento.';
+  const as = `${hora(fim)} de ${diaMes(fim)}`;
   const total = pontos.length;
-  const todosNormais = com.every((p) => p.situacao === 'NORMAL');
-  let t =
-    todosNormais && com.length === total
-      ? `Às ${horaH(ref)} de ${diaMes(ref)}, os ${total} pontos monitorados no Vale do Ribeira de Iguape estão em condição normal; nenhum está acima da cota de extravasamento.`
-      : `Às ${horaH(ref)} de ${diaMes(ref)}, ${com.length === total ? `dos ${total} pontos monitorados no Vale do Ribeira de Iguape` : `entre os ${com.length} pontos com situação classificada`}, ${lista(contagem)}.`;
-  if (semLeitura) t += ` ${plural(semLeitura, 'ponto está', 'pontos estão')} sem leitura recente.`;
-
-  const mov = (x: Tendencia) => com.filter((p) => p.tendencia === x).length;
-  const movimento = [
-    mov('subida') ? `subiu em ${plural(mov('subida'), 'ponto', 'pontos')}` : '',
-    mov('queda') ? `caiu em ${plural(mov('queda'), 'ponto', 'pontos')}` : '',
-    mov('estavel') ? `ficou estável em ${plural(mov('estavel'), 'ponto', 'pontos')}` : '',
-  ].filter(Boolean);
-  if (movimento.length) t += ` Desde as 07h de ${diaMes(t07)}, o nível ${lista(movimento)}.`;
-
-  const extrav = com.filter((p) => p.situacao === 'EXTRAVASAMENTO' && p.acima !== null);
-  if (extrav.length) {
-    const maior = extrav.reduce((a, b) => ((b.acima ?? 0) > (a.acima ?? 0) ? b : a));
-    t += ` Maior excedência da cota de extravasamento em ${maior.curto} (${fmtSinal(maior.acima)} m).`;
-  }
-  return t;
+  const extrav = pontos.filter((p) => !p.semCotas && p.situacao === 'EXTRAVASAMENTO' && p.acima !== null);
+  if (!extrav.length) return `Nenhum dos ${total} pontos monitorados no Vale do Ribeira de Iguape está acima da cota de extravasamento às ${as}.`;
+  const subindo = com.filter((p) => p.tendencia === 'subida').length;
+  const descendo = com.filter((p) => p.tendencia === 'queda').length;
+  const maior = extrav.reduce((a, b) => ((b.acima ?? 0) > (a.acima ?? 0) ? b : a));
+  return (
+    `Às ${as}, ${extrav.length} de ${total} pontos monitorados ${extrav.length === 1 ? 'permanece' : 'permanecem'} em extravasamento no Vale do Ribeira de Iguape` +
+    (descendo ? `, com redução de nível em ${descendo} deles` : '') +
+    (subindo ? `${descendo ? ' e' : ','} elevação em ${plural(subindo, 'ponto', 'pontos')}` : '') +
+    `. Maior excedência em ${maior.curto} (${fmtSinal(maior.acima)} m acima da cota).`
+  );
 }
 
-const quando = (ms: number) => `às ${horaH(ms)} de ${diaMes(ms)}`;
+/** Abertura da SÍNTESE: contagem por situação, como no sumário emitido. */
+export function sinteseResumo(pontos: PontoRibeira[]): string {
+  const com = comDado(pontos);
+  if (!com.length) return 'Sem dados suficientes para síntese no momento.';
+  const n = (s: Situacao) => com.filter((p) => !p.semCotas && p.situacao === s).length;
+  const extrav = n('EXTRAVASAMENTO');
+  const normal = com.filter((p) => p.semCotas || p.situacao === 'NORMAL').length;
+  return (
+    `Das ${pontos.length} estações monitoradas, ${extrav} ${extrav === 1 ? 'permanece' : 'permanecem'} em extravasamento` +
+    (n('ALERTA') ? `, ${n('ALERTA')} em alerta` : '') +
+    (n('EMERGÊNCIA') ? `, ${n('EMERGÊNCIA')} em emergência` : '') +
+    (n('ATENÇÃO') ? ` e ${n('ATENÇÃO')} em atenção` : '') +
+    `. ${normal} ${normal === 1 ? 'estação apresenta' : 'estações apresentam'} condição de normalidade.`
+  );
+}
 
-/** Síntese de um ponto, no formato dos modelos do sumário tradicional (sem o nome, que vai em destaque). */
-export function sintese(p: PontoRibeira): string {
-  if (p.semDado) return 'sem leitura disponível no SIBH nas últimas 12 horas.';
-  const nivel = `${quando(p.atualEm!)}, o posto registrava nível de ${fmt(p.atual)} m`;
-  const mov =
+const TENDENCIA_SINTESE: Record<Tendencia, string> = { subida: 'subida', queda: 'queda', estavel: 'estável' };
+
+/**
+ * Síntese de um ponto nos três modelos do sumário emitido (extravasamento,
+ * saiu do extravasamento, demais situações), às 07h do dia (`fim`). O nome do
+ * ponto vai à parte, em destaque.
+ */
+export function sintese(p: PontoRibeira, fim: number): Trecho[] {
+  const as = `${horaH(fim)} de ${diaMes(fim)}`;
+  if (p.semDado) return [{ t: `sem leitura disponível no SIBH às ${as}.` }];
+  const nivel = `Às ${as}, o posto registrava nível de ${fmt(p.atual)} m`;
+  const variacao: Trecho[] =
     p.variacao === null
-      ? '; sem a leitura das 07h, a variação do dia não foi calculada'
-      : p.tendencia === 'estavel'
-        ? ', estável desde as 07h'
-        : `, ${p.tendencia === 'subida' ? 'subida' : 'queda'} de ${fmt(Math.abs(p.variacao))} m desde as 07h`;
-  if (p.semCotas) return `sem cotas de referência cadastradas no SIBH (situação não classificada). ${maiuscula(nivel)}${mov}.`;
+      ? [{ t: 'sem variação registrada no período em análise' }]
+      : [{ t: 'com variação de ' }, { t: `${fmtSinal(p.variacao)} m`, b: true }, { t: ' no período em análise' }];
+  const fechamento: Trecho[] = p.tendencia
+    ? [{ t: ' O monitoramento dos dados mais recentes indica que o nível permanece em ' }, { t: TENDENCIA_SINTESE[p.tendencia], b: true }, { t: '.' }]
+    : [];
+  const leitura = (antes: Trecho[]): Trecho[] => [...antes, { t: ', ' }, ...variacao, { t: '.' }, ...fechamento];
 
+  if (p.semCotas) return leitura([{ t: `sem cotas de referência cadastradas no SIBH (situação não classificada). ${nivel}` }]);
   if (p.situacao === 'EXTRAVASAMENTO') {
     const d = p.desde;
-    const desde = !d ? '' : 'em' in d ? ` desde ${horaH(d.em)} de ${diaMes(d.em)}` : ` desde antes de ${horaH(d.antesDe)} de ${diaMes(d.antesDe)} (início do período consultado)`;
+    const desde = !d ? '' : 'em' in d ? ` desde ${diaMes(d.em)}, às ${horaH(d.em)}` : ` desde antes de ${diaMes(d.antesDe)}, às ${horaH(d.antesDe)} (início do período consultado)`;
     const cota = p.cotas?.extravasamento ?? null;
-    const acima = p.acima !== null && cota !== null ? `, ${fmt(Math.abs(p.acima))} m acima da cota de extravasamento de ${fmt(cota)} m` : '';
-    return `em extravasamento${desde}. ${maiuscula(nivel)}${acima}${mov}.`;
+    const acima: Trecho[] =
+      p.acima !== null && cota !== null ? [{ t: ', aproximadamente ' }, { t: `${fmt(Math.abs(p.acima))} m acima`, b: true }, { t: ` da cota de extravasamento de ${fmt(cota)} m` }] : [];
+    return leitura([{ t: `permanece em extravasamento${desde}. ${nivel}` }, ...acima]);
   }
-  const saiu = p.saiuEm !== null ? `saiu do extravasamento ${quando(p.saiuEm)} e está em ${TEXTO_SITUACAO[p.situacao]}` : `em ${TEXTO_SITUACAO[p.situacao]}`;
-  return `${saiu}. ${maiuscula(nivel)}${mov}.`;
+  if (p.saiuEm !== null) return leitura([{ t: `Saiu de extravasamento às ${horaH(p.saiuEm)} de ${diaMes(p.saiuEm)}. ${nivel}` }]);
+  return leitura([{ t: `permanece em ${p.situacao === 'NORMAL' ? 'normalidade' : TEXTO_SITUACAO[p.situacao]}. ${nivel}` }]);
 }
 
-const maiuscula = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
-
-/** Observações automáticas sobre registros ausentes ou incompletos. */
-export function observacoes(pontos: PontoRibeira[], t07: number): string[] {
-  const nomes = (f: (p: PontoRibeira) => boolean) => pontos.filter(f).map((p) => p.curto);
-  const o: string[] = [];
-  const sem = nomes((p) => p.semDado);
-  if (sem.length) o.push(`Sem leitura nas últimas 12 horas: ${lista(sem)}.`);
-  const atrasados = pontos.filter((p) => p.atrasado).map((p) => `${p.curto} (${horaH(p.atualEm!)} de ${diaMes(p.atualEm!)})`);
-  if (atrasados.length) o.push(`Última leitura recebida há mais de 1 hora: ${lista(atrasados)}.`);
-  const sem07 = nomes((p) => !p.semDado && p.nivel07 === null);
-  if (sem07.length) o.push(`Sem leitura das 07h de ${diaMes(t07)} (até 30 minutos antes ou depois): ${lista(sem07)} — variação e tendência não calculadas.`);
-  const semCotas = nomes((p) => p.semCotas);
-  if (semCotas.length) o.push(`Sem cotas de referência cadastradas no SIBH: ${lista(semCotas)} — situação não classificada.`);
-  if (!o.length) o.push(`Os ${pontos.length} pontos monitorados enviaram leitura na última hora, com a referência das 07h disponível.`);
-  return o;
-}
+/** Texto corrido da síntese (testes e leitores de tela). */
+export const textoSintese = (trechos: Trecho[]) => trechos.map((x) => x.t).join('');
 
 // ---------------------------------------------------------------- Copel
 
 /**
  * Volume útil do Reservatório Capivari (Copel), registro das 07h. Só o
- * registro das 07h vale: outro horário não substitui. Hoje não há fonte
- * autorizada (ver volumeCopel em boletim-ribeira.ts).
+ * registro das 07h vale: outro horário não substitui (ver volumeCopel em
+ * boletim-ribeira.ts).
  */
 export type VolumeCopel =
   | { estado: 'ok'; valor: number; lidoEm: number }
@@ -301,8 +316,8 @@ export type VolumeCopel =
   | { estado: 'indisponivel'; motivo: string; ultima: { valor: number; lidoEm: number } | null };
 
 export function textoVolumeCopel(v: VolumeCopel): { valor: string; detalhe: string } {
-  if (v.estado === 'ok') return { valor: `${fmt(v.valor, 1)}%`, detalhe: `Registro das 07h de ${diaMes(v.lidoEm)} (horário de Brasília).` };
-  if (v.estado === 'aguardando') return { valor: '—', detalhe: 'Volume útil das 07h: aguardando atualização da Copel.' };
+  if (v.estado === 'ok') return { valor: `${fmt(v.valor, 1)}%`, detalhe: `Registro das ${hora(v.lidoEm)} de ${diaMes(v.lidoEm)} (horário de Brasília).` };
+  if (v.estado === 'aguardando') return { valor: '—', detalhe: 'Aguardando a publicação do registro pela Copel.' };
   const ultima = v.ultima ? ` Última medição válida: ${fmt(v.ultima.valor, 1)}% em ${diaMes(v.ultima.lidoEm)} às ${horaH(v.ultima.lidoEm)}.` : '';
   return { valor: 'Indisponível', detalhe: `${v.motivo}${ultima}` };
 }

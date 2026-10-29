@@ -6,7 +6,7 @@ import { VISTAS, type Vista } from '../vistas';
 import '@/styles/painel.css';
 import '@/styles/acesso/painel-interativo.css';
 
-export const metadata: Metadata = { title: 'Painel interativo — análise por sistema' };
+export const metadata: Metadata = { title: 'Painel de Segurança Hídrica — análise por sistema' };
 
 const um = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
 

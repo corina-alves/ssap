@@ -634,7 +634,7 @@ function Sistemas({ d }: { d: DadosDiario }) {
             </div>
           ))}
         </div>
-        <Ed tag="p" className="bd-fonte" k="sis_fonte" padrao="Fonte: SABESP - Mananciais (volume do Cantareira: ANA)" />
+        <Ed tag="p" className="bd-fonte" k="sis_fonte" padrao="Fonte: SABESP - Mananciais (volume do Cantareira — Dado: ANA)" />
       </section>
 
       <section className="bd-pagina">
