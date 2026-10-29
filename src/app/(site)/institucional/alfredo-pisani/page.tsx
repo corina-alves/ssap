@@ -61,14 +61,15 @@ export default function Pagina() {
                 <Paragrafo key={t} texto={t} />
               ))}
             </section>
-            <aside className="hm-legado">
-              <h2>
-                <i className="bi bi-water" /> Sua contribuição para a Sala de Situação
-              </h2>
-              {CONTRIBUICAO.map((t) => (
-                <Paragrafo key={t} texto={t} />
-              ))}
-            </aside>
+            {/* ao lado da trajetória, a foto dele na Sala de Situação */}
+            {FOTO_SALA && (
+              <figure className="hm-foto">
+                <div className="hm-foto__imagem">
+                  <Image src={FOTO_SALA.src} alt={FOTO_SALA.legenda} fill sizes="(max-width: 991px) 90vw, 560px" priority />
+                </div>
+                <figcaption>{FOTO_SALA.legenda}</figcaption>
+              </figure>
+            )}
           </div>
 
           <section className="hm-secao">
@@ -90,20 +91,20 @@ export default function Pagina() {
 
           <section className="hm-secao hm-texto">
             <h2 className="hm-titulo">Conhecimento, dedicação e compromisso público</h2>
-            <div className={FOTO_SALA ? 'hm-texto__grade' : undefined}>
+            <div className="hm-texto__grade hm-texto__grade--meio">
               <div>
                 {COMPROMISSO.map((t) => (
                   <Paragrafo key={t} texto={t} />
                 ))}
               </div>
-              {FOTO_SALA && (
-                <figure className="hm-foto">
-                  <div className="hm-foto__imagem">
-                    <Image src={FOTO_SALA.src} alt={FOTO_SALA.legenda} fill sizes="(max-width: 991px) 90vw, 480px" />
-                  </div>
-                  <figcaption>{FOTO_SALA.legenda}</figcaption>
-                </figure>
-              )}
+              <aside className="hm-legado">
+                <h2>
+                  <i className="bi bi-water" /> Sua contribuição para a Sala de Situação
+                </h2>
+                {CONTRIBUICAO.map((t) => (
+                  <Paragrafo key={t} texto={t} />
+                ))}
+              </aside>
             </div>
           </section>
 

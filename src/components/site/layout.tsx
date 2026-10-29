@@ -125,6 +125,10 @@ export function Rodape() {
                     <Link href="/boletins">Boletins</Link>
                   </li>
                   <li>
+                    <i className="bi bi-award" />
+                    <Link href="/institucional/alfredo-pisani">Homenagem a Alfredo Pisani</Link>
+                  </li>
+                  <li>
                     <i className="bi bi-box-arrow-up-right" />
                     <a href="https://www.spaguas.sp.gov.br/" target="_blank" rel="noopener">
                       Portal SP Águas

@@ -36,6 +36,7 @@ export default function Pagina() {
       trilha="Resolução ANA/DAEE nº 925/2017"
       kicker="Regulação do Sistema Cantareira"
       titulo="Resolução Conjunta ANA/DAEE nº 925, de 29 de maio de 2017"
+      pdf="/legado/outorga/SistemaCantareira/Resolucao_Conjunta_ANA_DAEE_No_925_de_29-05-2017.pdf"
       ementa="Dispõe sobre as condições de operação para o Sistema Cantareira - SC, delimitado, para fins desta resolução, como o conjunto dos reservatórios Jaguari-Jacareí, Cachoeira, Atibainha e Paiva Castro."
       dados={[
         { icone: 'bi-calendar3', texto: 'Publicada em 31 de maio de 2017' },

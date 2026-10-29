@@ -109,8 +109,12 @@ function PrevisaoSistemasEsqueleto() {
   );
 }
 
-/** Intensidade da chuva em 1 hora (mm/h), só para a cor de destaque do TOP 5. */
-const intensidade = (mm: number | null) => (mm === null || mm < 5 ? 'fraca' : mm < 10 ? 'moderada' : mm < 25 ? 'forte' : 'muito-forte');
+/**
+ * Intensidade da chuva em 1 hora (mm), classificação da Sala, para a cor do TOP 5:
+ * fraca ≤ 5 · moderada 5,1 a 25 · forte 25,1 a 50 · muito forte > 50.
+ */
+const intensidade = (mm: number | null) => (mm === null || mm <= 5 ? 'fraca' : mm <= 25 ? 'moderada' : mm <= 50 ? 'forte' : 'muito-forte');
+const ROTULO_INTENSIDADE = { fraca: 'fraca', moderada: 'moderada', forte: 'forte', 'muito-forte': 'muito forte' } as const;
 
 async function ChuvaAgora() {
   const r = await chuvaAgora(0.2);
@@ -145,11 +149,14 @@ async function ChuvaAgora() {
       {cabeca('Monitoramento pluviométrico em tempo real', 'Última 1 hora · SIBH / SP-Águas', r.desatualizado ? 'Últimos dados obtidos' : 'Dados telemétricos')}
       <div className="sibh-now-body">
         <div className="sibh-metrics">
-          <div className="sibh-metric is-rain">
+          {/* na cor da intensidade da maior chuva da hora (a mesma escala do TOP 5) */}
+          <div className={`sibh-metric is-rain sibh-int--${intensidade(c.maximaMm)}`}>
             <i className="bi bi-cloud-rain-heavy-fill sibh-metric__icone" />
             <small>Maior chuva registrada</small>
             <strong>{fmt(c.maximaMm)} mm</strong>
-            <span>maior valor entre os postos com leitura</span>
+            <span>
+              maior valor entre os postos com leitura · intensidade <b>{ROTULO_INTENSIDADE[intensidade(c.maximaMm)]}</b>
+            </span>
           </div>
           <div className="sibh-metric is-green">
             <i className="bi bi-droplet-half sibh-metric__icone" />
@@ -169,8 +176,8 @@ async function ChuvaAgora() {
             <div className="sibh-top-head">
               <strong> TOP 5 DA ÚLTIMA 1 HORA </strong>
               <span className="sibh-legenda" aria-label="Intensidade em 1 hora">
-                <i className="sibh-int--fraca" title="até 5 mm" /> fraca <i className="sibh-int--moderada" title="5 a 10 mm" /> moderada{' '}
-                <i className="sibh-int--forte" title="10 a 25 mm" /> forte <i className="sibh-int--muito-forte" title="25 mm ou mais" /> muito forte
+                <i className="sibh-int--fraca" title="até 5 mm" /> fraca <i className="sibh-int--moderada" title="5,1 a 25 mm" /> moderada{' '}
+                <i className="sibh-int--forte" title="25,1 a 50 mm" /> forte <i className="sibh-int--muito-forte" title="acima de 50 mm" /> muito forte
               </span>
             </div>
             <ul className="sibh-top-list">

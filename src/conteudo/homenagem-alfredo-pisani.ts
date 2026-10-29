@@ -19,7 +19,7 @@ export type Foto = { src: string; legenda: string };
 
 export type Depoimento = { texto: string; autor: string };
 
-/** Foto ao lado do texto "Conhecimento, dedicação e compromisso público" (caminho em public/). Sem ela, o texto ocupa a largura toda. */
+/** Foto dele na Sala de Situação, ao lado de "Sua trajetória" (caminho em public/). Sem ela, a trajetória ocupa a largura toda. */
 export const FOTO_SALA: Foto | null = {
   src: '/legado/img/sssp-daee.png',
   legenda: 'Alfredo Pisani apresentando na Sala de Situação, ainda no DAEE',

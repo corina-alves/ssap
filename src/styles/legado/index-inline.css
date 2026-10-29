@@ -91,8 +91,24 @@
 .sibh-rank{display:grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--cor-i);color:#fff;font-size:.74rem;font-weight:800;box-shadow:0 2px 6px rgba(0,0,0,.12)}
 .sibh-barra{display:block;height:4px;margin-top:5px;border-radius:4px;background:var(--cor-i);opacity:.75}
 .sibh-top-item .sibh-rain-value{padding:3px 10px;border-radius:999px;background:var(--cor-i);color:#fff}
-.sibh-int--fraca{--cor-i:#5fa8e8}
-.sibh-int--moderada{--cor-i:#1565c0}
+.sibh-int--fraca{--cor-i:#2e9e5b}
+.sibh-int--moderada{--cor-i:#f2c200}
 .sibh-int--forte{--cor-i:#e67e00}
 .sibh-int--muito-forte{--cor-i:#d32f2f}
+/* amarelo: número escuro no selo e na posição (branco não teria contraste) */
+.sibh-int--moderada .sibh-rank,.sibh-int--moderada .sibh-rain-value{color:#3d2f00}
 .sibh-summary-icon{background:linear-gradient(135deg,#0b9a6d,#12b356);color:#fff}
+
+/* Card do monitoramento pluviométrico: borda mais forte para destaque */
+.sibh-now-panel{border:2px solid #0a6fc2;box-shadow:0 0 0 4px rgba(10,111,194,.10),0 16px 38px rgba(10,70,110,.12)}
+.sibh-now-head{border-bottom:1px solid rgba(10,111,194,.25)}
+
+/* Card "Maior chuva registrada" na cor da intensidade (fraca verde, moderada amarelo, forte laranja, muito forte vermelho) */
+.sibh-metric.is-rain[class*="sibh-int--"]{--cor-m:var(--cor-i)}
+.sibh-metric.is-rain.sibh-int--fraca{--fundo-m:#e3f5ea}
+.sibh-metric.is-rain.sibh-int--moderada{--fundo-m:#fff6d1}
+.sibh-metric.is-rain.sibh-int--forte{--fundo-m:#ffead1}
+.sibh-metric.is-rain.sibh-int--muito-forte{--fundo-m:#fde3e3}
+.sibh-metric.is-rain[class*="sibh-int--"] strong,.sibh-metric.is-rain[class*="sibh-int--"] span b{color:var(--cor-i)}
+.sibh-metric.is-rain.sibh-int--moderada strong,.sibh-metric.is-rain.sibh-int--moderada span b{color:#9a7b00}
+.sibh-metric.is-rain[class*="sibh-int--"] .sibh-metric__icone{opacity:.35}

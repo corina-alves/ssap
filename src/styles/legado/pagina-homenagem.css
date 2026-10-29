@@ -106,3 +106,8 @@
 @media (max-width: 575.98px) {
     .hm-fotos { grid-template-columns: 1fr; }
 }
+
+/* Seção "Conhecimento, dedicação e compromisso público": texto e o quadro da contribuição lado a lado */
+@media (min-width: 992px) {
+    .hm-texto__grade--meio { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+}
