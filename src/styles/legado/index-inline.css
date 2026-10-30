@@ -112,3 +112,14 @@
 .sibh-metric.is-rain[class*="sibh-int--"] strong,.sibh-metric.is-rain[class*="sibh-int--"] span b{color:var(--cor-i)}
 .sibh-metric.is-rain.sibh-int--moderada strong,.sibh-metric.is-rain.sibh-int--moderada span b{color:#9a7b00}
 .sibh-metric.is-rain[class*="sibh-int--"] .sibh-metric__icone{opacity:.35}
+
+/* Botão "Acessar Chuva Agora" (azul, com ícone e seta) */
+.public-page .sibh-summary a.sibh-btn-chuva{display:flex;align-items:center;gap:12px;margin-top:16px;padding:11px 14px;border-radius:14px;background:linear-gradient(135deg,#0a6fc2 0%,#0b4f93 100%);color:#fff;text-decoration:none;box-shadow:0 8px 20px rgba(10,111,194,.28);transition:transform .15s ease,box-shadow .15s ease,filter .15s ease}
+.public-page .sibh-summary a.sibh-btn-chuva:hover{transform:translateY(-2px);box-shadow:0 12px 26px rgba(10,111,194,.36);filter:brightness(1.06);color:#fff}
+.public-page .sibh-summary a.sibh-btn-chuva:focus-visible{outline:3px solid #9fd0ff;outline-offset:2px}
+.sibh-btn-chuva__icone{flex:0 0 auto;width:36px;height:36px;border-radius:10px;display:grid;place-items:center;background:rgba(255,255,255,.18);color:#fff;font-size:1.1rem}
+.sibh-btn-chuva__texto{display:flex;flex-direction:column;line-height:1.2;min-width:0}
+.sibh-btn-chuva__texto strong{font-size:.86rem;font-weight:800;color:#fff}
+.sibh-btn-chuva__texto small{font-size:.68rem;color:rgba(255,255,255,.82)}
+.sibh-btn-chuva__seta{margin-left:auto;color:#fff;font-size:1rem;transition:transform .15s ease}
+.public-page .sibh-summary a.sibh-btn-chuva:hover .sibh-btn-chuva__seta{transform:translate(2px,-2px)}

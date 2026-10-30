@@ -219,11 +219,16 @@ async function ChuvaAgora() {
                 consulte o Chuva Agora.
               </p>
             </div>
-            <p style={{ textAlign: 'center' }}>
-              <a className="btn btn-sm btn-success" target="_blank" rel="noopener" href="https://apps.spaguas.sp.gov.br/sibh/chuva_agora/">
-                <i className="bi bi-map me-1" /> Acessar Chuva Agora
-              </a>
-            </p>
+            <a className="sibh-btn-chuva" target="_blank" rel="noopener" href="https://apps.spaguas.sp.gov.br/sibh/chuva_agora/">
+              <span className="sibh-btn-chuva__icone">
+                <i className="bi bi-cloud-rain-heavy" />
+              </span>
+              <span className="sibh-btn-chuva__texto">
+                <strong>Acessar Chuva Agora</strong>
+                <small>Mapa e detalhes de cada posto</small>
+              </span>
+              <i className="bi bi-arrow-up-right sibh-btn-chuva__seta" />
+            </a>
           </div>
         </div>
         <div className="sibh-updated">
