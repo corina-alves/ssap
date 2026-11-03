@@ -324,7 +324,7 @@ As imagens não trazem navegador: o "Gerar PDF" dos sumários de cheias imprime 
 |---|---|
 | `app` não sobe e `ferramentas` saiu com erro | Migração falhou: `docker compose logs ferramentas`. |
 | `entrada: segredo da senha do banco não encontrado` | Falta `secrets/app_db_password.txt`. |
-| `password authentication failed` | O arquivo de senha foi trocado depois da primeira subida do banco, ou tem quebra de linha do Windows. |
+| `password authentication failed` | O arquivo de senha foi trocado depois da primeira subida do banco, ou tem quebra de linha do Windows. Para conferir a senha, entre pela rede (`docker compose run --rm backup`): dentro do contêiner `db`, `psql -h 127.0.0.1` aceita qualquer senha (`trust`). Confira também o projeto em uso (`docker compose ls`): outro nome de projeto (`COMPOSE_PROJECT_NAME` no `.env`, `-p`) é outro volume de banco, com as senhas da primeira subida dele. |
 | Login volta para a tela de login sem erro | Acesso por HTTP em produção: use HTTPS (item 5 da implantação). |
 | Páginas de dados com "indisponível" | Sem saída para as APIs: `docker compose run --rm ferramentas npm run integracoes:testar`. |
 | Porta 3000 já em uso | Outro programa na porta: crie `.env` com `APP_PORTA=3001`. |
