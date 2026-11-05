@@ -30,6 +30,7 @@ export const ROTULO_MODULO: Record<string, string> = {
   graficos: 'Gráficos',
   documentos: 'Documentos',
   previsoes: 'Previsões',
+  climatologia: 'Climatologia',
   sistema: 'Sistema',
 };
 

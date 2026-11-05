@@ -83,6 +83,14 @@ export async function montarMenu(a: Acl): Promise<Menu> {
     });
   }
 
+  // Climatologia da chuva por UGRHI (acervo histórico do SIBH, já processado no banco).
+  if (a.podeEmAlguma('visualizar_climatologia')) {
+    geral.push({
+      ...item('Climatologia de precipitação', '/acesso/climatologia', 'bi-cloud-rain-heavy'),
+      filhos: [item('Climatologia', '/acesso/climatologia', 'bi-cloud-rain-heavy'), item('Chuva do mês — UGRHIs e municípios', '/acesso/climatologia/mes', 'bi-table')],
+    });
+  }
+
   const visiveis = await salasPainel(a);
   // Painel interativo dos sistemas produtores (SSD): visualizar_dashboard na Sala Alfredo Pisani.
   const alfredo = visiveis.find((s) => s.slug === 'alfredo-pisani');
@@ -98,6 +106,8 @@ export async function montarMenu(a: Acl): Promise<Menu> {
       ],
     });
   }
+  // Boletim mensal da Sala Alfredo Pisani (slides montados com as integrações + o que a equipe completa).
+  if (alfredo && a.pode('visualizar_boletins', alfredo.id)) geral.push(item('Boletim mensal', '/acesso/boletim_mensal', 'bi-journal-richtext'));
 
   const salas = visiveis.map((s) => {
     const filhos = [item('Visão geral', '/acesso/salas/sala', 'bi-grid', `/acesso/salas/sala?s=${s.slug}`)];

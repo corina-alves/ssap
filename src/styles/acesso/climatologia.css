@@ -1,0 +1,62 @@
+/* Painel de Climatologia por UGRHI (/acesso/climatologia) — classes clima-. */
+
+.clima-carregando { padding: 18px; color: #64757f; }
+
+.clima-filtros .form-label { font-weight: 600; color: #26343d; }
+
+.clima-cards { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; margin-bottom: 12px; }
+.clima-card { background: #fff; border: 1px solid #dfe6eb; border-top: 4px solid #0b5394; border-radius: 8px; padding: 10px 12px; min-width: 0; }
+.clima-card__rotulo { font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .02em; color: #64757f; }
+.clima-card__valor { font-size: 1.45rem; font-weight: 700; color: #0b2e4f; line-height: 1.25; margin: 2px 0; white-space: nowrap; }
+.clima-card__nota { font-size: .75rem; color: #64757f; }
+
+.clima-mapa { width: 100%; height: auto; display: block; }
+.clima-mapa path { stroke: #fff; stroke-width: 1; cursor: pointer; transition: opacity .15s; }
+.clima-mapa a:hover path, .clima-mapa a:focus path { opacity: .8; stroke: #26343d; stroke-width: 1.5; }
+.clima-mapa path.sel { stroke: #0b2e4f; stroke-width: 2.5; }
+.clima-mapa a:focus { outline: none; }
+.clima-mapa__rotulo { font-size: 11px; font-weight: 700; fill: #26343d; text-anchor: middle; dominant-baseline: middle; pointer-events: none; paint-order: stroke; stroke: rgba(255, 255, 255, .8); stroke-width: 2.5px; }
+.clima-legenda { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 6px; color: #3b4f5c; }
+.clima-legenda i { display: inline-block; width: 14px; height: 10px; margin-right: 4px; border: 1px solid #c7d1d8; vertical-align: -1px; }
+
+.clima-meses th, .clima-meses td { font-size: .78rem; padding: 3px 5px; white-space: nowrap; }
+
+.clima-tabela th { white-space: nowrap; }
+.clima-ordenar { background: none; border: 0; padding: 0; font: inherit; font-weight: 600; color: inherit; cursor: pointer; }
+.clima-linha-sel td { background: #eaf2fb; }
+.clima-linha-deficit td:first-child { box-shadow: inset 4px 0 0 #b35806; }
+.clima-linha-excedente td:first-child { box-shadow: inset 4px 0 0 #2166ac; }
+.clima-badge-deficit { background: #fbe3cf; color: #7a3b04; font-weight: 600; }
+.clima-badge-excedente { background: #d8e7f5; color: #123e6b; font-weight: 600; }
+.clima-seco { color: #a24c05; }
+.clima-chuvoso { color: #1b5b99; }
+
+/* mapa das estações (UGRHI aproximada): contornos sem clique, postos como pontos */
+.clima-mapa-postos path { cursor: default; vector-effect: non-scaling-stroke; }
+.clima-mapa-postos .clima-mapa__vizinha { fill: #f1f4f6; stroke: #c7d1d8; stroke-width: 1; }
+.clima-mapa-postos .clima-mapa__ugrhi { fill: #e3ebf1; stroke: #0b2e4f; stroke-width: 1.5; }
+.clima-mapa-postos a:hover path, .clima-mapa-postos a:focus path { opacity: 1; }
+.clima-mapa-postos circle { stroke: #26343d; stroke-width: 1; vector-effect: non-scaling-stroke; cursor: pointer; }
+.clima-mapa-postos a:hover circle, .clima-mapa-postos a:focus circle { stroke: #000; stroke-width: 2.5; }
+.clima-mapa-postos circle.sel { stroke: #0b2e4f; stroke-width: 3; }
+
+.clima-foco { color: #26343d; }
+.clima-busca { max-width: 320px; }
+/* tabela no formato do boletim (todas as UGRHIs) */
+.clima-resumo thead th { background: #dbe9f6; color: #123e6b; white-space: normal; vertical-align: bottom; }
+.clima-resumo tbody tr:nth-child(even) td { background: #f7fafd; }
+.clima-resumo tbody tr.clima-linha-sel td { background: #eaf2fb; }
+.clima-tabela-local { max-height: 420px; overflow-y: auto; }
+.clima-tabela-local thead th { position: sticky; top: 0; background: #fff; z-index: 1; }
+
+.clima-postos { max-height: 360px; overflow-y: auto; }
+.clima-metodologia summary { cursor: pointer; }
+.clima-grafico { width: 100%; }
+
+@media (max-width: 1199.98px) {
+    .clima-cards { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 575.98px) {
+    .clima-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .clima-card__valor { font-size: 1.15rem; }
+}

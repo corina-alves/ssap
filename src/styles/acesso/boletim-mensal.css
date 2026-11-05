@@ -1,0 +1,99 @@
+/* Boletim Mensal da Sala (/acesso/boletim_mensal e /acesso/boletim_mensal_pdf) — classes bm-.
+   Cada slide tem 1280 × 720 px (13,33 × 7,5 polegadas: o 16:9 do Google Slides);
+   na impressão, uma página do mesmo tamanho por slide. */
+
+@page { size: 1280px 720px; margin: 0; }
+
+.bm-folhas { display: flex; flex-direction: column; align-items: center; gap: 24px; }
+.bm-zoom { overflow-x: auto; }
+@media screen and (max-width: 1599.98px) { .bm-zoom .bm-folhas { zoom: .78; } }
+
+.bm-folha {
+    position: relative; width: 1280px; height: 720px; flex: none; overflow: hidden;
+    display: flex; flex-direction: column; padding: 18px 40px 30px;
+    background: #fff; color: #111; box-shadow: 0 2px 10px rgba(0, 0, 0, .15);
+    font-size: 15px; line-height: 1.45;
+}
+.bm-topo { display: flex; justify-content: space-between; align-items: flex-start; font-size: 13px; font-weight: 700; }
+.bm-logo { height: 46px; width: auto; }
+.bm-titulo { margin: -14px 0 10px; text-align: center; font-size: 22px; font-weight: 800; }
+.bm-corpo { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.bm-rodape { position: absolute; left: 0; right: 0; bottom: 0; height: 12px; background: repeating-linear-gradient(to bottom, #333 0 2px, #fff 2px 4px); }
+.bm-numero { position: absolute; right: 12px; bottom: 14px; font-size: 11px; color: #888; }
+.bm-fonte { margin: 6px 0 0; font-size: 12px; color: #333; }
+.bm-fonte a { color: #0b5394; }
+.bm-subtitulo { font-size: 16px; font-weight: 800; margin: 0 0 8px; }
+.bm-texto p { margin: 0 0 10px; text-align: justify; }
+.bm-vazio { color: #a33; font-style: italic; }
+.bm-destaque { font-weight: 700; }
+.bm-aviso { color: #a33; font-size: 13px; margin: 6px 0 0; }
+.bm-legenda-figura { font-size: 14px; margin: 4px 0; text-align: center; }
+
+/* capa */
+.bm-capa { justify-content: center; padding-left: 90px; background: linear-gradient(90deg, #fff 55%, #f2f5f8); }
+.bm-capa__texto h1 { font-size: 44px; font-weight: 800; margin: 0 0 6px; }
+.bm-capa__sala { font-size: 22px; font-weight: 700; margin: 0; }
+.bm-capa__ref { font-size: 18px; margin: 4px 0 28px; }
+.bm-capa__sub { font-size: 17px; font-weight: 600; margin: 0 0 40px; }
+.bm-capa__logo { height: 90px; }
+
+/* slides com imagens anexadas */
+.bm-editavel { flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr; gap: 20px; }
+.bm-editavel--texto { grid-template-columns: 1.6fr 1fr; }
+.bm-imagens { min-height: 0; display: grid; gap: 14px; grid-template-columns: repeat(var(--n, 1), 1fr); }
+.bm-imagens--2 { --n: 2; }
+.bm-imagens--grade { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; }
+.bm-figura { margin: 0; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.bm-imagem { max-width: 100%; max-height: 100%; min-height: 0; object-fit: contain; flex: 1; }
+.bm-figura figcaption { font-size: 13px; text-align: center; margin-top: 4px; }
+.bm-sem-imagem { flex: 1; width: 100%; min-height: 120px; display: flex; align-items: center; justify-content: center; border: 2px dashed #c9a; color: #a33; font-style: italic; }
+.bm-lateral { min-height: 0; overflow: hidden; font-size: 15px; }
+.bm-imagem-acoes { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-top: 6px; }
+.bm-imagem-acoes form { margin: 0; }
+.bm-textarea { font-size: 13px; }
+.bm-herdado { font-size: 12px; color: #8a5a00; background: #fff4d6; padding: 2px 6px; border-radius: 4px; margin-bottom: 4px; }
+
+/* mapa das UGRHIs */
+.bm-ugrhis { flex: 1; min-height: 0; display: grid; grid-template-columns: 1.7fr 1fr; gap: 20px; align-items: center; }
+.bm-ugrhis__mapa { width: 100%; max-height: 560px; }
+.bm-ugrhis__rotulo { font-size: 13px; font-weight: 800; text-anchor: middle; dominant-baseline: middle; fill: #111; }
+.bm-ugrhis__lista { list-style: none; padding: 0; margin: 0; columns: 1; font-size: 13px; line-height: 1.6; }
+.bm-ugrhis__lista i { display: inline-block; width: 14px; height: 10px; margin-right: 6px; border: 1px solid #777; }
+
+/* protocolo */
+.bm-protocolo { flex: 1; min-height: 0; display: grid; grid-template-columns: 1.5fr 1fr; gap: 20px; }
+.bm-legenda { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 13px; margin-top: 4px; }
+.bm-legenda i { display: inline-block; width: 16px; height: 11px; margin-right: 4px; border: 1px solid #666; vertical-align: -1px; }
+
+/* tabelas */
+.bm-tabela { width: 100%; border-collapse: collapse; font-size: 15px; }
+.bm-tabela th, .bm-tabela td { border: 1px solid #222; padding: 6px 8px; text-align: center; vertical-align: middle; }
+.bm-tabela thead th { background: #eee; font-weight: 800; }
+.bm-tabela tbody th { font-weight: 800; }
+.bm-tabela .bm-tabela__titulo { background: #fff; font-size: 17px; }
+.bm-forte td, .bm-forte th { font-weight: 800; }
+.bm-tabela--volumes tbody td, .bm-tabela--volumes tbody th { height: 52px; }
+
+/* volumes e sistemas */
+.bm-volumes { flex: 1; min-height: 0; display: grid; grid-template-columns: 1.9fr 1fr; gap: 20px; }
+.bm-grafico { position: relative; }
+.bm-grafico--volumes { height: 500px; }
+.bm-sistema { flex: 1; min-height: 0; display: grid; grid-template-columns: 1.35fr 1fr; gap: 20px; }
+.bm-sistema__esq { min-height: 0; display: flex; flex-direction: column; }
+.bm-descricao { font-size: 14px; text-align: justify; margin: 0 0 8px; }
+.bm-grafico--sistema { flex: 1; min-height: 0; }
+.bm-tabela--sistema { font-size: 13px; align-self: start; }
+.bm-tabela--sistema th, .bm-tabela--sistema td { padding: 4px 6px; }
+
+/* tela × impressão */
+.bm-so-impressao { display: none; }
+@media print {
+    .bm-so-tela, .acesso-previa-barra { display: none !important; }
+    .bm-so-impressao { display: block; }
+    html, body { background: #fff !important; margin: 0 !important; padding: 0 !important; }
+    .bm-folhas { gap: 0; display: block; zoom: 1 !important; }
+    .bm-folha { box-shadow: none; break-after: page; page-break-after: always; }
+    .bm-folha:last-child { break-after: auto; page-break-after: auto; }
+    .bm-sem-imagem, .bm-vazio { border-color: #ddd; color: #bbb; }
+    * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}

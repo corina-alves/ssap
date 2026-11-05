@@ -6,6 +6,9 @@ import { SelectAutoEnvio } from '@/components/site/auto-envio';
 import { salasPainel } from '@/lib/acesso/painel';
 import { acl, exigirSala } from '@/lib/auth/acl';
 import { graficosSistemas, opcoesFim, SISTEMAS, VARIAVEIS, type Variavel } from '@/lib/hidrologia/sistemas-ssd';
+import { textoAnalise, volumesMensais } from '@/lib/hidrologia/volumes-mensais';
+import { GraficoVolumesSistemas } from './grafico-volumes';
+import { TabelaVolumesSistemas } from './tabela-volumes';
 
 export const metadata: Metadata = { title: 'Sistemas produtores' };
 
@@ -29,7 +32,7 @@ export default async function SistemasProdutores({ searchParams }: { searchParam
   const opcoes = opcoesFim();
   const fim = opcoes.find((o) => o.valor === um(sp.fim))?.valor ?? opcoes[0]!.valor;
   const sistemaSel = SISTEMAS[um(sp.sistema)] ? um(sp.sistema) : '';
-  const d = await graficosSistemas(fim, sistemaSel);
+  const [d, volumes] = await Promise.all([graficosSistemas(fim, sistemaSel), volumesMensais(fim)]);
   const periodo = d.periodoTexto;
   const variaveis = Object.keys(VARIAVEIS) as Variavel[];
 
@@ -37,12 +40,17 @@ export default async function SistemasProdutores({ searchParams }: { searchParam
     <>
       <Cabecalho
         titulo="Sistemas produtores — volume, chuva e vazões"
-        subtitulo={`Médias e totais mensais de ${periodo}. Fonte: SSD SP Águas.`}
+        subtitulo={`Médias e totais mensais de ${periodo}. Fontes: SABESP e ANA (tabela de volumes) e SSD SP Águas (gráficos).`}
         trilha={[
           ['Painel', '/acesso'],
           [sala.sigla || sala.nome, `/acesso/salas/sala?s=${sala.slug}`],
           ['Sistemas produtores', null],
         ]}
+        acoes={
+          <a className="btn btn-sm btn-outline-primary" href={`/acesso/boletim_mensal?s=${sala.slug}&mes=${fim}`}>
+            <i className="bi bi-journal-richtext" /> Boletim mensal
+          </a>
+        }
       />
 
       <form className="acesso-card mb-3 row g-2 align-items-end mx-0" method="get">
@@ -76,6 +84,15 @@ export default async function SistemasProdutores({ searchParams }: { searchParam
           Período: <strong>{periodo}</strong> ({d.meses.length} meses).
         </div>
       </form>
+
+      {volumes.faltas.length > 0 && (
+        <div className="alert alert-warning">
+          <i className="bi bi-exclamation-triangle" /> A SABESP ainda não publicou (ou não respondeu) os volumes de{' '}
+          {volumes.faltas.map((x) => `${x.slice(8)}/${x.slice(5, 7)}/${x.slice(0, 4)}`).join(', ')}: essas colunas ficam sem valor.
+        </div>
+      )}
+      <TabelaVolumesSistemas t={volumes} />
+      <GraficoVolumesSistemas t={volumes} texto={textoAnalise(volumes)} />
 
       {d.falhas.length > 0 && (
         <div className="alert alert-warning">

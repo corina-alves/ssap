@@ -17,7 +17,10 @@
     "db:migrar": "tsx scripts/migrar.ts",
     "arquivos:banco": "tsx scripts/arquivos-banco.ts",
     "admin:criar": "tsx scripts/criar-admin.ts",
-    "senha:link": "tsx scripts/link-senha.ts"
+    "senha:link": "tsx scripts/link-senha.ts",
+    "clima:importar": "tsx scripts/clima-importar.ts",
+    "clima:calcular": "tsx scripts/clima-calcular.ts",
+    "clima:telemetria": "tsx scripts/clima-telemetria.ts"
   },
   "dependencies": {
     "@node-rs/argon2": "^2.2.1",

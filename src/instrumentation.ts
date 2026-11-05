@@ -33,6 +33,17 @@ export async function register() {
     globalRibeira.__ssapColetaRibeira = setInterval(rodar, 10 * 60_000);
     globalRibeira.__ssapColetaRibeira.unref();
   }
+
+  // Painel de Climatologia: chuva do dia anterior de todos os pluviômetros (SIBH, API v2) — uma
+  // consulta por dia, conferida a cada hora até o dia fechar. CLIMA_TELEMETRIA_COLETA=off desliga.
+  const globalClima = globalThis as { __ssapColetaClima?: ReturnType<typeof setInterval> };
+  if (process.env.CLIMA_TELEMETRIA_COLETA !== 'off' && !globalClima.__ssapColetaClima) {
+    const { coletarRecentes } = await import('./lib/climatologia/telemetria');
+    const rodar = () => void coletarRecentes();
+    setTimeout(rodar, 90_000).unref(); // depois das outras coletas, sem disputar o SIBH
+    globalClima.__ssapColetaClima = setInterval(rodar, 60 * 60_000);
+    globalClima.__ssapColetaClima.unref();
+  }
 }
 
 export const onRequestError: Instrumentation.onRequestError = async (erro, request, contexto) => {
