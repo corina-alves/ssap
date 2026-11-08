@@ -19,6 +19,9 @@ const nextConfig: NextConfig = {
   experimental: {
     // Upload de PDF de boletim (até 30 MB) + folga do multipart.
     serverActions: { bodySizeLimit: '31mb' },
+    // O proxy (src/proxy.ts) guarda o corpo da requisição em memória e corta em 10 MB
+    // por padrão: sem isto, PDF entre 10 e 30 MB chegava truncado ("Unexpected end of form").
+    proxyClientMaxBodySize: '31mb',
     // Página já visitada há menos de 30 s abre direto do cache do navegador, sem
     // nova ida ao servidor (os dados das fontes mudam em 10 min ou mais).
     staleTimes: { dynamic: 30 },

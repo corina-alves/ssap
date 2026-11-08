@@ -15,6 +15,12 @@ export const MAX_DIAS = 31;
 const ESTAVEL_NIVEL_M = 0.02;
 const ESTAVEL_VAZAO = 0.02;
 
+/** Referência de cheia de vazão (m³/s) por prefixo do posto: linha no gráfico e frase na análise. */
+const REFERENCIA_CHEIA_VAZAO: Record<string, number> = {
+  '64278500': 1311, // Ourinhos (UHE Jusante)
+};
+export const referenciaCheia = (prefixo: string): number | null => REFERENCIA_CHEIA_VAZAO[prefixo] ?? null;
+
 export type PostoSibh = { id: number; prefixo: string; nome: string; cidade: string; ugrhi: number; transmitindo: boolean };
 
 /** Postos fluviométricos do SIBH (cadastro guardado por 1 dia). */
@@ -139,7 +145,19 @@ function evolucaoDia(pts: Ponto[], g: Grandeza, diaRef: string): string | null {
 const PALAVRA = { subindo: 'em elevação', descendo: 'em queda', estavel: 'estável' } as const;
 
 /** Texto da análise (mesmo formato do comunicado): dia de referência e última leitura. */
-export function analise(pts: Ponto[], diaRef: string): string {
+export function analise(pts: Ponto[], diaRef: string, refCheia: number | null = null): string {
+  const texto = analiseBase(pts, diaRef);
+  const ultimaVazao = refCheia === null ? undefined : valores(pts, 'vazao').at(-1);
+  if (!ultimaVazao || refCheia === null) return texto;
+  const ref = `referência de cheia de vazão (${fmtVazao(refCheia)})`;
+  const frase =
+    ultimaVazao.v >= refCheia
+      ? `A vazão da última leitura (${fmtVazao(ultimaVazao.v)}) está acima da ${ref}.`
+      : `A vazão da última leitura (${fmtVazao(ultimaVazao.v)}) está abaixo da ${ref}, ${fmtVazao(refCheia - ultimaVazao.v)} a menos.`;
+  return `${texto}\n${frase}`;
+}
+
+function analiseBase(pts: Ponto[], diaRef: string): string {
   if (!pts.length) return 'Sem leituras do posto no período.';
   const ultimo = pts.at(-1)!;
   const temVazao = pts.some((p) => p.vazao !== null);

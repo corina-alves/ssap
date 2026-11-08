@@ -6,7 +6,7 @@ import { Cabecalho } from '@/components/acesso/pecas';
 import { Esqueleto, EsqueletoGrafico } from '@/components/carregamento';
 import { acl } from '@/lib/auth/acl';
 import { hojeSp, somarDias } from '@/lib/integracoes/comum';
-import { analise, comparar, diaMes, diasEntre, fmtDif, fmtNivel, fmtVazao, MAX_DIAS, postosFluviometricos, seriePosto, type PostoSibh } from '@/lib/hidrologia/postos-graficos';
+import { analise, comparar, diaMes, diasEntre, fmtDif, fmtNivel, fmtVazao, MAX_DIAS, postosFluviometricos, referenciaCheia, seriePosto, type PostoSibh } from '@/lib/hidrologia/postos-graficos';
 import { AnaliseEditavel } from './analise';
 import { GraficoPosto } from './grafico-posto';
 import { Seletor } from './seletor';
@@ -80,6 +80,7 @@ async function CartaoPosto({ posto, de, ate, diaRef }: { posto: PostoSibh; de: s
   const ultimo = pontos.at(-1)!;
   const cn = comparar(pontos, 'nivel', diaRef);
   const cq = comparar(pontos, 'vazao', diaRef);
+  const refCheia = referenciaCheia(posto.prefixo);
   return (
     <div className="pg-item">
       {/* Fora do cartão: o cartão (faixa azul até a análise) fica só com o conteúdo do comunicado. */}
@@ -114,8 +115,12 @@ async function CartaoPosto({ posto, de, ate, diaRef }: { posto: PostoSibh; de: s
               </span>
             )}
           </div>
-          <GraficoPosto pontos={pontos.map(({ dia, hora, nivel, vazao }) => ({ dia, hora, nivel, vazao }))} titulo={`Nível${cq ? ' e vazão' : ''} de ${titulo}, ${periodo}`} />
-          <AnaliseEditavel titulo={`Análise – ${posto.nome}`} automatico={analise(pontos, diaRef)} chave={`dc-analise:${posto.id}:${de}:${ate}:${diaRef}`} />
+          <GraficoPosto
+            pontos={pontos.map(({ dia, hora, nivel, vazao }) => ({ dia, hora, nivel, vazao }))}
+            titulo={`Nível${cq ? ' e vazão' : ''} de ${titulo}, ${periodo}`}
+            referenciaVazao={cq ? refCheia : null}
+          />
+          <AnaliseEditavel titulo={`Análise – ${posto.nome}`} automatico={analise(pontos, diaRef, refCheia)} chave={`dc-analise:${posto.id}:${de}:${ate}:${diaRef}`} />
         </div>
       </section>
     </div>

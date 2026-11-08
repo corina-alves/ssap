@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 
-const DESTAQUE = /(estável|em elevação|em queda)/g;
+const DESTAQUE = /(estável|em elevação|em queda|acima da referência de cheia de vazão \([^)]*\))/g;
 
 const ler = (chave: string) => {
   try {
