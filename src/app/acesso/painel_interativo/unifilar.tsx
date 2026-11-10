@@ -1,21 +1,24 @@
 'use client';
 
-import { useEffect, useId, useMemo, useState, type CSSProperties } from 'react';
-import { paresDoDiagrama, VD, type Ancora, type Diagrama, type Ligacao, type No, type Valor } from '@/conteudo/diagramas-unifilares';
+import { useEffect, useMemo, useState } from 'react';
+import { paresDoDiagrama, VD, type Diagrama, type No } from '@/conteudo/diagramas-unifilares';
 import { BASES, type NomeBase } from './bases-mapa';
+import { DesenhoNoMapa } from './desenho-mapa';
 import { MapaUnifilar } from './mapa-unifilar';
+import { COR, ESTILO_LINHA, Ponto, Reservatorio, Rotulo, setas, TextoValor } from './simbolos-unifilar';
+import { COR_FAIXA, duracaoFluxo, texto, valorDe, type Modo, type ValoresSsd } from './valores-ssd';
 
 /**
  * Diagrama unifilar de um sistema produtor no tema escuro do painel: rios e
  * túneis tracejados com o sentido do escoamento, reservatórios com o nível de
  * água pelo volume útil, e os valores do SSD na data escolhida. Os modos
  * mostram vazões, volume (hm³), nível (m) ou chuva sobre o mesmo desenho.
- * Com mapa de fundo, o mesmo esquema fica preso ao mapa, sobre a região do
- * sistema (mapa-unifilar.tsx); "Sem mapa" mostra só o esquema.
+ * Com mapa de fundo (desenho-mapa.tsx), os mesmos símbolos e valores
+ * (simbolos-unifilar.tsx) vão para o lugar real e os rios seguem o traçado
+ * deles; "Sem mapa" mostra o esquema.
  */
 
-export type ValoresSsd = Record<string, { valor: number; data: string } | null>;
-export type Modo = 'vazao' | 'volume' | 'nivel' | 'chuva';
+export type { Modo, ValoresSsd };
 
 export const MODOS: { modo: Modo; rotulo: string; icone: string }[] = [
   { modo: 'vazao', rotulo: 'Vazão', icone: 'bi-water' },
@@ -23,274 +26,6 @@ export const MODOS: { modo: Modo; rotulo: string; icone: string }[] = [
   { modo: 'nivel', rotulo: 'Nível', icone: 'bi-rulers' },
   { modo: 'chuva', rotulo: 'Chuva', icone: 'bi-cloud-rain' },
 ];
-
-const COR = {
-  rio: '#2f9bff',
-  tunel: '#7fd3ff',
-  aducao: '#9be7c4',
-  contorno: '#5fb4ff',
-  fundoSimbolo: '#35414e', // = fundo do diagrama (--un-fundo, painel-interativo.css)
-  bacia: '#27313c', // parte vazia do reservatório
-  valor: '#4fc3f7',
-  nome: '#f2f7fc',
-  fraco: '#8fb3d9',
-  chuva: '#b9ff4f',
-};
-
-// casas decimais e unidade por variável do SSD
-const FORMATO: Record<number, [number, string]> = {
-  [VD.chuva]: [1, 'mm'],
-  [VD.vazao]: [2, 'm³/s'],
-  [VD.descarregada]: [2, 'm³/s'],
-  [VD.natural]: [2, 'm³/s'],
-  [VD.captada]: [2, 'm³/s'],
-  [VD.volumePct]: [1, '%'],
-  [VD.volumeHm3]: [2, 'hm³'],
-  [VD.nivel]: [2, 'm'],
-  [VD.defluente]: [2, 'm³/s'],
-};
-
-const numero = (v: number, casas: number) => v.toLocaleString('pt-BR', { minimumFractionDigits: casas, maximumFractionDigits: casas });
-
-/** "4,61 m³/s" (ou "—"); com "*" quando o dado é de dia anterior ao pedido. */
-function texto(valores: ValoresSsd, space: number, v: number, data: string, comUnidade = true): string {
-  const x = valores[`${space}:${v}`];
-  if (!x) return '—';
-  const [casas, un] = FORMATO[v] ?? [2, ''];
-  const unidade = comUnidade && un ? (un === '%' ? un : ` ${un}`) : '';
-  return `${numero(x.valor, casas)}${unidade}${x.data < data ? '*' : ''}`;
-}
-
-// ---------------------------------------------------------------- símbolos
-
-/** Setas no sentido do escoamento, nas frações pedidas do comprimento da linha. */
-function setas(l: Ligacao, cor: string) {
-  const fracoes = l.setas ?? (l.tipo === 'rio' ? [0.5] : [1]);
-  const trechos = l.pontos.slice(1).map((p, i) => {
-    const a = l.pontos[i]!;
-    return { a, b: p, c: Math.hypot(p[0] - a[0], p[1] - a[1]) };
-  });
-  const total = trechos.reduce((s, t) => s + t.c, 0);
-  if (!total) return null;
-  return fracoes.map((f, k) => {
-    let resto = f * total;
-    const t = trechos.find((x) => (resto -= x.c) <= 0) ?? trechos.at(-1)!;
-    const p = f >= 1 ? 1 : (t.c + resto) / t.c;
-    const x = t.a[0] + (t.b[0] - t.a[0]) * p;
-    const y = t.a[1] + (t.b[1] - t.a[1]) * p;
-    const ang = (Math.atan2(t.b[1] - t.a[1], t.b[0] - t.a[0]) * 180) / Math.PI;
-    return <polygon key={k} points="0,0 -11,-6 -11,6" fill={cor} transform={`translate(${x} ${y}) rotate(${ang})`} />;
-  });
-}
-
-// passo = quanto o tracejado anda por ciclo da animação (múltiplo do traço; o mesmo de @keyframes un-fluxo-* no CSS)
-const ESTILO_LINHA: Record<Ligacao['tipo'], { cor: string; largura: number; traco: string; passo: number }> = {
-  rio: { cor: COR.rio, largura: 3, traco: '9 6', passo: 30 },
-  tunel: { cor: COR.tunel, largura: 2.2, traco: '3 5', passo: 16 },
-  aducao: { cor: COR.aducao, largura: 2.2, traco: '12 4 2 4', passo: 22 },
-};
-
-const BACIA = '-52,-20 78,-20 52,20 -52,20';
-
-/** Valor numérico de um campo do SSD (null sem dado). */
-const valorDe = (valores: ValoresSsd, c?: { space: number; v: number }) => (c ? (valores[`${c.space}:${c.v}`]?.valor ?? null) : null);
-
-/** Duração de um ciclo da água correndo: mais rápida quanto maior a vazão (escala log; sem dado, velocidade média). */
-const duracaoFluxo = (passo: number, q: number | null) => passo / (q === null ? 20 : 12 + 22 * Math.log10(1 + q));
-
-function TextoValor({ v, valores, data, mostrar }: { v: Valor; valores: ValoresSsd; data: string; mostrar: boolean }) {
-  if (!mostrar) return null;
-  return (
-    <g className="un-valor">
-      <text x={v.x} y={v.y} textAnchor={v.ancora ?? 'middle'} fill={COR.valor} fontSize={15} fontWeight={800}>
-        {texto(valores, v.space, v.v, data)}
-      </text>
-      {v.rotulo && (
-        <text x={v.x} y={v.y + 15} textAnchor={v.ancora ?? 'middle'} fill={COR.fraco} fontSize={11}>
-          {v.rotulo}
-        </text>
-      )}
-    </g>
-  );
-}
-
-function Rotulo({ t }: { t: { texto: string; x: number; y: number; ancora?: Ancora; giro?: number } }) {
-  return (
-    <text x={t.x} y={t.y} textAnchor={t.ancora ?? 'middle'} fill={COR.fraco} fontSize={12} fontStyle="italic" transform={t.giro ? `rotate(${t.giro} ${t.x} ${t.y})` : undefined}>
-      {t.texto}
-    </text>
-  );
-}
-
-/** Ícone de nuvem com chuva (20×16), canto superior esquerdo em (x, y); as gotas caem quando choveu no dia. */
-const Nuvem = ({ x, y, cor, chovendo = false }: { x: number; y: number; cor: string; chovendo?: boolean }) => (
-  <g transform={`translate(${x} ${y})`} fill="none" stroke={cor} strokeWidth={1.6} strokeLinecap="round">
-    <path d="M5 11h10a4 4 0 0 0 0-8 5.5 5.5 0 0 0-10.4 1.6A3.3 3.3 0 0 0 5 11z" />
-    <path d="M6 14l-1 3M10 14l-1 3M14 14l-1 3" className={chovendo ? 'un-gotas' : undefined} />
-  </g>
-);
-
-function Reservatorio({
-  n,
-  valores,
-  data,
-  modo,
-  ativo,
-  aoEscolher,
-}: {
-  n: Extract<No, { tipo: 'reservatorio' }>;
-  valores: ValoresSsd;
-  data: string;
-  modo: Modo;
-  ativo: boolean;
-  aoEscolher?: (space: number) => void;
-}) {
-  const pct = valores[`${n.space}:${VD.volumePct}`]?.valor ?? null;
-  const nivelAgua = pct === null ? 0 : Math.max(0, Math.min(1, pct / 100));
-  const yAgua = 20 - 40 * nivelAgua; // superfície da água (fundo da bacia em y = 20)
-  const chovendo = (valores[`${n.space}:${VD.chuva}`]?.valor ?? 0) > 0;
-  const id = `un-cp-${n.space}-${useId().replace(/[^\w-]/g, '')}`; // único na página (vários diagramas juntos)
-  // bloco do nome: acima (padrão), abaixo, à direita ou à esquerda do símbolo
-  const lado = n.rotulo ?? 'acima';
-  const bx = lado === 'direita' ? 96 : lado === 'esquerda' ? -88 : -52;
-  const by = lado === 'abaixo' ? 44 : lado === 'acima' ? -48 : -14;
-  const anc: Ancora = lado === 'esquerda' ? 'end' : 'start';
-  const circ = lado === 'esquerda' ? 14 : -18;
-  const extra = modo === 'volume' ? texto(valores, n.space, VD.volumeHm3, data) : modo === 'nivel' ? texto(valores, n.space, VD.nivel, data) : null;
-  const chuva = texto(valores, n.space, VD.chuva, data);
-  // chuva ao lado do nome (largura do nome estimada pelo número de letras)
-  const larguraNome = Math.max(n.nome.length * 9.6, (n.prefixo ?? 'Represa').length * 6.2);
-  const cx = anc === 'end' ? bx - 4 - larguraNome - 92 : bx + larguraNome + 12;
-
-  return (
-    <g
-      className={`un-res${ativo ? ' is-ativo' : ''}`}
-      transform={`translate(${n.x} ${n.y})`}
-      onClick={aoEscolher ? () => aoEscolher(n.space) : undefined}
-      role={aoEscolher ? 'button' : undefined}
-      tabIndex={aoEscolher ? 0 : undefined}
-      onKeyDown={aoEscolher ? (e) => (e.key === 'Enter' || e.key === ' ') && aoEscolher(n.space) : undefined}
-    >
-      <title>{`${n.nome} — volume útil ${texto(valores, n.space, VD.volumePct, data)} · ${texto(valores, n.space, VD.volumeHm3, data)} · nível ${texto(valores, n.space, VD.nivel, data)} · chuva ${chuva}`}</title>
-      {/* água até o volume útil; y e height também no style, para a transição (represa enchendo) */}
-      <clipPath id={id}>
-        <rect className="un-agua-nivel" x={-60} y={yAgua} width={150} height={20 - yAgua} style={{ y: yAgua, height: 20 - yAgua } as CSSProperties} />
-      </clipPath>
-      <clipPath id={`${id}-b`}>
-        <polygon points={BACIA} />
-      </clipPath>
-      {/* barragem e bacia */}
-      <polygon points="-72,20 -52,-28 -52,20" fill={COR.fundoSimbolo} stroke={COR.contorno} strokeWidth={1.5} />
-      <polygon points={BACIA} fill={COR.bacia} stroke={ativo ? '#ffb020' : COR.contorno} strokeWidth={ativo ? 3 : 1.6} />
-      <polygon points={BACIA} fill="url(#un-agua)" clipPath={`url(#${id})`} />
-      <g clipPath={`url(#${id}-b)`}>
-        <line className="un-agua-nivel" x1={-60} x2={90} y1={0} y2={0} style={{ transform: `translateY(${yAgua}px)` }} stroke="#bfe9ff" strokeWidth={1.2} opacity={pct === null ? 0 : 0.8} />
-      </g>
-      <text x={10} y={6} textAnchor="middle" fill="#fff" fontSize={17} fontWeight={800} className="un-sombra">
-        {texto(valores, n.space, VD.volumePct, data)}
-      </text>
-      {/* nome */}
-      <circle cx={bx + circ} cy={by - 6} r={11} fill="none" stroke={COR.contorno} strokeWidth={1.4} />
-      <text x={bx + circ} y={by - 1.5} textAnchor="middle" fill={COR.nome} fontSize={12} fontWeight={700}>
-        {n.num}
-      </text>
-      <text x={bx + (anc === 'end' ? -4 : 0)} y={by - 12} textAnchor={anc} fill={COR.fraco} fontSize={11}>
-        {n.prefixo ?? 'Represa'}
-      </text>
-      <text x={bx + (anc === 'end' ? -4 : 0)} y={by + 5} textAnchor={anc} fill={COR.nome} fontSize={16} fontWeight={800}>
-        {n.nome}
-      </text>
-      {/* chuva (destacada no modo chuva) */}
-      <g opacity={modo === 'chuva' || modo === 'vazao' ? 1 : 0.55}>
-        <Nuvem x={cx} y={by - 16} cor={modo === 'chuva' ? COR.chuva : COR.fraco} chovendo={chovendo} />
-        <text x={cx + 25} y={by + 1} fill={modo === 'chuva' ? COR.chuva : COR.valor} fontSize={modo === 'chuva' ? 17 : 14} fontWeight={800}>
-          {chuva}
-        </text>
-      </g>
-      {extra && (
-        <text x={10} y={40} textAnchor="middle" fill={COR.chuva} fontSize={15} fontWeight={800} className="un-sombra">
-          {extra}
-        </text>
-      )}
-    </g>
-  );
-}
-
-/** Símbolo do ponto; `ativo` (vazão > 0) faz o rotor da EEAB girar e o raio da UHE pulsar. */
-function Simbolo({ n, ativo }: { n: Exclude<No, { tipo: 'reservatorio' }>; ativo: boolean }) {
-  const s = { fill: COR.fundoSimbolo, stroke: COR.contorno, strokeWidth: 1.8 };
-  switch (n.tipo) {
-    case 'posto':
-      return <circle r={9} {...s} />;
-    case 'estrutura':
-      return <rect x={-9} y={-9} width={18} height={18} rx={2} {...s} />;
-    case 'eeab':
-      return (
-        <g>
-          <circle r={14} {...s} />
-          <g className={ativo ? 'un-rotor' : undefined}>
-            <circle r={4} fill={COR.contorno} />
-            <path d="M0-4a8 8 0 0 1 8 6M4 2a8 8 0 0 1-8 6M-4 2a8 8 0 0 1 0-10" fill="none" stroke={COR.contorno} strokeWidth={1.6} />
-          </g>
-        </g>
-      );
-    case 'eta':
-      return (
-        <g>
-          <rect x={-18} y={-12} width={36} height={24} rx={3} {...s} />
-          <path d="M-12-6h24M-12 0h24M-12 6h24" stroke={COR.contorno} strokeWidth={1.4} />
-        </g>
-      );
-    case 'uhe':
-      return (
-        <g>
-          <circle r={16} {...s} />
-          <path d="M2-9l-7 10h6l-3 8 8-11h-6z" fill={COR.chuva} className={ativo ? 'un-pulso' : undefined} />
-        </g>
-      );
-    case 'cidade':
-      return (
-        <g {...s} fill="none">
-          <rect x={-22} y={-10} width={12} height={22} />
-          <rect x={-8} y={-22} width={14} height={34} />
-          <rect x={8} y={-14} width={12} height={26} />
-        </g>
-      );
-  }
-}
-
-function Ponto({ n, valores, data, modo, vazao }: { n: Exclude<No, { tipo: 'reservatorio' }>; valores: ValoresSsd; data: string; modo: Modo; vazao: number | null }) {
-  const lado = n.rotulo ?? 'acima';
-  const raio = n.tipo === 'eta' || n.tipo === 'cidade' ? 24 : n.tipo === 'eeab' || n.tipo === 'uhe' ? 18 : 12;
-  const pos =
-    lado === 'acima'
-      ? { x: 0, y1: -raio - 22, y2: -raio - 6, anc: 'middle' as Ancora }
-      : lado === 'abaixo'
-        ? { x: 0, y1: raio + 14, y2: raio + 30, anc: 'middle' as Ancora }
-        : lado === 'direita'
-          ? { x: raio + 6, y1: -2, y2: 14, anc: 'start' as Ancora }
-          : { x: -raio - 6, y1: -2, y2: 14, anc: 'end' as Ancora };
-  const titulo = [n.prefixo, n.nome].filter(Boolean).join(' ');
-  return (
-    <g transform={`translate(${n.x} ${n.y})`} className="un-ponto">
-      <title>{n.valor ? `${titulo}: ${texto(valores, n.valor.space, n.valor.v, data)}` : titulo}</title>
-      <Simbolo n={n} ativo={vazao !== null && vazao > 0} />
-      {n.prefixo && (
-        <text x={pos.x} y={pos.y1} textAnchor={pos.anc} fill={COR.fraco} fontSize={11}>
-          {n.prefixo}
-        </text>
-      )}
-      <text x={pos.x} y={n.prefixo ? pos.y2 : pos.y1 + 8} textAnchor={pos.anc} fill={COR.nome} fontSize={13} fontWeight={700}>
-        {n.nome}
-      </text>
-      {n.valor && modo === 'vazao' && (
-        <text x={n.valor.dx} y={n.valor.dy} textAnchor={n.valor.ancora ?? 'middle'} fill={COR.valor} fontSize={15} fontWeight={800}>
-          {texto(valores, n.valor.space, n.valor.v, data)}
-        </text>
-      )}
-    </g>
-  );
-}
 
 /** O desenho em si (sem busca de dados): serve também para testes e exportação. */
 export function DesenhoUnifilar({
@@ -375,8 +110,6 @@ export function DesenhoUnifilar({
 
 // ---------------------------------------------------------------- com dados
 
-const COR_FAIXA = (p: number | null) => (p === null ? '#6c7f91' : p >= 60 ? '#1aa564' : p >= 40 ? '#f4b400' : p >= 30 ? '#e08600' : p >= 20 ? '#dc3545' : '#9b3fb0');
-
 /** Valores do SSD de todos os campos do diagrama, na data (refeito a cada `tick`). */
 function useValoresSsd(d: Diagrama, data: string, tick: number) {
   const [st, setSt] = useState<{ valores: ValoresSsd; carregando: boolean; erro?: string }>({ valores: {}, carregando: true });
@@ -414,15 +147,36 @@ function BotoesModo({ modo, aoMudar }: { modo: Modo; aoMudar: (m: Modo) => void 
   );
 }
 
-function Legenda({ nota }: { nota: string }) {
+/** Faixas do volume útil (as cores de COR_FAIXA). */
+const FAIXAS: [number, string][] = [
+  [60, '≥ 60%'],
+  [40, '40–60%'],
+  [30, '30–40%'],
+  [20, '20–30%'],
+  [0, '< 20%'],
+];
+
+/** Legenda; com mapa, o rio é a linha cheia pelo traçado real (desenho-mapa.tsx). */
+function Legenda({ nota, comMapa }: { nota: string; comMapa: boolean }) {
   return (
     <div className="un-legenda" aria-label="Legenda">
-      <span>
-        <svg width="34" height="10" aria-hidden>
-          <line x1="1" y1="5" x2="33" y2="5" stroke={COR.rio} strokeWidth="3" strokeDasharray="9 6" className="un-fluxo un-fluxo--rio" />
-        </svg>
-        Rio / canal
-      </span>
+      {comMapa ? (
+        <span>
+          <svg width="34" height="12" aria-hidden>
+            <line x1="2" y1="6" x2="32" y2="6" stroke="rgba(6,16,28,.55)" strokeWidth="7.5" strokeLinecap="round" />
+            <line x1="2" y1="6" x2="32" y2="6" stroke="#1f8fff" strokeWidth="4" strokeLinecap="round" />
+            <polygon points="4,0 -6,-5.5 -3,0 -6,5.5" fill="#fff" transform="translate(19 6)" />
+          </svg>
+          Rio (traçado real, no sentido da água)
+        </span>
+      ) : (
+        <span>
+          <svg width="34" height="10" aria-hidden>
+            <line x1="1" y1="5" x2="33" y2="5" stroke={COR.rio} strokeWidth="3" strokeDasharray="9 6" className="un-fluxo un-fluxo--rio" />
+          </svg>
+          Rio / canal
+        </span>
+      )}
       <span>
         <svg width="34" height="10" aria-hidden>
           <line x1="1" y1="5" x2="33" y2="5" stroke={COR.tunel} strokeWidth="2.2" strokeDasharray="3 5" className="un-fluxo un-fluxo--tunel" />
@@ -465,6 +219,15 @@ function Legenda({ nota }: { nota: string }) {
           <rect x="-18" y="-12" width="36" height="24" rx="3" fill={COR.fundoSimbolo} stroke={COR.contorno} strokeWidth="1.8" />
         </svg>
         ETA
+      </span>
+      <span>
+        Nº da represa: volume útil
+        {FAIXAS.map(([p, t]) => (
+          <span key={p} className="un-legenda-faixa">
+            <i style={{ background: COR_FAIXA(p) }} />
+            {t}
+          </span>
+        ))}
       </span>
       <span className="un-legenda-nota">{nota}</span>
     </div>
@@ -521,7 +284,7 @@ export function DiagramaUnifilar({
         <div className={`un-desenho${st.carregando ? ' is-carregando' : ''}${base ? ` com-mapa com-mapa--${base === 'Escuro' ? 'escuro' : base === 'Satélite' ? 'satelite' : 'claro'}` : ''}`}>
           {base ? (
             <MapaUnifilar d={d} base={base} hidro={hidro}>
-              {(dm) => <DesenhoUnifilar d={dm} valores={st.valores} data={data} modo={modo} destaque={destaque} aoEscolher={aoEscolher} classe="un-svg-mapa" />}
+              {(v) => <DesenhoNoMapa d={d} {...v} valores={st.valores} data={data} modo={modo} destaque={destaque} aoEscolher={aoEscolher} />}
             </MapaUnifilar>
           ) : (
             <DesenhoUnifilar d={d} valores={st.valores} data={data} modo={modo} destaque={destaque} aoEscolher={aoEscolher} />
@@ -546,7 +309,7 @@ export function DiagramaUnifilar({
           </aside>
         )}
       </div>
-      <Legenda nota={antigos ? `${NOTA_FONTE} · ${NOTA_ANTIGOS}` : NOTA_FONTE} />
+      <Legenda nota={antigos ? `${NOTA_FONTE} · ${NOTA_ANTIGOS}` : NOTA_FONTE} comMapa={!!base} />
       {d.notas?.length ? (
         <ul className="un-notas">
           {d.notas.map((n) => (

@@ -6,16 +6,15 @@ import { carregarLeaflet } from '@/components/graficos/mapa-sistemas';
 import type { Diagrama } from '@/conteudo/diagramas-unifilares';
 import areas from '@/conteudo/sistemas-produtores-areas.json';
 import { BASES, type NomeBase } from './bases-mapa';
-import { planoNoMapa, type Pt, type Tela } from './posicoes-mapa';
+import { normalizar, planoNoMapa, type PlanoMapa, type Pt } from './posicoes-mapa';
 
 /**
- * Diagrama unifilar sobre o mapa: o mesmo esquema do "Sem mapa", posto sobre
- * a região do sistema pelas represas (o centro e o espalhamento delas no
- * esquema casam com os do mapa). Cada ponto do esquema tem lugar fixo no mapa:
- * com zoom e arrastar, o desenho acompanha o mapa sem se deformar
- * (posicoes-mapa.ts). Embaixo, a área do sistema e a hidrografia principal
- * dele (rios com nome e represas; hidrografia-sistemas.json). O desenho em si
- * vem de `children`, já nas posições da tela.
+ * Diagrama unifilar sobre o mapa, no lugar real: os nós nas coordenadas deles
+ * e os rios pelo traçado da hidrografia (posicoes-mapa.ts), com zoom e
+ * arrastar. Embaixo, a área do sistema e a hidrografia principal dele (rios
+ * com nome e represas; hidrografia-sistemas.json, carregada junto com o mapa:
+ * serve também para traçar os rios). O desenho em si vem de `children`
+ * (desenho-mapa.tsx), com o plano, o zoom (f = 2^zoom) e onde o mundo está na tela (t).
  */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -29,20 +28,13 @@ const COR_AGUA = '#1fb2ff';
 
 const ZOOM = { min: 8, max: 17, inicialMin: 9, inicialMax: 14 };
 
-/** Escala dos símbolos (px por unidade do desenho): a mesma do "Sem mapa" (.un-svg: no máximo 1120 px de largura e 70vh de altura). */
-const escala = (d: Diagrama, w: number, h: number) => Math.min(Math.min(w, 1120) / d.largura, Math.min(h, 0.7 * window.innerHeight) / d.altura);
+/** Escala dos símbolos (px por unidade do esquema): um pouco menor que a do esquema, para caberem no mapa. */
+const escala = (d: Diagrama, w: number, h: number) => Math.max(0.45, Math.min(0.8, 0.8 * Math.min(w / d.largura, h / d.altura)));
 
-const ptDe = (p: { x: number; y: number }): Pt => [p.x, p.y];
-const media = (ps: Pt[]): Pt => [ps.reduce((a, p) => a + p[0], 0) / ps.length, ps.reduce((a, p) => a + p[1], 0) / ps.length];
-const espalho = (ps: Pt[]) => {
-  const [mx, my] = media(ps);
-  return Math.sqrt(ps.reduce((a, p) => a + (p[0] - mx) ** 2 + (p[1] - my) ** 2, 0));
-};
+/** O que o desenho precisa: o plano, o zoom (f = 2^zoom), onde o mundo está na tela (t) e a escala dos símbolos (s). */
+export type VistaMapa = { plano: PlanoMapa; f: number; t: Pt; s: number };
 
-/** Lugar do esquema no mapa: o ponto p do esquema fica em c + u·p, em px do mundo no zoom 0 (`project(ll, 0)` do Leaflet). */
-type Lugar = { u: number; c: Pt };
-
-export function MapaUnifilar({ d, base, hidro, children }: { d: Diagrama; base: NomeBase; hidro: boolean; children: (d: Diagrama) => ReactNode }) {
+export function MapaUnifilar({ d, base, hidro, children }: { d: Diagrama; base: NomeBase; hidro: boolean; children: (v: VistaMapa) => ReactNode }) {
   const caixa = useRef<HTMLDivElement>(null);
   const Lf = useRef<Leaflet>(null);
   const mapa = useRef<Leaflet>(null);
@@ -51,65 +43,41 @@ export function MapaUnifilar({ d, base, hidro, children }: { d: Diagrama; base: 
   const camadaHidro = useRef<Leaflet>(null);
   const telasHidro = useRef<{ rios: Leaflet; aguas: Leaflet } | null>(null);
   const [pronto, setPronto] = useState(false);
-  const aplicar = useMemo(() => planoNoMapa(d), [d]);
-  const lugar = useRef<Lugar | null>(null);
-  // `aplicar` junto: ao trocar de sistema, a tela antiga (de outro esquema) não serve
-  const [tela, setTela] = useState<(Tela & { w: number; h: number; aplicar: typeof aplicar }) | null>(null);
+  // hidrografia de todos os sistemas: traça os rios do diagrama e desenha a camada "Hidrografia"
+  const [hidrografia, setHidrografia] = useState<Hidrografia | null>(null);
+  const plano = useMemo(() => hidrografia && planoNoMapa(d, hidrografia.sistemas[d.chave]?.rios ?? [], hidrografia.sistemas[d.chave]?.aguas ?? []), [d, hidrografia]);
+  // `plano` junto: ao trocar de sistema, a vista antiga (de outro diagrama) não serve
+  const [vista, setVista] = useState<VistaMapa | null>(null);
   const sistema = d.titulo.replace(/^Sistema /, '');
 
-  // onde o esquema está na tela; no zoom animado, já onde estará no fim da animação
+  // onde o mundo está na tela; no zoom animado, já onde estará no fim da animação
   const alvoZoom = useRef<{ centro: Leaflet; zoom: number } | null>(null);
   const atualizar = useRef<() => void>(() => {});
   atualizar.current = () => {
     const m = mapa.current;
-    if (!m) return;
-    const t = m.getSize();
-    if (!t.x || !t.y) return;
-    if (!lugar.current) return enquadrar.current();
+    const t = m?.getSize();
+    if (!m || !plano || !t.x || !t.y) return;
     const a = alvoZoom.current;
     const z = a ? a.zoom : m.getZoom();
-    const meio = m.project(a ? a.centro : m.getCenter(), z).subtract(t.divideBy(2));
-    const f = 2 ** z;
-    const { u, c } = lugar.current;
-    const k = u * f;
-    // afastado além da vista inicial, o desenho todo encolhe junto (símbolos inclusive)
-    setTela({ s: Math.min(escala(d, t.x, t.y), k), k, t: [c[0] * f - meio.x, c[1] * f - meio.y], w: t.x, h: t.y, aplicar });
+    const c = m.project(a ? a.centro : m.getCenter(), z);
+    setVista({ plano, f: 2 ** z, t: [t.x / 2 - c.x, t.y / 2 - c.y], s: escala(d, t.x, t.y) });
   };
 
-  /**
-   * Vista inicial e lugar do esquema no mapa: o centro das represas no esquema
-   * vai para o centro delas no mapa, num zoom em que o espalhamento delas é
-   * parecido com o do esquema; nesse zoom o desenho fica do tamanho do "Sem mapa".
-   */
+  /** Vista inicial: o desenho todo na caixa, com folga para os símbolos. */
   const enquadrar = useRef<() => void>(() => {});
+  // até alguém arrastar ou dar zoom, a vista inicial é refeita quando o mapa muda de tamanho
+  const mexeu = useRef(false);
   enquadrar.current = () => {
     const m = mapa.current;
-    if (!m) return;
-    const t = m.getSize();
-    if (!t.x || !t.y) return;
-    const s = escala(d, t.x, t.y);
-    const represas = d.nos.filter((n) => n.ll);
-    let z = d.zoomMapa ?? 12;
-    let noMapa: Pt;
-    let noEsquema: Pt;
-    if (represas.length) {
-      const p0 = represas.map((n) => ptDe(m.project(n.ll, 0)));
-      const n0 = represas.map(ptDe);
-      if (represas.length >= 2) z = Math.log2((s * espalho(n0)) / espalho(p0));
-      [noMapa, noEsquema] = [media(p0), media(n0)];
-    } else {
-      // sem represa com coordenada: o esquema sobre a área do sistema
-      const b = area.current?.getBounds();
-      if (!b?.isValid()) return;
-      const [a0, a1] = [ptDe(m.project(b.getNorthWest(), 0)), ptDe(m.project(b.getSouthEast(), 0))];
-      z = Math.log2(s * Math.min(d.largura / (a1[0] - a0[0]), d.altura / (a1[1] - a0[1])));
-      [noMapa, noEsquema] = [media([a0, a1]), [d.largura / 2, d.altura / 2]];
-    }
-    z = Math.max(ZOOM.inicialMin, Math.min(ZOOM.inicialMax, Math.round(z * 4) / 4));
-    const u = s / 2 ** z;
-    const c: Pt = [noMapa[0] - u * noEsquema[0], noMapa[1] - u * noEsquema[1]];
-    lugar.current = { u, c };
-    m.setView(m.unproject([c[0] + (u * d.largura) / 2, c[1] + (u * d.altura) / 2], 0), z, { animate: false });
+    const t = m?.getSize();
+    if (!m || !plano || !t.x || !t.y) return;
+    mexeu.current = false;
+    const [x0, y0, x1, y1] = plano.caixa;
+    // folga em volta do desenho para os símbolos e nomes dos pontos da borda
+    const folga = 2 * 95 * escala(d, t.x, t.y);
+    const util = (v: number) => (v > 2 * folga ? v - folga : v);
+    const z = Math.log2(Math.min(util(t.x) / Math.max(x1 - x0, 1e-9), util(t.y) / Math.max(y1 - y0, 1e-9)));
+    m.setView(m.unproject([(x0 + x1) / 2, (y0 + y1) / 2], 0), Math.max(ZOOM.inicialMin, Math.min(ZOOM.inicialMax, Math.floor(z * 4) / 4)), { animate: false });
     atualizar.current();
   };
 
@@ -164,13 +132,23 @@ export function MapaUnifilar({ d, base, hidro, children }: { d: Diagrama; base: 
         alvoZoom.current = null;
         atualizar.current();
       });
+      for (const ev of ['dragstart', 'boxzoomstart', 'dblclick']) m.on(ev, () => (mexeu.current = true));
+      L.DomEvent.on(caixa.current, 'wheel', () => (mexeu.current = true));
+      m.on('zoomstart', (e: Leaflet) => e.originalEvent !== undefined && (mexeu.current = true));
+      L.DomEvent.on(m.zoomControl.getContainer(), 'click', () => (mexeu.current = true));
       observador = new ResizeObserver(() => {
         m.invalidateSize({ pan: false });
-        agendar();
+        if (mexeu.current) agendar();
+        else enquadrar.current();
       });
       observador.observe(caixa.current);
       setPronto(true);
     });
+    // sem a hidrografia, os rios do diagrama vão em linha reta entre os pontos
+    import('@/conteudo/hidrografia-sistemas.json').then(
+      (mod) => vivo && setHidrografia((mod.default ?? mod) as unknown as Hidrografia),
+      () => vivo && setHidrografia({ sistemas: {} }),
+    );
     return () => {
       vivo = false;
       cancelAnimationFrame(quadro);
@@ -181,7 +159,7 @@ export function MapaUnifilar({ d, base, hidro, children }: { d: Diagrama; base: 
     };
   }, []);
 
-  // área do sistema e vista inicial
+  // área do sistema
   useEffect(() => {
     const m = mapa.current;
     if (!m || !pronto) return;
@@ -191,8 +169,12 @@ export function MapaUnifilar({ d, base, hidro, children }: { d: Diagrama; base: 
       Lf.current
         .geoJSON(f, { pane: 'un-area', interactive: false, style: { color: '#9c7478', weight: 1, opacity: 0.6, fillColor: '#7a5458', fillOpacity: 0.3 } })
         .addTo(area.current);
-    enquadrar.current();
   }, [sistema, pronto]);
+
+  // vista inicial (de novo ao trocar de sistema)
+  useEffect(() => {
+    if (pronto && plano) enquadrar.current();
+  }, [plano, pronto]);
 
   // mapa base escolhido
   useEffect(() => {
@@ -204,50 +186,48 @@ export function MapaUnifilar({ d, base, hidro, children }: { d: Diagrama; base: 
     }
   }, [base, pronto]);
 
-  // hidrografia principal do sistema (carregada só quando o mapa aparece): rios com o nome e as represas
+  // camada "Hidrografia": rios principais do sistema com o nome e as represas
   useEffect(() => {
     const m = mapa.current;
     const L = Lf.current;
-    if (!m || !pronto || !hidro) return;
-    let vivo = true;
-    import('@/conteudo/hidrografia-sistemas.json').then((mod) => {
-      const h = ((mod.default ?? mod) as unknown as Hidrografia).sistemas[d.chave];
-      if (!vivo || !mapa.current || !h) return;
-      const grupo = L.featureGroup([], { attribution: 'Hidrografia: IBGE (BC250) e © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' });
-      const { rios: telaRios, aguas: telaAguas } = telasHidro.current!;
-      const latLon = (c: [number, number][]) => c.map(([lon, lat]) => [lat, lon]);
-      for (const a of h.aguas) {
-        L.polygon(a.c.map(latLon), { renderer: telaAguas, color: COR_AGUA, weight: 0.6, opacity: 0.9, fillColor: COR_AGUA, fillOpacity: 0.85 })
-          .bindTooltip(a.n, { sticky: true, className: 'mu-dica' })
-          .addTo(grupo);
+    const h = hidrografia?.sistemas[d.chave];
+    if (!m || !pronto || !hidro || !h) return;
+    const grupo = L.featureGroup([], { attribution: 'Hidrografia: IBGE (BC250) e © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' });
+    const { rios: telaRios, aguas: telaAguas } = telasHidro.current!;
+    const latLon = (c: [number, number][]) => c.map(([lon, lat]) => [lat, lon]);
+    // nomes que o diagrama já escreve junto da linha dele ("Rio Cotia → Rio Tietê": os dois)
+    const noDesenho = new Set(
+      [...d.ligacoes.map((l) => l.rotulo?.texto), ...(d.textos ?? []).filter((t) => !t.semMapa).map((t) => t.texto)].flatMap((t) => (t ? t.split('→').map(normalizar) : [])),
+    );
+    for (const a of h.aguas) {
+      L.polygon(a.c.map(latLon), { renderer: telaAguas, color: COR_AGUA, weight: 0.6, opacity: 0.9, fillColor: COR_AGUA, fillOpacity: 0.85 })
+        .bindTooltip(a.n, { sticky: true, className: 'mu-dica' })
+        .addTo(grupo);
+    }
+    for (const r of h.rios) {
+      // rio em azul com tracejado claro por cima, mais fino que as linhas do diagrama (que seguem em destaque)
+      for (const c of r.c) {
+        L.polyline(latLon(c), { renderer: telaRios, color: COR_RIO, weight: 1.8, opacity: 0.7 }).bindTooltip(r.n, { sticky: true, className: 'mu-dica' }).addTo(grupo);
+        L.polyline(latLon(c), { renderer: telaRios, color: '#e8f6ff', weight: 0.8, opacity: 0.6, dashArray: '5 7', interactive: false }).addTo(grupo);
       }
-      for (const r of h.rios) {
-        // rio em azul com tracejado claro por cima, mais fino que as linhas do diagrama (que seguem em destaque)
-        for (const c of r.c) {
-          L.polyline(latLon(c), { renderer: telaRios, color: COR_RIO, weight: 1.8, opacity: 0.7 }).bindTooltip(r.n, { sticky: true, className: 'mu-dica' }).addTo(grupo);
-          L.polyline(latLon(c), { renderer: telaRios, color: '#e8f6ff', weight: 0.8, opacity: 0.6, dashArray: '5 7', interactive: false }).addTo(grupo);
-        }
-        L.marker([r.r[1], r.r[0]], {
-          pane: 'un-rios-nomes',
-          interactive: false,
-          keyboard: false,
-          icon: L.divIcon({ className: 'un-rio-nome', html: `<span>${r.n}</span>`, iconSize: null }),
-        }).addTo(grupo);
-      }
-      camadaHidro.current = grupo.addTo(m);
-    });
+      if (noDesenho.has(normalizar(r.n))) continue;
+      L.marker([r.r[1], r.r[0]], {
+        pane: 'un-rios-nomes',
+        interactive: false,
+        keyboard: false,
+        icon: L.divIcon({ className: 'un-rio-nome', html: `<span>${r.n}</span>`, iconSize: null }),
+      }).addTo(grupo);
+    }
+    camadaHidro.current = grupo.addTo(m);
     return () => {
-      vivo = false;
       camadaHidro.current?.remove();
       camadaHidro.current = null;
     };
-  }, [hidro, pronto, d.chave]);
-
-  const desenho = useMemo(() => (tela && tela.aplicar === aplicar ? aplicar(tela, tela.w, tela.h) : null), [aplicar, tela]);
+  }, [hidro, pronto, d, hidrografia]);
 
   return (
     <div className="un-mapa" ref={caixa} style={{ aspectRatio: `${d.largura} / ${d.altura}` }}>
-      {pronto && desenho && caixa.current && createPortal(<div className="un-mapa-desenho">{children(desenho)}</div>, caixa.current)}
+      {pronto && vista && vista.plano === plano && caixa.current && createPortal(<div className="un-mapa-desenho">{children(vista)}</div>, caixa.current)}
     </div>
   );
 }
