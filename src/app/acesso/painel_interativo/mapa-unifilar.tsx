@@ -9,11 +9,13 @@ import { BASES, type NomeBase } from './bases-mapa';
 import { planoNoMapa, type Pt, type Tela } from './posicoes-mapa';
 
 /**
- * Diagrama unifilar sobre o mapa: as represas no ponto real, o resto do
- * desenho acompanhando (posicoes-mapa.ts), com zoom e arrastar. Embaixo, a
- * área do sistema e a hidrografia principal dele (rios com nome e represas;
- * hidrografia-sistemas.json). O desenho em si vem de `children`, já nas
- * posições da tela.
+ * Diagrama unifilar sobre o mapa: o mesmo esquema do "Sem mapa", posto sobre
+ * a região do sistema pelas represas (o centro e o espalhamento delas no
+ * esquema casam com os do mapa). Cada ponto do esquema tem lugar fixo no mapa:
+ * com zoom e arrastar, o desenho acompanha o mapa sem se deformar
+ * (posicoes-mapa.ts). Embaixo, a área do sistema e a hidrografia principal
+ * dele (rios com nome e represas; hidrografia-sistemas.json). O desenho em si
+ * vem de `children`, já nas posições da tela.
  */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -27,12 +29,20 @@ const COR_AGUA = '#1fb2ff';
 
 const ZOOM = { min: 8, max: 17, inicialMin: 9, inicialMax: 14 };
 
-/** Escala dos símbolos (px por unidade do desenho): o esquema inteiro caberia na caixa. */
-const escala = (d: Diagrama, w: number, h: number) => Math.max(0.4, Math.min(0.9, 0.9 * Math.min(w / d.largura, h / d.altura)));
+/** Escala dos símbolos (px por unidade do desenho): a mesma do "Sem mapa" (.un-svg: no máximo 1120 px de largura e 70vh de altura). */
+const escala = (d: Diagrama, w: number, h: number) => Math.min(Math.min(w, 1120) / d.largura, Math.min(h, 0.7 * window.innerHeight) / d.altura);
 
 const ptDe = (p: { x: number; y: number }): Pt => [p.x, p.y];
+const media = (ps: Pt[]): Pt => [ps.reduce((a, p) => a + p[0], 0) / ps.length, ps.reduce((a, p) => a + p[1], 0) / ps.length];
+const espalho = (ps: Pt[]) => {
+  const [mx, my] = media(ps);
+  return Math.sqrt(ps.reduce((a, p) => a + (p[0] - mx) ** 2 + (p[1] - my) ** 2, 0));
+};
 
-export function MapaUnifilar({ d, base, hidro, children }: { d: Diagrama; base: NomeBase; hidro: boolean; children: (d: Diagrama, guias: [Pt, Pt][]) => ReactNode }) {
+/** Lugar do esquema no mapa: o ponto p do esquema fica em c + u·p, em px do mundo no zoom 0 (`project(ll, 0)` do Leaflet). */
+type Lugar = { u: number; c: Pt };
+
+export function MapaUnifilar({ d, base, hidro, children }: { d: Diagrama; base: NomeBase; hidro: boolean; children: (d: Diagrama) => ReactNode }) {
   const caixa = useRef<HTMLDivElement>(null);
   const Lf = useRef<Leaflet>(null);
   const mapa = useRef<Leaflet>(null);
@@ -41,28 +51,36 @@ export function MapaUnifilar({ d, base, hidro, children }: { d: Diagrama; base: 
   const camadaHidro = useRef<Leaflet>(null);
   const telasHidro = useRef<{ rios: Leaflet; aguas: Leaflet } | null>(null);
   const [pronto, setPronto] = useState(false);
-  const plano = useMemo(() => planoNoMapa(d), [d]);
-  // `plano` junto: ao trocar de sistema, a tela antiga (de outras represas) não serve
-  const [tela, setTela] = useState<(Tela & { w: number; h: number; plano: typeof plano }) | null>(null);
+  const aplicar = useMemo(() => planoNoMapa(d), [d]);
+  const lugar = useRef<Lugar | null>(null);
+  // `aplicar` junto: ao trocar de sistema, a tela antiga (de outro esquema) não serve
+  const [tela, setTela] = useState<(Tela & { w: number; h: number; aplicar: typeof aplicar }) | null>(null);
   const sistema = d.titulo.replace(/^Sistema /, '');
 
-  // posições na tela dos nós com coordenada; no zoom animado, já as do fim da animação
+  // onde o esquema está na tela; no zoom animado, já onde estará no fim da animação
   const alvoZoom = useRef<{ centro: Leaflet; zoom: number } | null>(null);
   const atualizar = useRef<() => void>(() => {});
   atualizar.current = () => {
     const m = mapa.current;
     if (!m) return;
     const t = m.getSize();
+    if (!t.x || !t.y) return;
+    if (!lugar.current) return enquadrar.current();
     const a = alvoZoom.current;
-    const meio = a && m.project(a.centro, a.zoom).subtract(t.divideBy(2));
-    const nos = plano.controles.map((c): Pt => {
-      const p = a ? m.project(c.ll, a.zoom).subtract(meio) : m.latLngToContainerPoint(c.ll);
-      return [p.x, p.y];
-    });
-    setTela({ s: escala(d, t.x, t.y), nos, w: t.x, h: t.y, plano });
+    const z = a ? a.zoom : m.getZoom();
+    const meio = m.project(a ? a.centro : m.getCenter(), z).subtract(t.divideBy(2));
+    const f = 2 ** z;
+    const { u, c } = lugar.current;
+    const k = u * f;
+    // afastado além da vista inicial, o desenho todo encolhe junto (símbolos inclusive)
+    setTela({ s: Math.min(escala(d, t.x, t.y), k), k, t: [c[0] * f - meio.x, c[1] * f - meio.y], w: t.x, h: t.y, aplicar });
   };
 
-  /** Vista inicial: zoom em que a distância entre as represas no mapa é a do esquema, centrada no desenho todo. */
+  /**
+   * Vista inicial e lugar do esquema no mapa: o centro das represas no esquema
+   * vai para o centro delas no mapa, num zoom em que o espalhamento delas é
+   * parecido com o do esquema; nesse zoom o desenho fica do tamanho do "Sem mapa".
+   */
   const enquadrar = useRef<() => void>(() => {});
   enquadrar.current = () => {
     const m = mapa.current;
@@ -70,34 +88,28 @@ export function MapaUnifilar({ d, base, hidro, children }: { d: Diagrama; base: 
     const t = m.getSize();
     if (!t.x || !t.y) return;
     const s = escala(d, t.x, t.y);
-    const cs = plano.controles;
+    const represas = d.nos.filter((n) => n.ll);
     let z = d.zoomMapa ?? 12;
-    if (cs.length >= 2) {
-      const p0 = cs.map((c) => m.project(c.ll, 0));
-      const n0 = cs.map((c) => ptDe(d.nos[c.i]!));
-      const media = (ps: Pt[]): Pt => [ps.reduce((a, p) => a + p[0], 0) / ps.length, ps.reduce((a, p) => a + p[1], 0) / ps.length];
-      const espalho = (ps: Pt[]) => {
-        const [mx, my] = media(ps);
-        return Math.sqrt(ps.reduce((a, p) => a + (p[0] - mx) ** 2 + (p[1] - my) ** 2, 0));
-      };
-      z = Math.log2((s * espalho(n0)) / espalho(p0.map((p: Leaflet) => [p.x, p.y])));
+    let noMapa: Pt;
+    let noEsquema: Pt;
+    if (represas.length) {
+      const p0 = represas.map((n) => ptDe(m.project(n.ll, 0)));
+      const n0 = represas.map(ptDe);
+      if (represas.length >= 2) z = Math.log2((s * espalho(n0)) / espalho(p0));
+      [noMapa, noEsquema] = [media(p0), media(n0)];
+    } else {
+      // sem represa com coordenada: o esquema sobre a área do sistema
+      const b = area.current?.getBounds();
+      if (!b?.isValid()) return;
+      const [a0, a1] = [ptDe(m.project(b.getNorthWest(), 0)), ptDe(m.project(b.getSouthEast(), 0))];
+      z = Math.log2(s * Math.min(d.largura / (a1[0] - a0[0]), d.altura / (a1[1] - a0[1])));
+      [noMapa, noEsquema] = [media([a0, a1]), [d.largura / 2, d.altura / 2]];
     }
-    z = Math.max(ZOOM.inicialMin, Math.min(ZOOM.inicialMax, Math.floor(z * 4) / 4));
-    if (!cs.length) {
-      if (area.current?.getBounds().isValid()) m.fitBounds(area.current.getBounds(), { padding: [16, 16], animate: false });
-      return;
-    }
-    // caixa do desenho todo nesse zoom (px do mundo), com folga para os símbolos e nomes
-    const pts = plano.pontos({ s, nos: cs.map((c) => ptDe(m.project(c.ll, z))) });
-    const folga = 95 * s;
-    const xs = pts.map((p) => p[0]);
-    const ys = pts.map((p) => p[1]);
-    const [x0, x1, y0, y1] = [Math.min(...xs) - folga, Math.max(...xs) + folga, Math.min(...ys) - folga, Math.max(...ys) + folga];
-    const centro = m.unproject([(x0 + x1) / 2, (y0 + y1) / 2], z);
-    // não coube: afasta um pouco (só a distância entre as represas encolhe; os símbolos não)
-    const sobra = Math.max((x1 - x0) / t.x, (y1 - y0) / t.y);
-    const zFinal = sobra > 1 ? Math.max(z - 1.5, Math.floor((z - Math.log2(sobra)) * 4) / 4) : z;
-    m.setView(centro, zFinal, { animate: false });
+    z = Math.max(ZOOM.inicialMin, Math.min(ZOOM.inicialMax, Math.round(z * 4) / 4));
+    const u = s / 2 ** z;
+    const c: Pt = [noMapa[0] - u * noEsquema[0], noMapa[1] - u * noEsquema[1]];
+    lugar.current = { u, c };
+    m.setView(m.unproject([c[0] + (u * d.largura) / 2, c[1] + (u * d.altura) / 2], 0), z, { animate: false });
     atualizar.current();
   };
 
@@ -231,11 +243,11 @@ export function MapaUnifilar({ d, base, hidro, children }: { d: Diagrama; base: 
     };
   }, [hidro, pronto, d.chave]);
 
-  const desenho = useMemo(() => (tela && tela.plano === plano ? plano.aplicar(tela, tela.w, tela.h) : null), [plano, tela]);
+  const desenho = useMemo(() => (tela && tela.aplicar === aplicar ? aplicar(tela, tela.w, tela.h) : null), [aplicar, tela]);
 
   return (
     <div className="un-mapa" ref={caixa} style={{ aspectRatio: `${d.largura} / ${d.altura}` }}>
-      {pronto && desenho && caixa.current && createPortal(<div className="un-mapa-desenho">{children(desenho.desenho, desenho.guias)}</div>, caixa.current)}
+      {pronto && desenho && caixa.current && createPortal(<div className="un-mapa-desenho">{children(desenho)}</div>, caixa.current)}
     </div>
   );
 }

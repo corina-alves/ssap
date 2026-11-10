@@ -6,8 +6,9 @@
  *
  * Coordenadas no espaço do viewBox de cada diagrama. Ligações vão sempre da
  * origem para o destino da água (a seta segue esse sentido). `ll` ([lat, lon])
- * põe o nó no ponto real do mapa (represas: no espelho d'água, pelo
- * OpenStreetMap); o resto do desenho acompanha (painel_interativo/posicoes-mapa.ts).
+ * é o ponto real da represa (no espelho d'água, pelo OpenStreetMap): com mapa
+ * de fundo, o esquema vai para a região do sistema pelo centro e pelo
+ * espalhamento das represas (painel_interativo/mapa-unifilar.tsx).
  */
 
 /** Variáveis do SSD usadas nos diagramas. */
@@ -16,8 +17,7 @@ export const VD = { chuva: 1, vazao: 3, descarregada: 5, natural: 6, captada: 8,
 export type Ancora = 'start' | 'middle' | 'end';
 /** Valor do SSD (local:variável) desenhado em (x, y). */
 export type Valor = { space: number; v: number; x: number; y: number; ancora?: Ancora; rotulo?: string };
-/** `semMapa`: só no esquema (sem sentido sobre o mapa, como a divisa entre bacias) */
-export type Texto = { texto: string; x: number; y: number; ancora?: Ancora; giro?: number; semMapa?: boolean };
+export type Texto = { texto: string; x: number; y: number; ancora?: Ancora; giro?: number };
 
 export type Ligacao = {
   /** rio/canal natural, túnel ou transferência, adução para ETA */
@@ -169,7 +169,7 @@ const cantareira: Diagrama = {
     { texto: 'Rio Jaguari → Rio Piracicaba', x: 20, y: 102, ancora: 'start' },
     { texto: 'Rio Jacareí', x: 1220, y: 157 },
     { texto: 'Rio Atibaia → Rio Piracicaba', x: 20, y: 412, ancora: 'start' },
-    { texto: 'Bacia do Piracicaba ↑   Bacia do Alto Tietê ↓', x: 20, y: 545, ancora: 'start', semMapa: true },
+    { texto: 'Bacia do Piracicaba ↑   Bacia do Alto Tietê ↓', x: 20, y: 545, ancora: 'start' },
   ],
   notas: ['UHE Jaguari fica na bacia do Paraíba do Sul e não entra no Sistema Equivalente.'],
 };

@@ -10,8 +10,8 @@ import { MapaUnifilar } from './mapa-unifilar';
  * túneis tracejados com o sentido do escoamento, reservatórios com o nível de
  * água pelo volume útil, e os valores do SSD na data escolhida. Os modos
  * mostram vazões, volume (hm³), nível (m) ou chuva sobre o mesmo desenho.
- * Com mapa de fundo, o desenho vai para cima das represas (mapa-unifilar.tsx);
- * "Sem mapa" mostra o esquema.
+ * Com mapa de fundo, o mesmo esquema fica preso ao mapa, sobre a região do
+ * sistema (mapa-unifilar.tsx); "Sem mapa" mostra só o esquema.
  */
 
 export type ValoresSsd = Record<string, { valor: number; data: string } | null>;
@@ -301,7 +301,6 @@ export function DesenhoUnifilar({
   destaque,
   aoEscolher,
   classe = 'un-svg',
-  guias,
 }: {
   d: Diagrama;
   valores: ValoresSsd;
@@ -310,8 +309,6 @@ export function DesenhoUnifilar({
   destaque?: number | null;
   aoEscolher?: (space: number) => void;
   classe?: string;
-  /** no mapa: do ponto real da represa ao símbolo afastado da vizinha */
-  guias?: [[number, number], [number, number]][];
 }) {
   const vazoes = modo === 'vazao';
   // vazão de um ponto (EEAB, UHE): a dele ou a da ligação que começa ou termina nele
@@ -353,12 +350,6 @@ export function DesenhoUnifilar({
           );
         })}
       </g>
-      {guias?.map(([a, b], i) => (
-        <g key={i} className="un-guia">
-          <line x1={a[0]} y1={a[1]} x2={b[0]} y2={b[1]} stroke="#bfe9ff" strokeWidth={1.4} strokeDasharray="3 4" opacity={0.85} />
-          <circle cx={a[0]} cy={a[1]} r={5} fill="#bfe9ff" stroke={COR.fundoSimbolo} strokeWidth={2} />
-        </g>
-      ))}
       {d.ligacoes.map((l, i) => (
         <g key={i}>
           {l.rotulo && <Rotulo t={l.rotulo} />}
@@ -530,7 +521,7 @@ export function DiagramaUnifilar({
         <div className={`un-desenho${st.carregando ? ' is-carregando' : ''}${base ? ` com-mapa com-mapa--${base === 'Escuro' ? 'escuro' : base === 'Satélite' ? 'satelite' : 'claro'}` : ''}`}>
           {base ? (
             <MapaUnifilar d={d} base={base} hidro={hidro}>
-              {(dm, guias) => <DesenhoUnifilar d={dm} guias={guias} valores={st.valores} data={data} modo={modo} destaque={destaque} aoEscolher={aoEscolher} classe="un-svg-mapa" />}
+              {(dm) => <DesenhoUnifilar d={dm} valores={st.valores} data={data} modo={modo} destaque={destaque} aoEscolher={aoEscolher} classe="un-svg-mapa" />}
             </MapaUnifilar>
           ) : (
             <DesenhoUnifilar d={d} valores={st.valores} data={data} modo={modo} destaque={destaque} aoEscolher={aoEscolher} />
