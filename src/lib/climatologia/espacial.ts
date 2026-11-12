@@ -65,19 +65,27 @@ export function distanciaKm(lat1: number, lon1: number, lat2: number, lon2: numb
 /** Células de uma UGRHI: peso (área relativa) e, para cada célula, os postos mais próximos em ordem de distância. */
 export type CelulasUgrhi = { codigo: number; nome: string; n: number; area: Float64Array; candidatos: Int32Array; distancias: Float32Array; k: number };
 
-export function montarGrade(limites: Limites, postos: readonly PostoGeo[], passo = PASSO_GRAUS, k = CANDIDATOS): Map<number, CelulasUgrhi> {
+/**
+ * O trabalho da grade em pedaços: pausa (yield) a cada linha de células e a cada
+ * célula; o resultado volta no fim. Com ~60 mil células e ~1.400 postos, a conta
+ * leva uns 12 s de CPU (medido em 12/11/2026): no servidor ela é feita aos poucos
+ * (montarGradeAosPoucos), para o site não parar enquanto isso.
+ */
+function* gerarGrade(limites: Limites, postos: readonly PostoGeo[], passo: number, k: number): Generator<void, Map<number, CelulasUgrhi>> {
   const grade = new Map<number, CelulasUgrhi>();
   const kk = Math.min(k, postos.length);
   for (const a of areas(limites)) {
     const celulas: [number, number][] = [];
     for (let y = Math.floor(a.caixa[1] / passo) * passo + passo / 2; y < a.caixa[3]; y += passo) {
       for (let x = Math.floor(a.caixa[0] / passo) * passo + passo / 2; x < a.caixa[2]; x += passo) if (dentroDe(a, x, y)) celulas.push([x, y]);
+      yield;
     }
     const n = celulas.length;
     const area = new Float64Array(n);
     const candidatos = new Int32Array(n * kk).fill(-1);
     const distancias = new Float32Array(n * kk).fill(Infinity);
-    celulas.forEach(([x, y], c) => {
+    for (let c = 0; c < n; c++) {
+      const [x, y] = celulas[c]!;
       area[c] = Math.cos(y * (Math.PI / 180)); // área da célula em graus² é proporcional ao cosseno da latitude
       const base = c * kk;
       for (let p = 0; p < postos.length; p++) {
@@ -92,10 +100,38 @@ export function montarGrade(limites: Limites, postos: readonly PostoGeo[], passo
         distancias[base + i] = d;
         candidatos[base + i] = p;
       }
-    });
+      yield;
+    }
     grade.set(a.codigo, { codigo: a.codigo, nome: a.nome, n, area, candidatos, distancias, k: kk });
   }
   return grade;
+}
+
+/** Células de todas as UGRHIs com os postos mais próximos de cada uma, de uma vez (scripts e testes). */
+export function montarGrade(limites: Limites, postos: readonly PostoGeo[], passo = PASSO_GRAUS, k = CANDIDATOS): Map<number, CelulasUgrhi> {
+  const g = gerarGrade(limites, postos, passo, k);
+  let r = g.next();
+  while (!r.done) r = g.next();
+  return r.value;
+}
+
+/**
+ * O mesmo que montarGrade, para o servidor: a cada `fatiaMs` de conta devolve a
+ * vez às requisições (setImmediate). Sem isso, a coleta da climatologia travava
+ * o site inteiro por ~12 s a cada hora.
+ */
+export async function montarGradeAosPoucos(limites: Limites, postos: readonly PostoGeo[], passo = PASSO_GRAUS, k = CANDIDATOS, fatiaMs = 20): Promise<Map<number, CelulasUgrhi>> {
+  const g = gerarGrade(limites, postos, passo, k);
+  let inicio = performance.now();
+  let r = g.next();
+  while (!r.done) {
+    if (performance.now() - inicio >= fatiaMs) {
+      await new Promise<void>((ok) => setImmediate(ok));
+      inicio = performance.now();
+    }
+    r = g.next();
+  }
+  return r.value;
 }
 
 export type ResultadoRegional = {

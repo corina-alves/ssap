@@ -1,5 +1,5 @@
 import { lembrar } from '../integracoes/cache';
-import { buscarSibh, type Cotas } from '../integracoes/sibh-medicoes';
+import { buscarSibh, chuvaAcumuladaPostos, type Cotas } from '../integracoes/sibh-medicoes';
 
 /**
  * Situação dos rios, córregos e piscinões (fluviômetros do SIBH) para as
@@ -448,18 +448,14 @@ export async function coordenadasPostos(): Promise<Record<string, { lat: number;
 
 /**
  * Chuva acumulada (mm) nas últimas `horas` de todos os pluviômetros: posto → mm.
- * Com `ateMs`, a janela termina nesse instante (ex.: 07h) em vez de agora.
+ * Com `ateMs`, a janela termina nesse instante (ex.: 07h) em vez de agora. A
+ * consulta é a mesma dos sumários automáticos (chuvaAcumuladaPostos, um cache
+ * só); sem resposta do SIBH, ou com a cópia antiga, entra em `falhas`.
  */
-async function chuvaAcumulada(horas: number, ateMs?: number): Promise<Record<string, number> | null> {
-  const ate = ateMs === undefined ? '' : `&from_date=${new Date(ateMs).toISOString().slice(0, 19)}Z`;
-  const r = (await buscarSibh(`measurements/now?station_type_id=2&hours=${horas}${ate}`)) as { measurements?: Linha[] };
-  if (!Array.isArray(r.measurements)) return null;
-  const saida: Record<string, number> = {};
-  for (const x of r.measurements) {
-    const v = num(x.value);
-    if (v !== null) saida[String(x.station_prefix_id)] = arred(v, 1);
-  }
-  return saida;
+async function chuvaAcumulada(horas: number, falhas: string[], ateMs?: number): Promise<Record<string, number>> {
+  const l = await chuvaAcumuladaPostos(horas, ateMs).catch(() => null);
+  if (!l || l.desatualizado) falhas.push(`mapa_chuva_${horas}h`);
+  return Object.fromEntries(Object.entries(l?.valor ?? {}).map(([id, c]) => [id, arred(c.mm, 1)]));
 }
 
 /**
@@ -473,7 +469,7 @@ export async function mapaUgrhi(ugrhi: number, horasPedidas: number) {
   const [flu, plu, acum] = await Promise.all([
     cacheOu('mapa_estacoes_flu', 86_400, () => estacoesMapa(1), falhas, {} as Record<string, EstacaoMapa>),
     cacheOu('mapa_estacoes_plu', 86_400, () => estacoesMapa(2), falhas, {} as Record<string, EstacaoMapa>),
-    cacheOu(`mapa_chuva_${horas}h`, CACHE_SEGUNDOS, () => chuvaAcumulada(horas), falhas, {} as Record<string, number>),
+    chuvaAcumulada(horas, falhas),
   ]);
   const estacoesUgrhi: PontoEstacao[] = [];
   for (const [t, lista] of [['flu', flu], ['plu', plu]] as const) {
@@ -508,11 +504,9 @@ export type PontoChuvaEstado = PontoChuva & { u: number };
 export async function chuvaEstado(horasPedidas: number, ateMs?: number) {
   const horas = HORAS_CHUVA[horasPedidas] ? horasPedidas : 24;
   const falhas: string[] = [];
-  const chave = ateMs === undefined ? `mapa_chuva_${horas}h` : `chuva_${horas}h_ate_${Math.round(ateMs / 60_000)}`;
-  const ttl = ateMs === undefined ? CACHE_SEGUNDOS : Date.now() - ateMs > 86_400_000 ? 86_400 : 15 * 60;
   const [plu, acum] = await Promise.all([
     cacheOu('mapa_estacoes_plu', 86_400, () => estacoesMapa(2), falhas, {} as Record<string, EstacaoMapa>),
-    cacheOu(chave, ttl, () => chuvaAcumulada(horas, ateMs), falhas, {} as Record<string, number>),
+    chuvaAcumulada(horas, falhas, ateMs),
   ]);
   const postos: PontoChuvaEstado[] = [];
   for (const [id, v] of Object.entries(acum)) {
@@ -535,7 +529,7 @@ export async function chuvaPorMunicipio(horasPedidas: number, ugrhi: number | nu
   const falhas: string[] = [];
   const [plu, acum] = await Promise.all([
     cacheOu('mapa_estacoes_plu', 86_400, () => estacoesMapa(2), falhas, {} as Record<string, EstacaoMapa>),
-    cacheOu(`mapa_chuva_${horas}h`, CACHE_SEGUNDOS, () => chuvaAcumulada(horas), falhas, {} as Record<string, number>),
+    chuvaAcumulada(horas, falhas),
   ]);
   const porCidade = new Map<string, ChuvaMunicipio>();
   for (const [id, v] of Object.entries(acum)) {

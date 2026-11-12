@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { buscarJson } from '../integracoes/http';
+import { SIBH_API_V1, SIBH_API_V2 } from '../integracoes/sibh-medicoes';
 
 /**
  * Acervo histórico de chuva do SIBH — o mesmo da página pública "Dados
@@ -23,7 +24,7 @@ import { buscarJson } from '../integracoes/http';
  * Só é usado pela importação (scripts/clima-importar.ts), nunca pelo painel.
  */
 
-const SIBH = 'https://apps.spaguas.sp.gov.br/sibh/api/';
+
 export const LINHAS_POR_PAGINA = 50;
 
 const texto = (v: unknown) => (typeof v === 'string' || typeof v === 'number' ? String(v).trim() : '');
@@ -59,10 +60,10 @@ const esquemaPostoV1 = z.looseObject({
 
 /** Postos pluviométricos com série no acervo (cadastro v1), com o código oficial da UGRHI do cadastro v2. Duas consultas. */
 export async function postosComAcervo(): Promise<PostoAcervo[]> {
-  const v1 = z.array(esquemaPostoV1).parse(await buscarJson(`${SIBH}v1/station_prefixes?pluviometricas=true&with_historical_measurements=true`, { timeoutMs: 90_000 }));
+  const v1 = z.array(esquemaPostoV1).parse(await buscarJson(`${SIBH_API_V1}station_prefixes?pluviometricas=true&with_historical_measurements=true`, { timeoutMs: 90_000 }));
   const v2 = z
     .array(z.looseObject({ id: z.union([z.number(), z.string()]), ugrhi_cod: z.unknown(), latitude: z.unknown(), longitude: z.unknown() }))
-    .parse(await buscarJson(`${SIBH}v2/stations?serializer=complete&station_type_id=2`, { timeoutMs: 90_000 }));
+    .parse(await buscarJson(`${SIBH_API_V2}stations?serializer=complete&station_type_id=2`, { timeoutMs: 90_000 }));
   const cadastro = new Map(v2.map((e) => [String(e.id), e]));
   const postos: PostoAcervo[] = [];
   for (const e of v1) {
@@ -101,7 +102,7 @@ const esquemaPagina = z.object({
 /** Uma página (até 50 linhas) do acervo dos postos `ids`, a partir da linha `inicio`. */
 export async function paginaAcervo(ids: readonly number[], inicio: number, timeoutMs = 60_000): Promise<{ total: number; linhas: LinhaAcervo[] }> {
   const filtro = ids.map((id) => `stations_prefix_ids%5B%5D=${id}`).join('&');
-  const r = esquemaPagina.parse(await buscarJson(`${SIBH}v1/historical_measurements?type=2&start=${inicio}&length=${LINHAS_POR_PAGINA}&${filtro}`, { timeoutMs }));
+  const r = esquemaPagina.parse(await buscarJson(`${SIBH_API_V1}historical_measurements?type=2&start=${inicio}&length=${LINHAS_POR_PAGINA}&${filtro}`, { timeoutMs }));
   return {
     total: r.json.qtd_total,
     linhas: r.json.data.map((l) => ({ id: l.id, prefixo: l.station_prefix.trim(), ano: l.year, mes: l.month, valores: l.values })),

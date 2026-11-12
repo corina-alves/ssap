@@ -5,12 +5,28 @@ import { erroSeguro, idRequisicao, limiteMs, log } from './log';
 // Um pool por processo; em desenvolvimento o hot reload reaproveita o mesmo.
 const global_ = globalThis as unknown as { __ssapPool?: pg.Pool };
 
+/** Variável de ambiente em ms (0 = sem limite), com padrão. */
+function ms(nome: string, padrao: number): number {
+  const v = process.env[nome];
+  if (v === undefined || v.trim() === '') return padrao;
+  const n = Number(v);
+  return Number.isFinite(n) && n >= 0 ? n : padrao;
+}
+
 export function pool(): pg.Pool {
   if (!global_.__ssapPool) {
     global_.__ssapPool = new pg.Pool({
       connectionString: env().DATABASE_URL,
       max: 10,
       idleTimeoutMillis: 30_000,
+      // Num pico, quem não consegue uma das 10 conexões em 10 s recebe erro, em vez
+      // de ficar esperando para sempre com a requisição presa.
+      connectionTimeoutMillis: ms('DB_ESPERA_CONEXAO_MS', 10_000),
+      // Consulta travada não segura a conexão para sempre: 2 min no site. Os scripts
+      // de manutenção (climatologia, migrações) rodam sem limite (scripts/_comum.ts).
+      statement_timeout: ms('DB_TEMPO_MAX_CONSULTA_MS', 120_000),
+      // Transação aberta e parada (erro no meio, sem COMMIT/ROLLBACK) é encerrada pelo banco.
+      idle_in_transaction_session_timeout: 60_000,
     });
     // Conexão ociosa derrubada (banco reiniciado, rede): o pool descarta e abre outra
     // na próxima consulta. Sem este tratador, o erro viraria exceção não capturada.

@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { lembrar, TTL } from './cache';
 import { comoDado, type Dado } from './comum';
 import { arred, buscarJson, numero } from './http';
+import { SIBH_API_V2 } from './sibh-medicoes';
 
 /**
  * SIBH / SP Águas — rede pluviométrica, "chuva agora" (última hora).
@@ -10,8 +11,7 @@ import { arred, buscarJson, numero } from './http';
  * Resposta grande (~700 KB, ~1100 postos): o cache guarda só o necessário.
  */
 
-const URL_CHUVA_AGORA =
-  'https://apps.spaguas.sp.gov.br/sibh/api/v2/measurements/now?station_type_id=2&hours=1&show_all=false&serializer=complete&public=true';
+export const URL_CHUVA_AGORA = `${SIBH_API_V2}measurements/now?station_type_id=2&hours=1&show_all=false&serializer=complete&public=true`;
 export const FONTE = 'SIBH — SP Águas';
 
 export type PostoChuva = {

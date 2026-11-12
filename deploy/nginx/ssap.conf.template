@@ -6,6 +6,26 @@
 
 server_tokens off;
 
+# Arquivos do Next com o conteúdo no nome (/_next/static/: JS, CSS, fontes): nunca
+# mudam. O nginx guarda uma cópia (não chegam ao Node a cada visita) e repassa o
+# "Cache-Control: public, max-age=31536000, immutable" que o Next manda.
+# NÃO acrescente "Cache-Control: no-store" no server inteiro: o navegador baixaria
+# tudo de novo a cada página (~290 KB e ~19 requisições a mais na página inicial).
+proxy_cache_path /var/cache/nginx/ssap levels=1:2 keys_zone=ssap_estaticos:10m max_size=300m inactive=30d use_temp_path=off;
+
+# Limite de requisições por IP (429 acima disto). Generoso para quem navega,
+# inclusive vários usuários atrás do mesmo IP de uma rede; segura robôs e abuso.
+# Só vale com este nginx de frente para a internet: atrás de outro proxy,
+# $binary_remote_addr seria o IP do proxy e o limite valeria para todo mundo junto.
+limit_req_zone $binary_remote_addr zone=ssap_geral:10m rate=30r/s;
+# Envio de formulários e ações (POST): mais apertado. GET não entra nesta zona (chave vazia).
+map $request_method $ssap_chave_post {
+    default "";
+    POST    $binary_remote_addr;
+}
+limit_req_zone $ssap_chave_post zone=ssap_post:10m rate=5r/s;
+limit_req_status 429;
+
 # Acesso em JSON, no mesmo formato dos logs da aplicação (src/lib/log.ts):
 # o "req" é o X-Request-Id repassado ao app, que aparece também nos logs dele.
 # Sem a query string ($uri, não $request_uri: o link de senha leva um código)
@@ -48,7 +68,24 @@ server {
 
     access_log /dev/stdout ssap_json;
 
+    location ^~ /_next/static/ {
+        proxy_pass http://app:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Host              $http_host;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Connection        "";
+        proxy_cache       ssap_estaticos;
+        proxy_cache_valid 200 30d;
+        proxy_cache_lock  on; # vários pedidos do mesmo arquivo ao mesmo tempo: um só vai ao app
+        access_log off;
+        # add_header aqui dentro descarta os do server: o HSTS vai repetido
+        add_header Strict-Transport-Security "max-age=31536000" always;
+        add_header X-Cache-Status $upstream_cache_status always;
+    }
+
     location / {
+        limit_req zone=ssap_geral burst=120 nodelay;
+        limit_req zone=ssap_post burst=20 nodelay;
         proxy_pass http://app:3000;
         proxy_http_version 1.1;
         # $http_host mantém a porta, se houver: a aplicação confere a origem dos formulários por ele

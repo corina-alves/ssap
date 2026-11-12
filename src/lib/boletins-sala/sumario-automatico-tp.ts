@@ -10,11 +10,12 @@ import {
   type Estacao,
 } from '@/conteudo/sumario-automatico-tp';
 import { query } from '../db';
-import { lembrar, TTL } from '../integracoes/cache';
+import { lembrar } from '../integracoes/cache';
 import { comoDado, hojeSp, somarDias, type Dado } from '../integracoes/comum';
 import { emaeSaisp, instanteDaPosicao, linhaPreenchida, numeroPlanilha, slotsHorarios } from '../integracoes/emae-saisp';
 import { arred, buscarJson, numero } from '../integracoes/http';
-import { buscarSibh, cotasAlerta, instante, medicoes, type Cotas, type Medicao } from '../integracoes/sibh-medicoes';
+import { chuvaPrevistaGrade } from '../integracoes/openmeteo';
+import { chuvaAcumuladaPostos, cotasAlerta, instante, mediaChuva, medicoes, SIBH_API_V1, type Cotas, type Medicao } from '../integracoes/sibh-medicoes';
 import { erroSeguro, log } from '../log';
 
 /**
@@ -28,7 +29,7 @@ import { erroSeguro, log } from '../log';
  */
 
 const SERVICO = 'sumario_tp';
-const SIBH_V1 = 'https://apps.spaguas.sp.gov.br/sibh/api/v1/';
+const SIBH_V1 = SIBH_API_V1;
 const HORA = 3_600_000;
 
 // ---------------------------------------------------------------- horários
@@ -242,38 +243,16 @@ export async function comportas(): Promise<Dado<Comportas>> {
 
 export type Chuva = { ultimas3h: number | null; ultimas24h: number | null; previsao24h: number | null; postos: number };
 
+/** Chuva média nas últimas `horas` nos pluviômetros dos municípios da RMSP (consulta estadual compartilhada). */
 async function mediaChuvaRmsp(horas: 3 | 24): Promise<{ media: number; postos: number } | null> {
-  const l = await lembrar(SERVICO, `chuva:${horas}h`, TTL.tempoReal, async () => {
-    const j = (await buscarSibh(`measurements/now?station_type_id=2&hours=${horas}`)) as { measurements?: { cod_ibge?: unknown; value?: unknown }[] };
-    if (!Array.isArray(j.measurements)) throw new Error('resposta do SIBH sem "measurements"');
-    const valores = j.measurements.filter((m) => RMSP_COD_IBGE.has(String(m.cod_ibge))).flatMap((m) => {
-      const v = numero(m.value);
-      return v === null ? [] : [Math.max(0, v)];
-    });
-    return valores.length ? { media: valores.reduce((a, b) => a + b, 0) / valores.length, postos: valores.length } : null;
-  });
-  return l?.valor ?? null;
+  const l = await chuvaAcumuladaPostos(horas);
+  return mediaChuva(l?.valor, (_, c) => c.ibge !== null && RMSP_COD_IBGE.has(c.ibge));
 }
-
-const horaLocalIso = (t: number) => new Date(t - 3 * HORA).toISOString().slice(0, 13) + ':00';
 
 /** Chuva média prevista (Open-Meteo) nas 24 h seguintes à hora cheia atual, na grade da RMSP. */
 async function previsaoRmsp(): Promise<number | null> {
-  const l = await lembrar('previsao', 'rmsp-24h-sumario-tp', TTL.hora, async () => {
-    const base = Math.floor(Date.now() / HORA) * HORA;
-    const url =
-      'https://api.open-meteo.com/v1/forecast' +
-      `?latitude=${GRADE_PREVISAO_RMSP.map((p) => p[0]).join(',')}&longitude=${GRADE_PREVISAO_RMSP.map((p) => p[1]).join(',')}` +
-      `&hourly=precipitation&timezone=America%2FSao_Paulo&start_hour=${horaLocalIso(base + HORA)}&end_hour=${horaLocalIso(base + 24 * HORA)}`;
-    const j = await buscarJson(url, { timeoutMs: 20_000 });
-    const locais = (Array.isArray(j) ? j : [j]) as { hourly?: { precipitation?: (number | null)[] } }[];
-    const somas = locais
-      .map((p) => p.hourly?.precipitation ?? [])
-      .filter((s) => s.some((v) => v !== null))
-      .map((s) => s.reduce<number>((a, v) => a + (v ?? 0), 0));
-    return somas.length ? somas.reduce((a, b) => a + b, 0) / somas.length : null;
-  });
-  return l?.valor ?? null;
+  const p = await chuvaPrevistaGrade('grade-rmsp-24h-sumario-tp', GRADE_PREVISAO_RMSP, Math.floor(Date.now() / HORA) * HORA);
+  return p?.media ?? null;
 }
 
 export async function chuva(): Promise<Dado<Chuva>> {

@@ -25,20 +25,28 @@ export function dataSar(ymd: string): string {
   return `${dias[d.getUTCDay()]} ${meses[d.getUTCMonth()]} ${String(d.getUTCDate()).padStart(2, '0')} ${d.getUTCFullYear()} 00:00:00 GMT-0300`;
 }
 
+/** Uma linha do SAR. afluencia/defluencia (m³/s) e cota (m) só vêm no SIN (retornaMedicoesSIN). */
 export type MedicaoAna = {
   estado: string | null;
   bacia: string | null;
   reservatorio: string | null;
   volumeUtil: number | null;
+  afluencia: number | null;
+  defluencia: number | null;
+  cota: number | null;
   data: string | null;
 };
 
+const numeroOuTexto = z.union([z.string(), z.number()]).nullable().optional();
 const esquema = z.array(
   z.looseObject({
     estado: z.string().nullable().optional(),
     bacia: z.string().nullable().optional(),
     reservatorio: z.string().nullable().optional(),
-    volumeUtil: z.union([z.string(), z.number()]).nullable().optional(),
+    volumeUtil: numeroOuTexto,
+    afluencia: numeroOuTexto,
+    defluencia: numeroOuTexto,
+    cota: numeroOuTexto,
     data: z.string().nullable().optional(),
   }),
 );
@@ -52,6 +60,9 @@ function normalizarLista(json: unknown): MedicaoAna[] | null {
     bacia: m.bacia ?? null,
     reservatorio: m.reservatorio ?? null,
     volumeUtil: numero(m.volumeUtil),
+    afluencia: numero(m.afluencia),
+    defluencia: numero(m.defluencia),
+    cota: numero(m.cota),
     data: m.data ?? null,
   }));
 }
@@ -91,9 +102,15 @@ function cantareiraDoDia(lista: MedicaoAna[] | undefined, ymd: string): number |
   return pct(lista.find((m) => normalizar(m.estado ?? '').includes('CANTAREIRA'))?.volumeUtil ?? null);
 }
 
-function medicoesSin(ymd: string, bacia: number) {
+/**
+ * Reservatórios do SIN de uma bacia num dia (volume, afluência, defluência e
+ * cota). Uma consulta e um cache para o site (volume do Jaguari) e para o
+ * Boletim Paraíba do Sul, que antes baixava o mesmo endereço com cache próprio.
+ * Chave "sin2": a "sin" antiga não guardava afluência, defluência e cota.
+ */
+export function medicoesSin(ymd: string, bacia: number) {
   const url = `${BASE}retornaMedicoesSIN?data=${encodeURIComponent(dataSar(ymd))}&tipoSistema=2&bacia=${bacia}`;
-  return lembrar('ana', `sin:${bacia}:${ymd}`, ttlPorData(ymd, TTL.hora, TTL.historico), async () => normalizarLista(await buscarJson(url)), {
+  return lembrar('ana', `sin2:${bacia}:${ymd}`, ttlPorData(ymd, TTL.hora, TTL.historico), async () => normalizarLista(await buscarJson(url, { timeoutMs: 15_000 })), {
     esperaFalhaSeg: 10 * 60,
   });
 }

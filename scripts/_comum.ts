@@ -1,11 +1,17 @@
 import { existsSync } from 'node:fs';
 import { createInterface } from 'node:readline';
 
-/** Lê .env.local/.env (como o Next faz), sem sobrescrever o que já está no ambiente. */
+/**
+ * Lê .env.local/.env (como o Next faz), sem sobrescrever o que já está no ambiente.
+ * Scripts de manutenção (cargas da climatologia, migrações) podem ter consultas
+ * longas de propósito: sem limite de tempo por consulta, ao contrário do site
+ * (src/lib/db.ts), a menos que DB_TEMPO_MAX_CONSULTA_MS seja definida.
+ */
 export function carregarEnv(): void {
   for (const arquivo of ['.env.local', '.env']) {
     if (existsSync(arquivo)) process.loadEnvFile(arquivo);
   }
+  process.env.DB_TEMPO_MAX_CONSULTA_MS ??= '0';
 }
 
 // Sem terminal (pipe, CI): as respostas vêm uma por linha da entrada padrão.

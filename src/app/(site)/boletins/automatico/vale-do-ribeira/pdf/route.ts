@@ -1,5 +1,5 @@
 import type { Dado } from '@/lib/integracoes/comum';
-import { chuva, escolherPeriodo, estruturas, niveis, paraCampo, volumeCopel } from '@/lib/boletins-sala/boletim-ribeira';
+import { chavePeriodo, chuva, escolherPeriodo, estruturas, niveis, paraCampo, volumeCopel, type Periodo } from '@/lib/boletins-sala/boletim-ribeira';
 import { gerarPdf } from '@/lib/boletins-sala/boletim-ribeira-pdf';
 import { erroSeguro, log } from '@/lib/log';
 import { enderecoPublico } from '@/lib/requisicao';
@@ -22,30 +22,47 @@ function comPrazo<T>(p: Promise<Dado<T>>, fonte: string): Promise<Dado<T>> {
   return Promise.race([resultado, limite]).finally(() => clearTimeout(espera));
 }
 
-/**
- * PDF do Sumário Executivo — Vale do Ribeira, gerado na hora com os dados das
- * fontes (os mesmos da página; o cache e a coleta em segundo plano evitam
- * consultas repetidas). Período: ?inicio=&fim= (como na página); sem eles, das
- * 07h às 07h. ?baixar=1 baixa o arquivo; sem ele, abre no navegador.
- */
-export async function GET(req: Request) {
-  const url = new URL(req.url);
-  const { ref } = escolherPeriodo(url.searchParams.get('inicio') ?? undefined, url.searchParams.get('fim') ?? undefined);
+async function montarPdf(ref: Periodo, endereco: string): Promise<Uint8Array> {
   const [n, e, c, copel] = await Promise.all([
     comPrazo(niveis(ref), 'SIBH — SP Águas'),
     comPrazo(estruturas(ref), 'SIBH — SP Águas'),
     comPrazo(chuva(ref), 'SIBH — SP Águas / Open-Meteo'),
     volumeCopel(ref), // nunca lança; a chamada à Copel tem prazo próprio de 20 s
   ]);
-  const pdf = await gerarPdf({
-    ref,
-    geradoEm: Date.now(),
-    niveis: n,
-    estruturas: e,
-    chuva: c,
-    copel,
-    endereco: `${enderecoPublico(req)}/boletins/automatico/vale-do-ribeira`,
-  });
+  return gerarPdf({ ref, geradoEm: Date.now(), niveis: n, estruturas: e, chuva: c, copel, endereco });
+}
+
+// PDF pronto por período, por 5 min (os dados mudam a cada 10 min): montar o PDF
+// gasta CPU do servidor, e a rota é pública. Pedidos iguais ao mesmo tempo
+// esperam o mesmo PDF. Até 20 períodos guardados (sai o mais antigo).
+const GUARDAR_MS = 5 * 60_000;
+const MAX_GUARDADOS = 20;
+const guardados = ((globalThis as { __ssapPdfRibeira?: Map<string, { em: number; pdf: Promise<Uint8Array> }> }).__ssapPdfRibeira ??= new Map());
+
+function pdfDoPeriodo(ref: Periodo, endereco: string): Promise<Uint8Array> {
+  const chave = `${chavePeriodo(ref)}|${endereco}`;
+  const g = guardados.get(chave);
+  if (g && Date.now() - g.em < GUARDAR_MS) return g.pdf;
+  const pdf = montarPdf(ref, endereco);
+  guardados.set(chave, { em: Date.now(), pdf });
+  pdf.catch(() => guardados.delete(chave)); // falhou: o próximo pedido tenta de novo
+  for (const k of guardados.keys()) {
+    if (guardados.size <= MAX_GUARDADOS) break;
+    guardados.delete(k);
+  }
+  return pdf;
+}
+
+/**
+ * PDF do Sumário Executivo — Vale do Ribeira, com os dados das fontes (os mesmos
+ * da página; o cache e a coleta em segundo plano evitam consultas repetidas),
+ * guardado 5 min por período. Período: ?inicio=&fim= (como na página); sem eles,
+ * das 07h às 07h. ?baixar=1 baixa o arquivo; sem ele, abre no navegador.
+ */
+export async function GET(req: Request) {
+  const url = new URL(req.url);
+  const { ref } = escolherPeriodo(url.searchParams.get('inicio') ?? undefined, url.searchParams.get('fim') ?? undefined);
+  const pdf = await pdfDoPeriodo(ref, `${enderecoPublico(req)}/boletins/automatico/vale-do-ribeira`);
   // Padrão: o fechamento das 07h do dia operacional; escolhido: início e fim no nome.
   const nome = ref.personalizado
     ? `sumario-executivo-vale-do-ribeira_${paraNome(ref.t07Ontem)}_a_${paraNome(ref.t07)}.pdf`

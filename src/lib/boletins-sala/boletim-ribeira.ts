@@ -1,10 +1,11 @@
 import { z } from 'zod';
 import { BARRAMENTOS, CAPIVARI, ESTACOES_RIBEIRA, GRADE_PREVISAO_UGRHI11, PLUVIOMETRICAS_UGRHI11, type Barramento } from '@/conteudo/boletim-ribeira';
 import { query } from '../db';
-import { lembrar, TTL } from '../integracoes/cache';
+import { lembrar } from '../integracoes/cache';
 import { comoDado, type Dado } from '../integracoes/comum';
 import { arred, buscarJson, numero } from '../integracoes/http';
-import { buscarSibh, cotasAlerta, medicoes, type Medicao } from '../integracoes/sibh-medicoes';
+import { chuvaPrevistaGrade } from '../integracoes/openmeteo';
+import { chuvaAcumuladaPostos, cotasAlerta, mediaChuva, medicoes, type Medicao } from '../integracoes/sibh-medicoes';
 import { erroSeguro, log } from '../log';
 import {
   ATRASO,
@@ -90,7 +91,8 @@ export function escolherPeriodo(inicio?: string, fim?: string, agora = Date.now(
 }
 
 /** Identifica o período nas chaves do cache. */
-const chavePeriodo = (ref: Periodo) => (ref.personalizado ? `${ref.t07Ontem}-${ref.t07}` : ref.dia);
+/** Identifica o período (padrão: o dia; escolhido: início e fim) nas chaves de cache. */
+export const chavePeriodo = (ref: Periodo) => (ref.personalizado ? `${ref.t07Ontem}-${ref.t07}` : ref.dia);
 
 // ---------------------------------------------------------------- reserva das 07h
 
@@ -424,45 +426,24 @@ export async function volumeCopelAte(ref: number): Promise<VolumeCopel> {
 
 export type Chuva = { ultimas3h: number | null; ultimas24h: number | null; previsao24h: number | null; postos: number; pontosPrevisao: number };
 
-/** Chuva média acumulada nas `horas` que terminam na Referência 2 (from_date = fim da janela). */
-async function mediaChuva(horas: 3 | 24, ref: Periodo): Promise<{ media: number; postos: number } | null> {
-  const ate = new Date(ref.t07).toISOString().slice(0, 19);
-  const l = await lembrar(SERVICO, `chuva:${horas}h:${chavePeriodo(ref)}`, ref.agora >= ref.t07 + 2 * HORA ? 6 * 3600 : TTL.tempoReal, async () => {
-    const j = (await buscarSibh(`measurements/now?station_type_id=2&hours=${horas}&from_date=${ate}Z`)) as { measurements?: { station_prefix_id?: unknown; value?: unknown }[] };
-    if (!Array.isArray(j.measurements)) throw new Error('resposta do SIBH sem "measurements"');
-    const valores = j.measurements.filter((m) => PLUVIOMETRICAS_UGRHI11.has(String(m.station_prefix_id))).flatMap((m) => {
-      const v = numero(m.value);
-      return v === null ? [] : [Math.max(0, v)];
-    });
-    return valores.length ? { media: valores.reduce((a, b) => a + b, 0) / valores.length, postos: valores.length } : null;
-  });
-  return l?.valor ?? null;
+/**
+ * Chuva média acumulada nas `horas` que terminam na Referência 2, nos
+ * pluviômetros da UGRHI 11 (consulta estadual compartilhada com o boletim
+ * diário e a Defesa Civil: chuvaAcumuladaPostos).
+ */
+async function mediaChuvaUgrhi11(horas: 3 | 24, ref: Periodo): Promise<{ media: number; postos: number } | null> {
+  const l = await chuvaAcumuladaPostos(horas, ref.t07);
+  return mediaChuva(l?.valor, (id) => PLUVIOMETRICAS_UGRHI11.has(id));
 }
 
-const horaLocalIso = (t: number) => new Date(t - 3 * HORA).toISOString().slice(0, 13) + ':00';
-
 /** Chuva média prevista (Open-Meteo) nas 24 h seguintes à Referência 2, na grade da UGRHI 11. */
-async function previsao(ref: Periodo): Promise<{ media: number; pontos: number } | null> {
-  const l = await lembrar('previsao', `ugrhi11-24h-boletim-ribeira:${chavePeriodo(ref)}`, TTL.hora, async () => {
-    const base = ref.t07;
-    const url =
-      'https://api.open-meteo.com/v1/forecast' +
-      `?latitude=${GRADE_PREVISAO_UGRHI11.map((p) => p[0]).join(',')}&longitude=${GRADE_PREVISAO_UGRHI11.map((p) => p[1]).join(',')}` +
-      `&hourly=precipitation&timezone=America%2FSao_Paulo&start_hour=${horaLocalIso(base + HORA)}&end_hour=${horaLocalIso(base + 24 * HORA)}`;
-    const j = await buscarJson(url, { timeoutMs: 30_000 });
-    const locais = (Array.isArray(j) ? j : [j]) as { hourly?: { precipitation?: (number | null)[] } }[];
-    const somas = locais
-      .map((p) => p.hourly?.precipitation ?? [])
-      .filter((s) => s.some((v) => v !== null))
-      .map((s) => s.reduce<number>((a, v) => a + (v ?? 0), 0));
-    return somas.length ? { media: somas.reduce((a, b) => a + b, 0) / somas.length, pontos: somas.length } : null;
-  });
-  return l?.valor ?? null;
+function previsao(ref: Periodo): Promise<{ media: number; pontos: number } | null> {
+  return chuvaPrevistaGrade(`ugrhi11-24h-boletim-ribeira:${chavePeriodo(ref)}`, GRADE_PREVISAO_UGRHI11, ref.t07, 24, 30_000);
 }
 
 /** Chuva do período fechado: observada até as 07h do dia e prevista para as 24 h seguintes. */
 export async function chuva(ref: Periodo): Promise<Dado<Chuva>> {
-  const [c3, c24, prev] = await Promise.all([mediaChuva(3, ref), mediaChuva(24, ref), previsao(ref).catch(() => null)]);
+  const [c3, c24, prev] = await Promise.all([mediaChuvaUgrhi11(3, ref).catch(() => null), mediaChuvaUgrhi11(24, ref).catch(() => null), previsao(ref).catch(() => null)]);
   if (!c3 && !c24 && !prev) return comoDado('SIBH — SP Águas / Open-Meteo', null);
   return {
     ok: true,

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import limites from '../src/conteudo/ugrhi.json';
-import { classificadorUgrhi, distanciaKm, montarGrade, thiessen, type Limites } from '../src/lib/climatologia/espacial';
+import { classificadorUgrhi, distanciaKm, montarGrade, montarGradeAosPoucos, thiessen, type Limites } from '../src/lib/climatologia/espacial';
 import { climatologia, diasDoMes, estatistica, juntarRepetidos, resumir, tipoMedia, validade, valorDia, type PontoSerie } from '../src/lib/climatologia/regras';
 
 const L = limites as unknown as Limites;
@@ -179,4 +179,23 @@ test('exportação: CSV para o Excel em português e .xlsx válido (ZIP com a pl
   const texto = Buffer.from(x).toString('latin1');
   assert.ok(texto.includes('xl/worksheets/sheet1.xml'));
   assert.ok(Buffer.from(x).toString('utf8').includes('é &lt;&amp;&gt;'));
+});
+
+test('grade aos poucos (servidor) dá o mesmo resultado da grade de uma vez', async () => {
+  const postos = [
+    { id: 1, lat: -23.62, lon: -45.41, ugrhi: 3 },
+    { id: 2, lat: -23.81, lon: -45.4, ugrhi: 3 },
+    { id: 3, lat: -23.55, lon: -46.63, ugrhi: 6 },
+  ];
+  const deUmaVez = montarGrade(L, postos);
+  // fatia de 0 ms: devolve a vez a cada passo, o caso mais picado
+  const aosPoucos = await montarGradeAosPoucos(L, postos, undefined, undefined, 0);
+  assert.deepEqual([...aosPoucos.keys()], [...deUmaVez.keys()]);
+  for (const [codigo, u] of deUmaVez) {
+    const v = aosPoucos.get(codigo)!;
+    assert.equal(v.n, u.n);
+    assert.deepEqual(v.candidatos, u.candidatos);
+    assert.deepEqual(v.distancias, u.distancias);
+    assert.deepEqual(v.area, u.area);
+  }
 });

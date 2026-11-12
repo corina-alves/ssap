@@ -29,8 +29,19 @@ FROM base AS deps
 COPY package.json package-lock.json ./
 RUN --mount=type=cache,target=/root/.npm npm ci --no-audit --no-fund
 
-FROM deps AS ferramentas
-COPY . .
+# Migrações e scripts de manutenção (tsx). Só os pacotes que os scripts usam (pg, zod,
+# argon2, tsx), nas versões do package-lock (docker/pacote-ferramentas.mjs), e só o
+# código que eles importam. Antes levava o node_modules inteiro (~1,1 GB), e a imagem
+# não descompactava no servidor de produção (03/11/2026).
+FROM base AS ferramentas
+COPY package.json package-lock.json docker/pacote-ferramentas.mjs ./
+RUN --mount=type=cache,target=/root/.npm node pacote-ferramentas.mjs . \
+ && npm install --omit=dev --no-audit --no-fund \
+ && rm pacote-ferramentas.mjs
+COPY tsconfig.json ./
+COPY db ./db
+COPY scripts ./scripts
+COPY src ./src
 ENV NODE_ENV=production \
     STORAGE_DIR=/dados/storage \
     CACHE_DIR=/dados/cache

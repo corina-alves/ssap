@@ -1,8 +1,8 @@
 import limites from '../../conteudo/ugrhi.json';
 import { coordenadasPostos, mapaUgrhi, SITUACOES, situacaoRios, UGRHIS, type Situacao } from '../hidrologia/situacao-rios';
-import { dataSar } from '../integracoes/ana';
+import { medicoesSin } from '../integracoes/ana';
 import { lembrar, TTL } from '../integracoes/cache';
-import { hojeSp, somarDias, ttlPorData } from '../integracoes/comum';
+import { hojeSp, somarDias } from '../integracoes/comum';
 import { buscarJson } from '../integracoes/http';
 
 /**
@@ -132,30 +132,23 @@ export function situacaoResolucao(dia: DiaSar) {
   };
 }
 
-const num = (v: unknown): number | null => {
-  if (v === null || v === undefined || v === '') return null;
-  const n = Number(String(v).replace(',', '.'));
-  return Number.isFinite(n) ? n : null; // "-" = sem volume útil (fio d'água)
-};
-
 // ---------------------------------------------------------------- SAR/ANA
 
 type ValoresSin = { afluencia: number | null; defluencia: number | null; cota: number | null; volume: number | null };
 
-/** Reservatórios do SIN de um dia: NOME → valores. Dia sem medição não é guardado (tenta de novo depois). */
+/**
+ * Reservatórios do SIN de um dia: NOME → valores. A consulta (e o cache) é a
+ * mesma do site (medicoesSin, integracoes/ana.ts). Dia sem medição: null.
+ */
 async function sinDoDia(ymd: string, bacia: number): Promise<Record<string, ValoresSin> | null> {
-  const url = `https://www.ana.gov.br/sar/restportal/api/retornaMedicoesSIN?data=${encodeURIComponent(dataSar(ymd))}&tipoSistema=2&bacia=${bacia}`;
-  const l = await lembrar('ana', `sin-valores:${bacia}:${ymd}`, ttlPorData(ymd, TTL.hora, TTL.historico), async () => {
-    const json = await buscarJson(url, { timeoutMs: 15_000 });
-    if (!Array.isArray(json) || !json.length) return null;
-    const dia: Record<string, ValoresSin> = {};
-    for (const r of json as Record<string, unknown>[]) {
-      const nome = String(r.reservatorio ?? '').trim().toUpperCase();
-      if (nome) dia[nome] = { afluencia: num(r.afluencia), defluencia: num(r.defluencia), cota: num(r.cota), volume: num(r.volumeUtil) };
-    }
-    return dia;
-  }, { esperaFalhaSeg: 10 * 60 });
-  return l?.valor ?? null;
+  const l = await medicoesSin(ymd, bacia);
+  if (!l?.valor?.length) return null;
+  const dia: Record<string, ValoresSin> = {};
+  for (const r of l.valor) {
+    const nome = (r.reservatorio ?? '').trim().toUpperCase();
+    if (nome) dia[nome] = { afluencia: r.afluencia, defluencia: r.defluencia, cota: r.cota, volume: r.volumeUtil };
+  }
+  return dia;
 }
 
 // ---------------------------------------------------------------- Open-Meteo

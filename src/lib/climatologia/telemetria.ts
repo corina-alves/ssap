@@ -2,8 +2,9 @@ import { z } from 'zod';
 import limites from '../../conteudo/ugrhi.json';
 import { query, transacao } from '../db';
 import { buscarJson } from '../integracoes/http';
+import { SIBH_API_V2 } from '../integracoes/sibh-medicoes';
 import { erroSeguro, log } from '../log';
-import { classificadorUgrhi, COBERTURA_MIN, montarGrade, thiessen, type Limites } from './espacial';
+import { classificadorUgrhi, COBERTURA_MIN, montarGradeAosPoucos, thiessen, type Limites } from './espacial';
 import { CRITERIOS, resumir } from './regras';
 import { janelaDoDia, mesTelemetria, somarDias, type DiaPosto } from './regras-telemetria';
 
@@ -18,7 +19,7 @@ import { janelaDoDia, mesTelemetria, somarDias, type DiaPosto } from './regras-t
  * diária do servidor (instrumentation.ts), nunca pela página.
  */
 
-const SIBH_V2 = 'https://cth.daee.sp.gov.br/sibh/api/v2/';
+const SIBH_V2 = SIBH_API_V2; // apps.spaguas: o mesmo SIBH que o resto do sistema (antes, cth.daee)
 export const TIMEOUT_DIA_MS = 150_000;
 
 const texto = (v: unknown) => (typeof v === 'string' || typeof v === 'number' ? String(v).trim() : '');
@@ -206,7 +207,8 @@ export async function recalcularMeses(meses: readonly { ano: number; mes: number
   );
   if (!postos.length) return { postosMes: 0, ugrhiMes: 0 };
   const indice = new Map(postos.map((p, i) => [p.id, i]));
-  const grade = montarGrade(limites as unknown as Limites, postos);
+  // aos poucos: a coleta roda dentro do servidor do site e não pode travá-lo (~12 s de conta)
+  const grade = await montarGradeAosPoucos(limites as unknown as Limites, postos);
   let postosMes = 0;
   let ugrhiMes = 0;
   const hoje = hojeSP();

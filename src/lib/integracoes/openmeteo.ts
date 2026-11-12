@@ -24,6 +24,39 @@ export const CENTROIDES_SISTEMAS = [
   { sistema: 'São Lourenço', lat: -23.75, lon: -47.15 },
 ] as const;
 
+const HORA_MS = 3_600_000;
+/** Instante (ms) → "2026-11-12T14:00", hora cheia em Brasília (o start_hour/end_hour da forecast). */
+const horaLocalIso = (t: number) => new Date(t - 3 * HORA_MS).toISOString().slice(0, 13) + ':00';
+
+/**
+ * Chuva média prevista numa grade de pontos para as `horas` seguintes a
+ * `inicioMs` (hora cheia): a soma horária de cada ponto e a média entre os
+ * pontos que têm previsão. Uma chamada em lote, guardada 1 h com a `chave`
+ * dada (serviço "previsao"). Usada pelos sumários automáticos (grade da RMSP e
+ * da UGRHI 11), que tinham, cada um, uma cópia desta consulta.
+ */
+export async function chuvaPrevistaGrade(
+  chave: string,
+  grade: readonly (readonly [number, number])[],
+  inicioMs: number,
+  horas = 24,
+  timeoutMs = 20_000,
+): Promise<{ media: number; pontos: number } | null> {
+  const l = await lembrar('previsao', chave, TTL.hora, async () => {
+    const url =
+      `${FORECAST}?latitude=${grade.map((p) => p[0]).join(',')}&longitude=${grade.map((p) => p[1]).join(',')}` +
+      `&hourly=precipitation&timezone=America%2FSao_Paulo&start_hour=${horaLocalIso(inicioMs + HORA_MS)}&end_hour=${horaLocalIso(inicioMs + horas * HORA_MS)}`;
+    const j = await buscarJson(url, { timeoutMs });
+    const locais = (Array.isArray(j) ? j : [j]) as { hourly?: { precipitation?: (number | null)[] } }[];
+    const somas = locais
+      .map((p) => p.hourly?.precipitation ?? [])
+      .filter((s) => s.some((v) => v !== null))
+      .map((s) => s.reduce<number>((a, v) => a + (v ?? 0), 0));
+    return somas.length ? { media: somas.reduce((a, b) => a + b, 0) / somas.length, pontos: somas.length } : null;
+  });
+  return l?.valor ?? null;
+}
+
 /** Limites aproximados do Estado de São Paulo, para a grade do mapa. */
 export const BBOX_SP = { latMin: -25.4, latMax: -19.7, lonMin: -53.2, lonMax: -44.1 } as const;
 

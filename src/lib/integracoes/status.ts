@@ -1,5 +1,6 @@
 import { dataSar } from './ana';
 import { lembrar } from './cache';
+import { URL_CHUVA_AGORA } from './sibh';
 import { hojeSp, somarDias } from './comum';
 
 /**
@@ -24,7 +25,7 @@ function alvos(): { id: string; nome: string; url: string }[] {
     {
       id: 'sibh',
       nome: 'SIBH — Pluviometria',
-      url: 'https://apps.spaguas.sp.gov.br/sibh/api/v2/measurements/now?station_type_id=2&hours=1&show_all=false&serializer=complete&public=true',
+      url: URL_CHUVA_AGORA,
     },
     {
       id: 'openmeteo',

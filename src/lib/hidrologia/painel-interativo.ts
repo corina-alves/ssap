@@ -1,7 +1,5 @@
-import { createHash } from 'node:crypto';
 import { lembrar } from '../integracoes/cache';
 import { RE_DATA, somarDias } from '../integracoes/comum';
-import { buscarTexto } from '../integracoes/http';
 import { resumoRecente, resumosPeriodo } from '../integracoes/sabesp';
 import { instante, medicoes, somar, type Medicao } from '../integracoes/sibh-medicoes';
 import { catalogo, FREQ_DIARIA, serie, type Ponto } from '../integracoes/ssd';
@@ -133,18 +131,6 @@ export const DETALHES: Record<string, { diagrama: string; reservatorios: Local[]
       { chave: 'atibainha-jaguari', nome: 'Atibainha → UHE Jaguari', space: 41 },
     ],
   },
-};
-
-/** Diagramas oficiais do SSD que o painel pode embutir (nome do arquivo → caminho). */
-export const DIAGRAMAS: Record<string, string> = {
-  'map-home': 'images/map-home.svg',
-  cantareira: 'images/diagrams/cantareira.svg',
-  altotiete: 'images/diagrams/altotiete.svg',
-  guarapiranga: 'images/diagrams/guarapiranga.svg',
-  cotia: 'images/diagrams/cotia.svg',
-  riogrande: 'images/diagrams/riogrande.svg',
-  rioclaro: 'images/diagrams/rioclaro.svg',
-  saolourenco: 'images/diagrams/saolourenco.svg',
 };
 
 // ---------------------------------------------------------------- cálculos
@@ -500,7 +486,7 @@ export async function chuvaRadarDia(ids: number[], data: string): Promise<Record
 // --------------------------------------------------------------- diagramas
 
 /**
- * Diagrama oficial do SSD (SVG), limpo para ser embutido: sem scripts, sem
+ * SVG (ex.: diagrama oficial do SSD) limpo para ser embutido: sem scripts, sem
  * atributos de evento e sem referências externas além de imagens em data:.
  */
 export function limparSvg(svg: string): string {
@@ -511,18 +497,6 @@ export function limparSvg(svg: string): string {
     .replace(/<foreignObject[\s\S]*?<\/foreignObject\s*>/gi, '')
     .replace(/\s+on[a-z]+\s*=\s*("[^"]*"|'[^']*')/gi, '')
     .replace(/(\s(?:xlink:)?href\s*=\s*)("|')(?!data:image\/|#)[^"']*\2/gi, '$1$2#$2');
-}
-
-/** SVG do diagrama, guardado por 30 dias (o desenho muda raramente). */
-export async function diagrama(nome: string): Promise<string | null> {
-  const caminho = DIAGRAMAS[nome];
-  if (!caminho) return null;
-  const url = `https://sssp.spaguas.sp.gov.br/ssdsp/${caminho}`;
-  const l = await lembrar('ssd', `diagrama:${createHash('sha256').update(url).digest('hex').slice(0, 16)}`, 30 * 86_400, async () => {
-    const t = await buscarTexto(url, { timeoutMs: 30_000 });
-    return t && t.includes('<svg') ? limparSvg(t) : null;
-  });
-  return l?.valor ?? null;
 }
 
 export const dataValida = (d: string | null | undefined): d is string => !!d && RE_DATA.test(d);

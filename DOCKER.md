@@ -168,13 +168,15 @@ docker compose up -d
 
 1. Faça um backup: `docker compose run --rm backup`
 2. Traga o código novo: `git pull`
-3. Reconstrua e suba: `docker compose up -d --build`
+3. Construa as imagens **com o site antigo ainda no ar**: `docker compose build`. Se falhar, nada mudou; o site antigo continua.
+4. Troque: `docker compose up -d`. As migrações novas são aplicadas antes de o site voltar.
+5. Confira: `docker compose ps` (app `healthy`), `curl -s http://127.0.0.1:3000/api/saude` (`{"ok":true}`), uma página de verdade (`curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:3000/`, que deve dar `200`) e `docker compose logs --tail 100 app` (sem `requisicao_erro`).
 
-O banco e os arquivos não são tocados pela atualização: ficam nos volumes. As migrações novas são aplicadas antes de o site voltar. O site fica fora do ar por alguns segundos durante a troca.
+O banco e os arquivos não são tocados pela atualização: ficam nos volumes. O site fica fora do ar por alguns segundos durante a troca (passo 4).
 
 Para voltar à versão anterior: `git checkout <versão anterior>` e `docker compose up -d --build`. Se a versão nova tiver aplicado migrações, restaure também o backup do passo 1.
 
-Limpeza de imagens antigas (não mexe em volumes): `docker image prune -f`.
+Limpeza de imagens antigas: **em servidor compartilhado com outros projetos, não use `docker image prune`, `docker system prune` nem `docker builder prune`.** Eles atingem as imagens e o cache de todos os projetos da máquina. A limpeza fica com quem administra o servidor. Só numa máquina dedicada ao SSAP: `docker image prune -f` (não mexe em volumes).
 
 ## Logs
 
@@ -257,10 +259,86 @@ O Docker Desktop (Windows) não tem journald: em desenvolvimento fica o `json-fi
 
    Ele atende nas portas 80 (redireciona para HTTPS) e 443. Ao renovar o certificado: `docker compose --profile proxy restart proxy`. Com o perfil ligado, use `--profile proxy` também nos outros comandos (`ps`, `logs`, `down`). Se as portas 80/443 estiverem ocupadas, defina `PROXY_PORTA_HTTP` e `PROXY_PORTA_HTTPS` no arquivo `.env`.
 
-   **b) proxy reverso da instituição** (nginx, IIS, balanceador). Aponte-o para `http://127.0.0.1:3000`. Ele precisa enviar `Host`, `X-Forwarded-Host`, `X-Forwarded-Proto` e `X-Forwarded-For`, aceitar envio de até 32 MB e esperar até 300 s por resposta. O arquivo `deploy/nginx/ssap.conf.template` serve de modelo.
+   **b) proxy reverso da instituição** (nginx, IIS, balanceador). Aponte-o para `http://127.0.0.1:3000`. Ele precisa enviar `Host`, `X-Forwarded-Host`, `X-Forwarded-Proto` e `X-Forwarded-For`, aceitar envio de até 32 MB e esperar até 300 s por resposta. O arquivo `deploy/nginx/ssap.conf.template` serve de modelo. Veja também **Proxy da instituição: cache, HSTS e limites** logo abaixo.
 
 6. **Firewall:** libere só 80 e 443. A porta 3000 fica presa a `127.0.0.1` e o banco não tem porta publicada.
 7. **Agende o backup** (seção Backup) e a cópia para fora do servidor.
+
+### Proxy da instituição: cache, HSTS e limites
+
+O que o proxy reverso na frente do site precisa fazer (ou deixar de fazer). Os trechos são de nginx; em outro proxy, o equivalente.
+
+**1. Não acrescentar `Cache-Control: no-store` em tudo.** A aplicação já manda o `Cache-Control` certo em cada resposta:
+- páginas e APIs: `private, no-store`;
+- `/_next/static/` (JS, CSS e fontes, com o conteúdo no nome): `public, max-age=31536000, immutable`.
+
+Um `add_header Cache-Control "no-cache, no-store, must-revalidate"` no `server` (ou no `http`) se soma a esse cabeçalho, e o `no-store` vence. Medido em 12/11/2026 em https://hub.spaguas.sp.gov.br: cada visita à página inicial baixava de novo **~290 KB e 19 arquivos**, todos atendidos pelo Node. Tire essa linha, ou deixe-a só onde for necessária.
+
+**2. Arquivos estáticos com cache longo**, guardados no próprio nginx (não chegam ao Node a cada visita):
+
+```nginx
+# no bloco http (fora do server):
+proxy_cache_path /var/cache/nginx/ssap levels=1:2 keys_zone=ssap_estaticos:10m max_size=300m inactive=30d use_temp_path=off;
+
+# no server do site:
+location ^~ /_next/static/ {
+    proxy_pass http://127.0.0.1:3000;
+    proxy_http_version 1.1;
+    proxy_set_header Host $http_host;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header Connection "";
+    proxy_cache ssap_estaticos;
+    proxy_cache_valid 200 30d;
+    proxy_cache_lock on;
+    access_log off;
+    # add_header aqui dentro descarta os do server (inclusive um no-store herdado);
+    # repita o HSTS:
+    add_header Strict-Transport-Security "max-age=31536000" always;
+}
+```
+
+**3. HSTS** no `server` do HTTPS: `add_header Strict-Transport-Security "max-age=31536000" always;`. Em 12/11/2026 não estava.
+
+**4. Limite de requisições por IP** (devolve 429 acima do limite). É generoso para quem navega, inclusive vários usuários atrás do mesmo IP, e segura robôs e abuso:
+
+```nginx
+# no bloco http:
+limit_req_zone $binary_remote_addr zone=ssap_geral:10m rate=30r/s;
+map $request_method $ssap_chave_post { default ""; POST $binary_remote_addr; }
+limit_req_zone $ssap_chave_post zone=ssap_post:10m rate=5r/s;
+limit_req_status 429;
+
+# no location / do site:
+limit_req zone=ssap_geral burst=120 nodelay;
+limit_req zone=ssap_post burst=20 nodelay;
+```
+
+Se houver outro proxy ou balanceador antes deste nginx, use o IP real (`real_ip_header X-Forwarded-For` com `set_real_ip_from`). Sem isso, o limite vale para todos os visitantes juntos.
+
+**Como conferir** (de qualquer máquina):
+
+```
+# o arquivo estático deve ter UM Cache-Control, com max-age=31536000 e immutable
+JS=$(curl -s https://hub.spaguas.sp.gov.br/ | grep -oE '/_next/static/chunks/[^"]+\.js' | head -1)
+curl -s -o /dev/null -D - "https://hub.spaguas.sp.gov.br$JS" | grep -i cache-control
+# a página deve ter Strict-Transport-Security
+curl -s -o /dev/null -D - https://hub.spaguas.sp.gov.br/ | grep -i strict-transport
+```
+
+**Service worker dos arquivos estáticos (`public/sw.js`).** Enquanto o proxy mandar `no-store`, o site se protege sozinho. A partir da segunda visita, o navegador guarda o que está em `/_next/static/` e não baixa de novo. Nada mais é tocado: páginas, APIs, imagens, formulários e área restrita seguem direto para o servidor. A primeira visita de cada pessoa ainda passa pelo proxy, por isso os itens 1 e 2 continuam necessários.
+
+Para **desligar** o service worker em todos os navegadores, troque o conteúdo de `public/sw.js` por este bloco e publique. Na visita seguinte, cada navegador apaga o que guardou e remove o service worker:
+
+```js
+// DESLIGAR
+self.addEventListener('install', () => self.skipWaiting());
+self.addEventListener('activate', (e) => e.waitUntil((async () => {
+  for (const n of await caches.keys()) if (n.startsWith('ssap-estaticos-')) await caches.delete(n);
+  await self.registration.unregister();
+})()));
+```
+
+Depois, tire também o `<RegistroServiceWorker />` de `src/app/layout.tsx`.
 
 ### Rede da instituição
 

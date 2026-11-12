@@ -1,4 +1,4 @@
-import { lembrar } from './cache';
+import { lembrar, type Lembrado } from './cache';
 import { buscarJson, ErroFonte } from './http';
 
 /**
@@ -10,7 +10,14 @@ import { buscarJson, ErroFonte } from './http';
  * tempo e cache por pedido (dia fechado fica guardado; dia corrente, 5 min).
  */
 
-const SIBH = 'https://apps.spaguas.sp.gov.br/sibh/api/v2/';
+/**
+ * Endereços da API do SIBH, os mesmos em todo o sistema. O SIBH também responde
+ * em cth.daee.sp.gov.br, com os mesmos dados (conferido em 12/11/2026), mas o
+ * servidor de produção só precisa liberar apps.spaguas.sp.gov.br (DOCKER.md).
+ */
+export const SIBH_API_V1 = 'https://apps.spaguas.sp.gov.br/sibh/api/v1/';
+export const SIBH_API_V2 = 'https://apps.spaguas.sp.gov.br/sibh/api/v2/';
+const SIBH = SIBH_API_V2;
 const CONEXOES = 4;
 const TIMEOUT_MS = 60_000;
 
@@ -90,6 +97,55 @@ export async function medicoes(servico: string, pedidos: Record<string, Pedido>)
     chaves.map(async (chave) => (await lembrar(servico, chave, pedidos[chave]!.ttlSeg, () => buscarPedido(pedidos[chave]!)))?.valor ?? null),
   );
   return Object.fromEntries(chaves.map((c, i) => [c, listas[i]!]));
+}
+
+/** Chuva de um pluviômetro na janela (mm) e o código IBGE do município dele. */
+export type ChuvaPosto = { mm: number; ibge: string | null };
+
+const HORA_MS = 3_600_000;
+
+/**
+ * Chuva acumulada de TODOS os pluviômetros do estado nas `horas` que terminam
+ * em `ateMs` (sem ele, agora): station_prefix_id → mm e município. Uma consulta
+ * ao SIBH (~700 KB) serve o mapa da Defesa Civil, o boletim diário e os sumários
+ * automáticos (Tietê-Pinheiros e Vale do Ribeira), que antes baixavam o mesmo
+ * arquivo cada um com o seu cache.
+ *
+ * Prazo: janela até agora, 3 min; janela que acabou há menos de 3 h, 10 min
+ * (ainda chegam leituras atrasadas); até 1 dia, 1 h; depois, 1 dia. Com o SIBH
+ * fora, a janela "até agora" usa a última cópia por até 6 h (depois disso, nada:
+ * chuva de dias atrás não serve como "últimas horas"); janela fechada, até 30 dias.
+ */
+export async function chuvaAcumuladaPostos(horas: number, ateMs?: number): Promise<Lembrado<Record<string, ChuvaPosto>> | null> {
+  const fechada = ateMs !== undefined;
+  const idade = fechada ? Date.now() - ateMs : 0;
+  const ttl = !fechada ? 180 : idade < 3 * HORA_MS ? 600 : idade < 24 * HORA_MS ? 3600 : 86_400;
+  const ate = fechada ? `&from_date=${new Date(ateMs).toISOString().slice(0, 19)}Z` : '';
+  const chave = `acumulada:${horas}h:${fechada ? Math.round(ateMs / 60_000) : 'agora'}`;
+  return lembrar(
+    'sibh',
+    chave,
+    ttl,
+    async () => {
+      const j = (await sibh(`${SIBH}measurements/now?station_type_id=2&hours=${horas}${ate}`, 40_000)) as {
+        measurements?: { station_prefix_id?: unknown; cod_ibge?: unknown; value?: unknown }[];
+      };
+      if (!Array.isArray(j.measurements)) throw new Error('resposta do SIBH sem "measurements"');
+      const saida: Record<string, ChuvaPosto> = {};
+      for (const m of j.measurements) {
+        const v = numero(m.value);
+        if (v !== null && m.station_prefix_id != null) saida[String(m.station_prefix_id)] = { mm: v, ibge: m.cod_ibge == null || m.cod_ibge === '' ? null : String(m.cod_ibge) };
+      }
+      return saida;
+    },
+    { validadeMaxSeg: fechada ? 30 * 86_400 : 6 * 3600 },
+  );
+}
+
+/** Média da chuva dos postos que passam no `filtro` (negativo conta 0). null sem nenhum posto com leitura. */
+export function mediaChuva(postos: Record<string, ChuvaPosto> | null | undefined, filtro: (id: string, c: ChuvaPosto) => boolean): { media: number; postos: number } | null {
+  const valores = Object.entries(postos ?? {}).flatMap(([id, c]) => (filtro(id, c) ? [Math.max(0, c.mm)] : []));
+  return valores.length ? { media: valores.reduce((a, b) => a + b, 0) / valores.length, postos: valores.length } : null;
 }
 
 export type Cotas = { atencao: number | null; alerta: number | null; emergencia: number | null; extravasamento: number | null };

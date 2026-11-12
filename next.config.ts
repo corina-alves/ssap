@@ -71,6 +71,16 @@ const nextConfig: NextConfig = {
       { source: '/:path*', headers: cabecalhosSeguranca },
       // Sumários de cheias: abrem num quadro da própria área (/acesso/sumarios_cheias).
       { source: '/acesso/sumario_executivo_cheias/:arquivo', headers: [{ key: 'X-Frame-Options', value: 'SAMEORIGIN' }] },
+      // Service worker dos arquivos estáticos (public/sw.js): o navegador confere a
+      // versão a cada visita e o script só pode carregar coisas do próprio site.
+      {
+        source: '/sw.js',
+        headers: [
+          { key: 'Content-Type', value: 'application/javascript; charset=utf-8' },
+          { key: 'Cache-Control', value: 'no-cache, no-store, must-revalidate' },
+          { key: 'Content-Security-Policy', value: "default-src 'self'; script-src 'self'" },
+        ],
+      },
     ];
   },
 };

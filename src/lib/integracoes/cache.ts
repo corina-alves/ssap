@@ -39,20 +39,28 @@ export const TTL = {
   historico: 10 * 365 * 24 * 60 * 60,
 } as const;
 
+// Memória: até 300 itens e 96 MB (tamanho do JSON). Item acima de 8 MB fica só no
+// arquivo (ex.: respostas inteiras do SIBH de ~3,6 MB eram guardadas às dezenas).
+// Sai primeiro o usado há mais tempo.
 const MAX_MEMORIA = 300;
+const MAX_MEMORIA_BYTES = 96 * 1024 * 1024;
+const MAX_ITEM_BYTES = 8 * 1024 * 1024;
+type NaMemoria = Entrada<unknown> & { tam?: number };
 type Estado = {
-  memoria: Map<string, Entrada<unknown>>;
+  memoria: Map<string, NaMemoria>;
   emAndamento: Map<string, Promise<Lembrado<unknown> | null>>;
   falhaRecente: Map<string, { em: number; erro: string }>;
+  bytes?: number;
 };
 // No globalThis: o módulo pode ser carregado mais de uma vez no mesmo processo
 // (recarga em desenvolvimento, pacotes separados por rota). Sem isso, cada cópia
 // esqueceria as falhas recentes e chamaria de novo, a cada página, as fontes que
 // ainda não publicaram o dia.
-const estado = ((globalThis as { __ssapCacheIntegracoes?: Estado }).__ssapCacheIntegracoes ??= {
+const estado: Estado = ((globalThis as { __ssapCacheIntegracoes?: Estado }).__ssapCacheIntegracoes ??= {
   memoria: new Map(),
   emAndamento: new Map(),
   falhaRecente: new Map(),
+  bytes: 0,
 });
 const { memoria, emAndamento, falhaRecente } = estado;
 
@@ -62,6 +70,7 @@ let diretorio: string | null = null;
 export function definirDiretorio(dir: string | null) {
   diretorio = dir;
   memoria.clear();
+  estado.bytes = 0;
   falhaRecente.clear();
 }
 
@@ -74,21 +83,23 @@ function arquivo(servico: string, chave: string): string {
   return join(pasta(), servico, `${createHash('sha1').update(chave).digest('hex')}.json`);
 }
 
-async function lerArquivo<T>(servico: string, chave: string): Promise<Entrada<T> | null> {
+/** Entrada guardada no arquivo e o tamanho dele (bytes, ~ caracteres do JSON). */
+async function lerArquivo<T>(servico: string, chave: string): Promise<(Entrada<T> & { tam: number }) | null> {
   try {
-    const e = JSON.parse(await readFile(/*turbopackIgnore: true*/ arquivo(servico, chave), 'utf8')) as Entrada<T> & { chave?: string };
-    return typeof e.obtidoEm === 'number' && 'valor' in e ? { valor: e.valor, obtidoEm: e.obtidoEm } : null;
+    const texto = await readFile(/*turbopackIgnore: true*/ arquivo(servico, chave), 'utf8');
+    const e = JSON.parse(texto) as Entrada<T> & { chave?: string };
+    return typeof e.obtidoEm === 'number' && 'valor' in e ? { valor: e.valor, obtidoEm: e.obtidoEm, tam: texto.length } : null;
   } catch {
     return null;
   }
 }
 
-async function gravarArquivo<T>(servico: string, chave: string, e: Entrada<T>): Promise<void> {
+async function gravarArquivo(servico: string, chave: string, texto: string): Promise<void> {
   const destino = arquivo(servico, chave);
   const tmp = `${destino}.${randomBytes(6).toString('hex')}.tmp`;
   try {
     await mkdir(/*turbopackIgnore: true*/ join(pasta(), servico), { recursive: true });
-    await writeFile(/*turbopackIgnore: true*/ tmp, JSON.stringify({ chave, ...e }));
+    await writeFile(/*turbopackIgnore: true*/ tmp, texto);
     await rename(/*turbopackIgnore: true*/ tmp, destino);
   } catch {
     await rm(/*turbopackIgnore: true*/ tmp, { force: true }).catch(() => {});
@@ -96,10 +107,23 @@ async function gravarArquivo<T>(servico: string, chave: string, e: Entrada<T>): 
   }
 }
 
-function guardarMemoria(id: string, e: Entrada<unknown>) {
+function esquecer(id: string) {
+  const v = memoria.get(id);
+  if (!v) return;
   memoria.delete(id);
-  memoria.set(id, e);
-  if (memoria.size > MAX_MEMORIA) memoria.delete(memoria.keys().next().value!);
+  estado.bytes = Math.max(0, (estado.bytes ?? 0) - (v.tam ?? 0));
+}
+
+function guardarMemoria(id: string, e: Entrada<unknown>, tam: number) {
+  esquecer(id);
+  if (tam > MAX_ITEM_BYTES) return; // grande demais: fica só no arquivo
+  memoria.set(id, { valor: e.valor, obtidoEm: e.obtidoEm, tam });
+  estado.bytes = (estado.bytes ?? 0) + tam;
+  while (memoria.size > MAX_MEMORIA || estado.bytes > MAX_MEMORIA_BYTES) {
+    const maisAntigo = memoria.keys().next().value;
+    if (maisAntigo === undefined) break;
+    esquecer(maisAntigo);
+  }
 }
 
 /**
@@ -120,7 +144,12 @@ export async function lembrar<T>(
   const valido = (e: Entrada<unknown> | null | undefined) => !!e && agora - e.obtidoEm < ttlSeg * 1000;
 
   const m = memoria.get(id);
-  if (valido(m)) return { valor: m!.valor as T, obtidoEm: new Date(m!.obtidoEm), desatualizado: false };
+  if (valido(m)) {
+    // usado agora: vai para o fim da fila (o primeiro da fila é o que sai quando a memória enche)
+    memoria.delete(id);
+    memoria.set(id, m!);
+    return { valor: m!.valor as T, obtidoEm: new Date(m!.obtidoEm), desatualizado: false };
+  }
 
   const andamento = emAndamento.get(id);
   if (andamento) return andamento as Promise<Lembrado<T> | null>;
@@ -128,7 +157,7 @@ export async function lembrar<T>(
   const tarefa = (async (): Promise<Lembrado<T> | null> => {
     const salvo = m ?? (await lerArquivo<T>(servico, chave));
     if (valido(salvo)) {
-      guardarMemoria(id, salvo!);
+      guardarMemoria(id, salvo!, salvo!.tam ?? 0);
       return { valor: salvo!.valor as T, obtidoEm: new Date(salvo!.obtidoEm), desatualizado: false };
     }
 
@@ -146,8 +175,9 @@ export async function lembrar<T>(
     if (novo !== null) {
       falhaRecente.delete(id);
       const e = { valor: novo, obtidoEm: Date.now() };
-      guardarMemoria(id, e);
-      await gravarArquivo(servico, chave, e);
+      const texto = JSON.stringify({ chave, ...e });
+      guardarMemoria(id, e, texto.length);
+      await gravarArquivo(servico, chave, texto);
       return { valor: novo, obtidoEm: new Date(e.obtidoEm), desatualizado: false };
     }
 

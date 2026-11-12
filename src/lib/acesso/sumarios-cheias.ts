@@ -4,6 +4,7 @@ import type { Acl } from '../auth/acl';
 import { query } from '../db';
 import { lembrar } from '../integracoes/cache';
 import { buscarJson } from '../integracoes/http';
+import { SIBH_API_V1, SIBH_API_V2 } from '../integracoes/sibh-medicoes';
 
 /**
  * Sumários Executivos de Cheias (porte de acesso/sumario_executivo_cheias do
@@ -57,8 +58,8 @@ export const SALAS_SUMARIOS = [...new Set(Object.values(SUMARIOS).flatMap((s) =>
 // Proxy do SIBH (api_proxy.php)
 // ---------------------------------------------------------------------------
 
-const API_V2 = 'https://apps.spaguas.sp.gov.br/sibh/api/v2/';
-const API_V1 = 'https://apps.spaguas.sp.gov.br/sibh/api/v1/'; // comportas das barragens
+const API_V2 = SIBH_API_V2;
+const API_V1 = SIBH_API_V1; // comportas das barragens
 const CAMINHOS_V2 = ['measurements', 'measurements/now', 'parameters'];
 const CAMINHOS_V1 = ['dams'];
 
