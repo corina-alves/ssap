@@ -192,7 +192,7 @@
 .um-seta { stroke: rgba(6, 16, 28, .55); stroke-width: 1; stroke-linejoin: round; }
 .um-parado polyline:not(.um-contorno) { stroke: #8fa3b8; }
 .um-parado .um-seta { fill: #c7d3df; }
-.um-svg .un-res, .um-svg .un-ponto { pointer-events: auto; }
+.um-svg .un-res, .um-svg .un-ponto, .um-svg .un-radar { pointer-events: auto; }
 /* contorno escuro nos textos: legíveis sobre rios e imagem de satélite */
 .um-svg text { paint-order: stroke; stroke: rgba(30, 38, 47, .88); stroke-width: 3px; stroke-linejoin: round; }
 .um-guia line { stroke: #bfe9ff; stroke-width: 1.4; stroke-dasharray: 3 4; opacity: .85; }

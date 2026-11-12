@@ -1,9 +1,9 @@
 import geojson from '@/conteudo/ugrhi6-subbacias.json';
 import rios from '@/conteudo/ugrhi6-rios.json';
 import {
-  anoMes, cargaMes, CHUVA_MAX_DIARIA_MM, CONAMA, diasDoMes, estatisticasNivel, EXUTORIO_PEDREIRA, EXUTORIOS_MAPA, FLUVIOMETRIA_TABELA, MESES, MESES_ABREV, NOMES,
+  anoMes, cargaMes, CHUVA_MAX_DIARIA_MM, CONAMA, diasDoMes, estatisticasNivel, EXUTORIO_PEDREIRA, EXUTORIOS_MAPA, FLUVIOMETRIA_TABELA, ANOS_HISTORICO, MESES, MESES_ABREV, NOMES,
   PARAMETROS, PARAMETROS_QUALIDADE, PONTOS_QUALIDADE, TIPOS,
-  type DadosChuvaVazao, type DadosExutorios, type DadosMananciais, type SerieMes, type Tipo,
+  type DadosChuvaVazao, type DadosExutorios, type DadosMananciais, type Hidrograma, type SerieMes, type Tipo,
 } from './boletim-integrado';
 import { SUBBACIAS } from './rede-pluviometrica';
 
@@ -65,7 +65,9 @@ class Montagem {
     const analise =
       `<div class="analise-tela${texto ? '' : ' vazia'}" data-secao="${esc(secao)}"><div class="analise-rotulo">Análise</div>` +
       `<div class="analise-texto">${esc(texto).replace(/\n/g, '<br>')}</div></div>`;
-    return `<section class="slide-tela"><header class="slide-cab"><h3 class="slide-tela-titulo">${tituloHtml}</h3>${LOGOS}</header>${conteudo}${analise}</section>`;
+    // título longo (nome de posto extenso): letra menor, para a página caber numa folha A4
+    const longo = tituloHtml.replace(/<br>/g, ' ').replace(/<[^>]*>/g, '').replace(/&#d+;|&w+;/g, ' ').length > 80;
+    return `<section class="slide-tela"><header class="slide-cab"><h3 class="slide-tela-titulo${longo ? ' slide-tela-titulo--longo' : ''}">${tituloHtml}</h3>${LOGOS}</header>${conteudo}${analise}</section>`;
   }
 
   /**
@@ -157,29 +159,35 @@ function mapa(m: Montagem, tituloMapa: string, pontos: Ponto[]): string {
 // Boletim Chuva-Vazão
 // ---------------------------------------------------------------------------
 
+/** Cores dos anos do histórico no gráfico de chuva (do mais antigo ao mais recente): bem diferentes entre si e do azul do mês do boletim. */
+const CORES_ANOS = ['#F59E0B', '#10B981', '#8B5CF6', '#EC4899', '#06B6D4'];
+
 function paginasPluviometria(m: Montagem, d: DadosChuvaVazao['chuva'], ano: number, mes: number): string {
   const nomeMes = MESES[mes - 1]!;
-  const campos = ['atual', 'minima', 'media', 'maxima'] as const;
+  const resumo = ['minima', 'media', 'maxima'] as const;
+  const abrev = `${MESES_ABREV[mes - 1]}`;
   let tab =
-    `<table class="tab-chuva"><thead><tr><th class="titulo-tab" colspan="5">CHUVA - ${esc(nomeMes.toUpperCase())} / ${ano} (mm)</th></tr><tr><th>SUB-BACIA</th><th>Acumulado<br>mês</th>` +
-    `<th>Mín.<br>${nomeMes}<br>(${d.periodo})</th><th class="hist">Média<br>${nomeMes}<br>(${d.periodo})</th><th>Máx.<br>${nomeMes}<br>(${d.periodo})</th></tr></thead><tbody>`;
+    `<table class="tab-chuva"><thead><tr><th class="titulo-tab" colspan="${5 + d.anos.length}">CHUVA - ${esc(nomeMes.toUpperCase())} / ${ano} (mm)</th></tr>` +
+    `<tr><th>SUB-BACIA</th><th>Acumulado<br>mês</th>${d.anos.map((a) => `<th class="hist">${abrev}/<br>${a}</th>`).join('')}` +
+    `<th>Mín.<br>${nomeMes}<br>(${d.periodo})</th><th>Média<br>${nomeMes}<br>(${d.periodo})</th><th>Máx.<br>${nomeMes}<br>(${d.periodo})</th></tr></thead><tbody>`;
   d.linhas.forEach((l, i) => {
-    const cel = (k: (typeof campos)[number]) => m.celula(`chuva.${l.slug}.${k}`, l[k]);
-    tab += `<tr class="${i % 2 ? 'par' : 'impar'}"><td class="sub">${esc(l.nome)}</td><td><b>${cel('atual')}</b></td><td>${cel('minima')}</td><td>${cel('media')}</td><td>${cel('maxima')}</td></tr>`;
+    const cel = (k: string, v: number | null) => m.celula(`chuva.${l.slug}.${k}`, v);
+    tab +=
+      `<tr class="${i % 2 ? 'par' : 'impar'}"><td class="sub">${esc(l.nome)}</td><td><b>${cel('atual', l.atual)}</b></td>` +
+      `${d.anos.map((a) => `<td>${cel(`ano_${a}`, l.anos[a] ?? null)}</td>`).join('')}${resumo.map((k) => `<td>${cel(k, l[k])}</td>`).join('')}</tr>`;
   });
   tab +=
     '</tbody></table><p class="nota">Chuva média por sub-bacia = média dos acumulados mensais dos postos pluviométricos SIBH com dados ' +
-    `(leituras diárias &lt; 0 ou &gt; ${CHUVA_MAX_DIARIA_MM} mm descartadas). Mínima, média e máxima do mês em toda a série do SIBH (início em 2015).</p>`;
+    `(leituras diárias &lt; 0 ou &gt; ${CHUVA_MAX_DIARIA_MM} mm descartadas). Histórico: o mesmo mês nos ${ANOS_HISTORICO} anos anteriores; ` +
+    'mínima, média e máxima desses anos.</p>';
 
   // valores ajustados na tela valem para a tabela e para o gráfico
-  const serie = (k: (typeof campos)[number]) => d.linhas.map((l) => m.ajuste(`chuva.${l.slug}.${k}`, l[k]));
-  const per = d.periodo.replace(' a ', '-');
-  // cores bem distintas: o mês do boletim em azul forte; mínima, média e máxima da série em âmbar, verde e vermelho
+  const serie = (k: string, v: (l: (typeof d.linhas)[number]) => number | null) => d.linhas.map((l) => m.ajuste(`chuva.${l.slug}.${k}`, v(l)));
+  // o mês do boletim em azul forte; cada ano do histórico numa cor; a média dos anos em cinza escuro
   const series = [
-    { nome: `${MESES_ABREV[mes - 1]}/${String(ano).slice(2)}`, cor: '#0039C4', valores: serie('atual') },
-    { nome: `Mín (${per})`, cor: '#F59E0B', valores: serie('minima') },
-    { nome: `Média (${per})`, cor: '#00B154', valores: serie('media') },
-    { nome: `Máx (${per})`, cor: '#E11D48', valores: serie('maxima') },
+    { nome: `${abrev}/${String(ano).slice(2)}`, cor: '#0039C4', valores: serie('atual', (l) => l.atual) },
+    ...d.anos.map((a, i) => ({ nome: `${abrev}/${String(a).slice(2)}`, cor: CORES_ANOS[(i + CORES_ANOS.length - d.anos.length) % CORES_ANOS.length]!, valores: serie(`ano_${a}`, (l) => l.anos[a] ?? null) })),
+    { nome: `Média (${d.periodo.replace(' a ', '-')})`, cor: '#334155', valores: serie('media', (l) => l.media) },
   ];
   const g = grafico({ tipo: 'barras', titulo: `CHUVAS (mm) ${nomeMes.toUpperCase()} / ${ano}`, rotulos: d.linhas.map((l) => l.nome), series, unidade: 'mm' });
   return m.slide('PLUVIOMETRIA - ALTO TIETÊ', tab) + m.slide('PLUVIOMETRIA - ALTO TIETÊ', g);
@@ -205,13 +213,17 @@ function paginaEstatisticas(m: Montagem, postos: DadosChuvaVazao['fluviometria']
         linhas.push({ html: `${nome}<td>Flu (m)</td><td colspan="9" class="al">leituras ainda chegando do SIBH — atualize em instantes</td>`, vazao: false });
         continue;
       }
+      if (!p.leituras.some((l) => l.nivel !== null)) {
+        linhas.push({ html: `${nome}<td>Flu (m)</td><td colspan="9" class="al">sem leituras no SIBH neste mês (posto sem transmissão)</td>`, vazao: false });
+        continue;
+      }
       const st = estatisticasNivel(p.leituras, p.cotas);
       const c = (grupo: string, campo: string, v: number | undefined) => m.celula(`${grupo}.${p.codigo}.${campo}`, v ?? null, 2);
       const f = st.permanencia;
       linhas.push({
         html:
           `${nome}<td>Flu (m)</td><td>${c('flu', 'media', st.nivel?.media)}</td><td>${c('flu', 'maximo', st.nivel?.maximo)}</td><td>${c('flu', 'minimo', st.nivel?.minimo)}</td>` +
-          `<td>${st.nivel ? num(st.nivel.quantidade, 0) : '—'}</td>${FAIXAS.map(([k, classe]) => `<td class="${f ? classe : ''}">${f ? m.celula(`perm.${p.codigo}.${k}`, f[k], 2, '%') : ''}</td>`).join('')}`,
+          `<td>${st.nivel ? num(st.nivel.quantidade, 0) : '—'}</td>${FAIXAS.map(([k, classe]) => (f && f[k] !== null ? `<td class="${classe}">${m.celula(`perm.${p.codigo}.${k}`, f[k], 2, '%')}</td>` : `<td>${f ? '—' : ''}</td>`)).join('')}`,
         vazao: false,
       });
       if (st.vazao) {
@@ -224,14 +236,23 @@ function paginaEstatisticas(m: Montagem, postos: DadosChuvaVazao['fluviometria']
     linhas.forEach((l, i) => (h += `<tr${l.vazao ? ' class="vazao"' : ''}>${i === 0 ? `<td class="grupo" rowspan="${linhas.length}">${esc(sub)}</td>` : ''}${l.html}</tr>`));
   }
   h +=
-    '</tbody></table><p class="nota">Leituras de 10 min do SIBH. Permanência = % das leituras de nível em cada faixa das cotas de referência cadastradas no SIBH ' +
-    '(Normal &lt; Atenção ≤ Alerta ≤ Emergência ≤ Extravasamento).</p>';
+    '</tbody></table><p class="nota">Leituras de 10 min do SIBH. Permanência = % das leituras de nível em cada faixa das cotas de referência do SIBH, ' +
+    'completadas pela planilha de cotas de extravasamento (Normal &lt; Atenção ≤ Alerta ≤ Emergência ≤ Extravasamento); "—": o posto não tem cota dessa faixa.</p>';
   return m.slide(`ESTATÍSTICAS BÁSICAS - VAZÃO E NÍVEL - ${esc(MESES[mes - 1]!.toUpperCase())}/${ano}`, h);
 }
 
-function paginasHidrogramas(m: Montagem, d: DadosChuvaVazao, ano: number, mes: number): string {
+const NOME_FAIXA = { alerta: 'alerta', emergencia: 'emergência', extravasamento: 'extravasamento' } as const;
+
+/**
+ * Texto da última célula do quadro do hidrograma: a faixa mais grave registrada no mês (postos em destaque)
+ * e a falta de pluviômetro. Fica no quadro, e não abaixo dele, para a página caber numa folha A4.
+ */
+const registro = (faixa: keyof typeof NOME_FAIXA | undefined, semPluviometro: boolean) =>
+  [faixa ? `<b>Registrou ${NOME_FAIXA[faixa]} no mês</b>` : '', semPluviometro ? 'Sem pluviômetro no local' : ''].filter(Boolean).join('<br>');
+
+function paginasHidrogramas(m: Montagem, d: DadosChuvaVazao, lista: Hidrograma[], ano: number, mes: number, faixas?: Map<string, keyof typeof NOME_FAIXA>): string {
   let html = '';
-  for (const hg of d.hidrogramas) {
+  for (const hg of lista) {
     const titulo = `HIDROGRAMA POSTO TELEMÉTRICO<br>${esc(hg.titulo.toUpperCase())} - ${esc(MESES[mes - 1]!.toUpperCase())}/${ano}`;
     const p = d.fluviometria.find((x) => x.codigo === hg.codigo);
     if (!p?.posto) {
@@ -240,6 +261,10 @@ function paginasHidrogramas(m: Montagem, d: DadosChuvaVazao, ano: number, mes: n
     }
     if (!p.leituras) {
       html += m.slide(titulo, aviso(`As leituras de ${esc(p.posto.nome)} ainda estão chegando do SIBH. Atualize o boletim em instantes.`));
+      continue;
+    }
+    if (!p.leituras.some((l) => l.nivel !== null)) {
+      html += m.slide(titulo, aviso(`${esc(p.posto.nome)}: sem leituras de nível no SIBH em ${esc(competencia(ano, mes, '/'))}.`));
       continue;
     }
     const cod = hg.codigo;
@@ -264,10 +289,20 @@ function paginasHidrogramas(m: Montagem, d: DadosChuvaVazao, ano: number, mes: n
       `<tr><td>Mínimo</td><td>${ed(`flu.${cod}.minimo`, n?.minimo)}</td><td>Emergência</td><td>${ed(`cota.${cod}.emergencia`, p.cotas?.emergencia)}</td><td>Dias com chuva</td><td>${ed(`plu.${cod}.dias_com_chuva`, ch.dias_com_chuva, 0)}</td></tr>` +
       `<tr><td>Quantidade</td><td>${n ? num(n.quantidade, 0) : '—'}</td><td>Extravasamento</td><td>${ed(`cota.${cod}.extravasamento`, p.cotas?.extravasamento)}</td><td>Média dias com chuva</td><td>${ed(`plu.${cod}.media_dias_com_chuva`, ch.media_dias_com_chuva, 1)}</td></tr>` +
       `<tr><td class="p-normal">% Normal</td><td>${ed(`perm.${cod}.normal`, f?.normal, 2, '%')}</td><td class="p-atencao">% Atenção</td><td>${ed(`perm.${cod}.atencao`, f?.atencao, 2, '%')}</td><td class="p-alerta">% Alerta</td><td>${ed(`perm.${cod}.alerta`, f?.alerta, 2, '%')}</td></tr>` +
-      `<tr><td class="p-emerg">% Emergência</td><td>${ed(`perm.${cod}.emergencia`, f?.emergencia, 2, '%')}</td><td class="p-extrav">% Extravasamento</td><td>${ed(`perm.${cod}.extravasamento`, f?.extravasamento, 2, '%')}</td><td colspan="2"></td></tr></table>`;
+      `<tr><td class="p-emerg">% Emergência</td><td>${ed(`perm.${cod}.emergencia`, f?.emergencia, 2, '%')}</td><td class="p-extrav">% Extravasamento</td><td>${ed(`perm.${cod}.extravasamento`, f?.extravasamento, 2, '%')}</td>` +
+      `<td colspan="2" class="registro">${registro(faixas?.get(hg.codigo), hg.chuva.acumulada === null)}</td></tr></table>`;
     html += m.slide(titulo, g + quadro);
   }
   return html;
+}
+
+/** Postos da tabela que registraram alerta, emergência ou extravasamento no mês: um hidrograma cada. */
+function paginasDestaques(m: Montagem, d: DadosChuvaVazao, ano: number, mes: number): string {
+  const titulo = 'POSTOS QUE REGISTRARAM<br>ALERTA, EMERGÊNCIA OU EXTRAVASAMENTO';
+  if (!d.destaques.length) {
+    return divisoria(titulo) + m.slide(titulo, aviso(`Nenhum outro posto da tabela registrou alerta, emergência ou extravasamento em ${esc(competencia(ano, mes, '/'))}.`));
+  }
+  return divisoria(titulo) + paginasHidrogramas(m, d, d.destaques, ano, mes, new Map(d.destaques.map((x) => [x.codigo, x.faixa])));
 }
 
 export function htmlChuvaVazao(d: DadosChuvaVazao, ano: number, mes: number, e: Edicoes): string {
@@ -283,7 +318,8 @@ export function htmlChuvaVazao(d: DadosChuvaVazao, ano: number, mes: number, e: 
     paginasPluviometria(m, d.chuva, ano, mes) +
     divisoria('DADOS FLUVIOMÉTRICOS<br>PRINCIPAIS PONTOS DO SISTEMA<br>DE ALERTA/INUNDAÇÃO') +
     paginaEstatisticas(m, d.fluviometria, ano, mes) +
-    paginasHidrogramas(m, d, ano, mes)
+    paginasHidrogramas(m, d, d.hidrogramas, ano, mes) +
+    paginasDestaques(m, d, ano, mes)
   );
 }
 

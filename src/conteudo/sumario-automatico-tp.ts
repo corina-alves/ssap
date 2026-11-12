@@ -56,25 +56,34 @@ export const BARRAGEM_MOVEL = 2;
 
 /**
  * Colunas da planilha horária da EMAE (índice 0-based: A = 0, B = 1…), as
- * mesmas do CSV que o sumário tradicional importa à mão.
+ * mesmas do CSV que o sumário tradicional importa à mão e do layout que
+ * src/lib/integracoes/emae-saisp.ts monta com os dados do SAISP.
+ *
+ * igg: diferença do referencial EPUSP (EMAE) para o IGG (SP Águas) na estrutura,
+ * cota IGG = cota EPUSP + igg. Marcos RN, FCTH (2022): Tabela 3 – Marcos da
+ * "Resolução Conjunta" e Tabela 4 – Marcos Complementares EMAE.
  */
-export type EstruturaEmae = { nome: string; cota: number; vazao: number | null; volumeUtil?: 'Billings' | 'Guarapiranga' };
+export type EstruturaEmae = { nome: string; cota: number; vazao: number | null; igg: number; volumeUtil?: 'Billings' | 'Guarapiranga' };
 export const MAPA_PLANILHA: EstruturaEmae[] = [
-  { nome: 'Barragem Móvel', cota: 8, vazao: null }, // I
-  { nome: 'Estrutura de Retiro', cota: 7, vazao: 9 }, // H, J
-  { nome: 'Pinheiros Inferior', cota: 5, vazao: 6 }, // F, G
-  { nome: 'Pinheiros Superior', cota: 4, vazao: 6 }, // E, G
-  { nome: 'Pedreira', cota: 2, vazao: 3 }, // C, D
-  { nome: 'Billings', cota: 1, vazao: 24, volumeUtil: 'Billings' }, // B, Y
-  { nome: 'Guarapiranga', cota: 20, vazao: 21, volumeUtil: 'Guarapiranga' }, // U, V
-  { nome: 'Edgard de Souza', cota: 12, vazao: 13 }, // M, N
-  { nome: 'Pirapora', cota: 14, vazao: 15 }, // O, P
-  { nome: 'Rasgão', cota: 16, vazao: 17 }, // Q, R
-  { nome: 'Porto Goés', cota: 18, vazao: 19 }, // S, T
+  { nome: 'Barragem Móvel', cota: 8, vazao: null, igg: 1.42 }, // I
+  { nome: 'Estrutura de Retiro', cota: 7, vazao: 9, igg: 1.42 }, // H, J
+  { nome: 'Pinheiros Inferior', cota: 5, vazao: 6, igg: 1.4 }, // F, G
+  { nome: 'Pinheiros Superior', cota: 4, vazao: 6, igg: 1.4 }, // E, G
+  { nome: 'Pedreira', cota: 2, vazao: 3, igg: 1.43 }, // C, D
+  { nome: 'Billings', cota: 1, vazao: 24, igg: 1.43, volumeUtil: 'Billings' }, // B, Y
+  { nome: 'Guarapiranga', cota: 20, vazao: 21, igg: 1.43, volumeUtil: 'Guarapiranga' }, // U, V
+  { nome: 'Edgard de Souza', cota: 12, vazao: 13, igg: 1.53 }, // M, N
+  { nome: 'Pirapora', cota: 14, vazao: 15, igg: 1.53 }, // O, P
+  { nome: 'Rasgão', cota: 16, vazao: 17, igg: 3.29 }, // Q, R
+  { nome: 'Porto Goés', cota: 18, vazao: 19, igg: 1.49 }, // S, T
 ];
 
-/** Cotas da EMAE (referencial EPUSP) + 1,39 m = referencial IGG, o da SP Águas. */
-export const OFFSET_IGG = 1.39;
+/** Nota das cotas da EMAE (a mesma do sumário tradicional). */
+export const NOTA_REFERENCIAIS =
+  'As cotas apresentadas possuem referenciais altimétricos distintos (dados da EMAE seguem o referencial EPUSP/POLI-LIGHT e os da SP-Águas, o IGG). ' +
+  'Para fins de comparação, as cotas da EMAE já estão convertidas para o IGG pela diferença entre referenciais de cada estrutura (cota IGG = cota EPUSP + diferença): ' +
+  'Barragem Móvel e Estrutura de Retiro 1,42 m; Pinheiros Inferior e Superior 1,40 m; Pedreira, Billings e Guarapiranga 1,43 m; Edgard de Souza e Pirapora 1,53 m; ' +
+  "Rasgão 3,29 m; Porto Goés 1,49 m (FCTH, 2022). Essas diferenças não representam diferença física de nível d'água.";
 
 /** Linhas da tabela "Situação atual das estruturas", por eixo, na ordem do sumário tradicional. */
 export const EIXOS: { eixo: string; destaque?: boolean; estruturas: string[] }[] = [

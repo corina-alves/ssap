@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import {
-  cargaMes, chuvaDiaria, estatisticasNivel, interpretarCargas, interpretarReservatorio, leituras, linhaChuva, mediasPorSubbacia, numeroBr, periodoBoletim, postoPorCodigo, resumoChuva,
+  anosHistorico, cargaMes, chuvaDiaria, estatisticasNivel, faixaDestaque, interpretarCargas, interpretarReservatorio, leituras, linhaChuva, mediasPorSubbacia, numeroBr, periodoBoletim, postoPorCodigo, resumoChuva,
   type ChuvaMes, type DadosExutorios,
 } from '../src/lib/boletins-sala/boletim-integrado';
 import { conformidadeConama, htmlExutorios } from '../src/lib/boletins-sala/boletim-integrado-html';
@@ -43,10 +43,17 @@ test('chuva por sub-bacia: descarta leitura negativa ou acima de 200 mm; média 
   assert.deepEqual(mediasPorSubbacia(postos, diario), { cabeceiras: { media: 15.25, postos: 2 }, cotia_guarapiranga: { media: 40, postos: 1 } });
 
   const porAno = new Map<number, ChuvaMes>([[2018, { cabeceiras: { media: 100, postos: 5 } }], [2021, { cabeceiras: { media: 40, postos: 5 } }], [2023, { cabeceiras: { media: 60, postos: 5 } }]]);
-  assert.deepEqual(linhaChuva('cabeceiras', { cabeceiras: { media: 15.25, postos: 2 } }, porAno), {
-    slug: 'cabeceiras', nome: 'Cabeceiras', atual: 15.25, minima: 40, media: 200 / 3, maxima: 100, // toda a série, desde 2015
+  // cada ano do histórico e a mínima, a média e a máxima dos anos com dado (2022 sem dado fica null)
+  assert.deepEqual(linhaChuva('cabeceiras', { cabeceiras: { media: 15.25, postos: 2 } }, porAno, [2018, 2021, 2022, 2023]), {
+    slug: 'cabeceiras', nome: 'Cabeceiras', atual: 15.25, anos: { 2018: 100, 2021: 40, 2022: null, 2023: 60 }, minima: 40, media: 200 / 3, maxima: 100,
   });
-  assert.deepEqual(linhaChuva('juqueri_cantareira', null, porAno), { slug: 'juqueri_cantareira', nome: 'Juqueri/Cantareira', atual: null, minima: null, media: null, maxima: null });
+  assert.deepEqual(linhaChuva('juqueri_cantareira', null, porAno, [2021]), {
+    slug: 'juqueri_cantareira', nome: 'Juqueri/Cantareira', atual: null, anos: { 2021: null }, minima: null, media: null, maxima: null,
+  });
+  // histórico: os 5 anos anteriores ao do boletim, sem passar do início da série do SIBH (2015)
+  assert.deepEqual(anosHistorico(2026), [2021, 2022, 2023, 2024, 2025]);
+  assert.deepEqual(anosHistorico(2017), [2015, 2016]);
+  assert.deepEqual(anosHistorico(2015), []);
 });
 
 test('nível: cm → m no horário de Brasília, estatísticas e permanência nas faixas de cota', () => {
@@ -55,7 +62,15 @@ test('nível: cm → m no horário de Brasília, estatísticas e permanência na
   assert.deepEqual(l.map((x) => x.nivel), [730, 730.5, null, 732]);
   const s = estatisticasNivel(l, { atencao: 730.4, alerta: 731, emergencia: 731.9, extravasamento: null });
   assert.deepEqual([s.nivel!.quantidade, s.nivel!.minimo, s.nivel!.maximo, s.vazao], [3, 730, 732, { media: 10, maximo: 12.5, minimo: 7.5, quantidade: 2 }]);
-  assert.deepEqual(Object.values(s.permanencia!).map((v) => Math.round(v)), [33, 33, 0, 33, 0]);
+  // sem cota de extravasamento: a faixa fica null (não se aplica)
+  assert.deepEqual(Object.values(s.permanencia!).map((v) => (v === null ? null : Math.round(v))), [33, 33, 0, 33, null]);
+  // só a cota de extravasamento (muitos postos): normal ou extravasamento; as outras faixas não se aplicam
+  const so = estatisticasNivel(l, { atencao: null, alerta: null, emergencia: null, extravasamento: 731 });
+  assert.deepEqual(Object.values(so.permanencia!).map((v) => (v === null ? null : Math.round(v))), [67, null, null, null, 33]);
+  assert.equal(faixaDestaque(so.permanencia), 'extravasamento');
+  assert.equal(faixaDestaque(s.permanencia), 'emergencia');
+  assert.equal(faixaDestaque({ normal: 90, atencao: 10, alerta: 0, emergencia: 0, extravasamento: 0 }), null); // só atenção não destaca
+  assert.equal(faixaDestaque(null), null);
   assert.equal(estatisticasNivel(l, null).permanencia, null);
   assert.deepEqual(estatisticasNivel([], null), { nivel: null, vazao: null, permanencia: null });
 

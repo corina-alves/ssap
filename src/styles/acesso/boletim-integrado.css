@@ -21,6 +21,8 @@
   .slide-tela { background: #fff; border: 1px solid var(--borda); border-top: 4px solid var(--azul-escuro); border-radius: 12px; padding: 18px 22px; margin-bottom: 22px; overflow-x: auto; box-shadow: 0 4px 18px rgba(15, 23, 42, .06); }
   .slide-cab { display: flex; align-items: center; justify-content: center; gap: 16px; margin-bottom: 14px; }
   .slide-tela-titulo { flex: 1; text-align: center; font-size: 21px; font-weight: 800; color: var(--marinho); margin: 0; line-height: 1.25; }
+  .slide-tela-titulo--longo { font-size: 18px; }
+  table.quadro td.registro { text-align: center; color: #7A0000; }
   .slide-logos { display: none; align-items: center; gap: 3mm; }
   .slide-logos img { height: 13mm; width: auto; }
   .divisoria-tela { background: linear-gradient(90deg, var(--azul-escuro), var(--azul)); border-bottom: 5px solid var(--verde); color: #fff; text-align: center; font-size: 19px; font-weight: 800; letter-spacing: .02em; padding: 13px; border-radius: 10px; margin: 28px 0 18px; }
@@ -107,7 +109,8 @@
   .form-exut .rolagem { max-height: 360px; overflow: auto; }
   .form-exut table th { position: sticky; top: 0; }
 
-  @media (max-width: 760px) {
+  /* só na tela: na impressão o Chrome mede pelo papel padrão (retrato) e a grade de qualidade caía para 1 coluna */
+  @media screen and (max-width: 760px) {
     .slide-tela { padding: 12px 10px; }
     .slide-tela-titulo { font-size: 17px; }
     .grade-qual { grid-template-columns: 1fr; }
@@ -120,7 +123,9 @@
 body.imprimindo .bi-area .conteudo-boletim { width: 1040px; }
 body.imprimindo .bi-area .grafico-tela { height: 400px !important; }
 body.imprimindo .bi-area .slide-tela:has(.grafico-tela + .grafico-tela) .grafico-tela { height: 285px !important; }
-body.imprimindo .bi-area .grade-qual .grafico-tela { height: 150px !important; }
+/* qualidade: os 5 gráficos em 3 colunas (2 linhas) numa folha só */
+body.imprimindo .bi-area .grade-qual { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+body.imprimindo .bi-area .grade-qual .grafico-tela { height: 175px !important; }
 @media print {
   body:has(.bi-area) { background: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   /* some a moldura da área administrativa: fica só o boletim */
@@ -140,12 +145,23 @@ body.imprimindo .bi-area .grade-qual .grafico-tela { height: 150px !important; }
     .slide-tela:last-child { break-after: auto; }
     .slide-cab { border-bottom: 1.2mm solid var(--azul-escuro); padding-bottom: 2mm; margin-bottom: 3mm; }
     .slide-tela-titulo { font-size: 18pt; color: #000; }
+    .slide-tela-titulo--longo { font-size: 14pt; }
     .divisoria-tela { display: flex; align-items: center; justify-content: center; height: 188mm; margin: 0; border-radius: 4mm; font-size: 32pt; line-height: 1.35; break-after: page; }
     .mapa-svg svg { max-width: 235mm; }
     table.tab-chuva td { padding: 3mm 2mm; }
     table.tab-flu { font-size: 6.6pt; }
     table.tab-flu th, table.tab-flu td { padding: .7mm 1.2mm; }
     table.quadro, table.qual-info, table.conama { font-size: 8.5pt; }
+    /* qualidade: tabelas compactas para os 5 gráficos caberem na mesma folha */
+    table.qual-info { margin-bottom: 1.5mm; }
+    table.qual-info th, table.qual-info td { padding: .8mm 2mm; }
+    .conama-titulo { font-size: 8.5pt; margin-bottom: .8mm; }
+    table.conama { margin-bottom: 1.5mm; }
+    table.conama th, table.conama td { padding: .5mm 3mm; }
+    .grade-qual { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.5mm; }
+    .grade-qual > div { padding: 1mm 1.5mm; break-inside: avoid; }
+    .grade-qual h3 { font-size: 9pt; margin-bottom: .5mm; }
+    .grade-qual .nota { padding: 2mm; font-size: 8pt; }
     .analise-tela { background: #fff; border-left-color: #0070C0; font-size: 10.5pt; }
     .ajustado { color: inherit; font-weight: inherit; }
   }

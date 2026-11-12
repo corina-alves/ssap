@@ -3,6 +3,7 @@ import { podeSumario, proxySibh, SALAS_SUMARIOS, SUMARIOS, type ChaveSumario } f
 import { auditar } from '@/lib/auditoria';
 import { volumeCopelAte } from '@/lib/boletins-sala/boletim-ribeira';
 import { textoVolumeCopel } from '@/lib/boletins-sala/boletim-ribeira-regras';
+import { emaeSaisp } from '@/lib/integracoes/emae-saisp';
 import { acl } from '@/lib/auth/acl';
 import { usuarioAtual } from '@/lib/auth/sessao';
 
@@ -24,6 +25,7 @@ const json = (error: string, status: number) => Response.json({ error }, { statu
  * Sumários Executivos de Cheias:
  *   sumario_executivo_<chave>.html   o sumário (login + criar_boletim numa das salas dele)
  *   api-sibh                         proxy da API do SIBH
+ *   api-emae                         dados da EMAE no SAISP, no layout da planilha (emae_saisp.php)
  *   capturar-diagrama[-ribeira]      captura do diagrama: sempre recusa (imprime com o ao vivo)
  */
 export async function GET(req: Request, { params }: { params: Promise<{ arquivo: string }> }) {
@@ -48,7 +50,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ arquivo:
   }
 
   if (CAPTURAS.includes(arquivo)) return Response.json({ success: false, error: 'captura do diagrama desativada neste servidor' });
-  if (arquivo !== 'api-sibh' && arquivo !== 'api-copel') notFound();
+  if (arquivo !== 'api-sibh' && arquivo !== 'api-copel' && arquivo !== 'api-emae') notFound();
 
   // Proxy: recusa em JSON (o JavaScript do sumário mostra a mensagem).
   const u = await usuarioAtual();
@@ -61,6 +63,12 @@ export async function GET(req: Request, { params }: { params: Promise<{ arquivo:
     const ref = Number(url.searchParams.get('ref'));
     const v = await volumeCopelAte(Number.isFinite(ref) && ref > 0 ? Math.min(ref, Date.now()) : Date.now());
     return Response.json({ ...v, ...textoVolumeCopel(v) }, { headers: { 'Cache-Control': 'private, no-store' } });
+  }
+  if (arquivo === 'api-emae') {
+    // ?aba=dd/mm/aaaa: dia operacional (07h → 07h); sem ela, o atual. Mesmo JSON do emae_saisp.php.
+    const r = await emaeSaisp(url.searchParams.get('aba') ?? '');
+    const corpo = r.ok ? r : { ok: false, erro: r.erro, detalhe: r.detalhe };
+    return Response.json(corpo, { status: r.ok ? 200 : r.status, headers: { 'Cache-Control': 'private, no-store' } });
   }
   return proxySibh(url.searchParams);
 }

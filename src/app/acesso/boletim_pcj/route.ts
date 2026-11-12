@@ -1,9 +1,16 @@
+import previsao from '@/conteudo/boletim-pcj-previsao';
 import miolo from '@/conteudo/legado/boletim_pcj';
 import { idTipoBoletim } from '@/lib/acesso/api';
 import { escaparHtml, paginaAvulsa } from '@/lib/acesso/pagina-avulsa';
 import { acl, exigirSala } from '@/lib/auth/acl';
 import { PERMISSAO_PCJ, SALA_PCJ } from '@/lib/boletins-sala/pcj';
 import { hojeSp } from '@/lib/integracoes/comum';
+
+// Página de previsão do tempo (não existe no PHP): entra antes da contracapa.
+const CONTRACAPA = '<!-- 7. Contracapa -->';
+const mioloCompleto = miolo.includes(CONTRACAPA)
+  ? miolo.replace(CONTRACAPA, `${previsao}\n${CONTRACAPA}`)
+  : miolo.replace('</main>', `${previsao}</main>`);
 
 /**
  * Boletim Diário da Sala de Situação PCJ — página editável (acesso/boletim_pcj/
@@ -19,7 +26,7 @@ export async function GET() {
   return paginaAvulsa({
     titulo: 'Boletim Diário — Sala de Situação PCJ',
     pasta: 'boletim_pcj',
-    versao: '20261005',
+    versao: '20261112',
     // O PHP mandava um token CSRF; aqui a origem do POST é conferida em src/proxy.ts.
     dados: { token: '', hoje, dados: '/api/acesso/boletim_pcj/dados', medias: '/api/acesso/boletim_pcj/medias' },
     barra: `    <a class="barra__voltar" href="/acesso/boletins?sala=${sala.id}">&larr; Boletins PCJ</a>
@@ -34,6 +41,6 @@ export async function GET() {
     dica: `Clique em qualquer valor ou texto para corrigir. As edições ficam salvas neste navegador (por data).
     As médias históricas editadas valem para os próximos boletins só depois de "Salvar médias do mês".
     Em "Gerar PDF", escolha <strong>Salvar como PDF</strong> e deixe as margens em <strong>Nenhuma</strong>.`,
-    miolo,
+    miolo: mioloCompleto,
   });
 }

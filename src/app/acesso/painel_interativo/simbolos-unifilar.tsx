@@ -1,8 +1,8 @@
 'use client';
 
 import { useId, type CSSProperties } from 'react';
-import { VD, type Ancora, type Ligacao, type No, type Valor } from '@/conteudo/diagramas-unifilares';
-import { COR_FAIXA, texto, type Modo, type ValoresSsd } from './valores-ssd';
+import { VD, type Ancora, type Ligacao, type No, type Radar, type Valor } from '@/conteudo/diagramas-unifilares';
+import { chaveRadar, COR_FAIXA, texto, textoRadar, type Modo, type ValoresSsd } from './valores-ssd';
 
 /**
  * Símbolos e textos dos diagramas unifilares, os mesmos no esquema ("Sem mapa",
@@ -217,6 +217,46 @@ export function Simbolo({ n, ativo }: { n: Exclude<No, { tipo: 'reservatorio' }>
         </g>
       );
   }
+}
+
+/** Antena de radar (raio 9): a varredura gira quando choveu no dia. */
+export const SimboloRadar = ({ choveu = false }: { choveu?: boolean }) => (
+  <g>
+    <circle r={9} fill={COR.fundoSimbolo} stroke={COR.chuva} strokeWidth={1.5} />
+    <circle r={4.6} fill="none" stroke={COR.chuva} strokeWidth={0.8} opacity={0.5} />
+    <g className={choveu ? 'un-rotor' : undefined}>
+      <path d="M0 0V-8.2A8.2 8.2 0 0 1 5.8-5.8Z" fill={COR.chuva} opacity={0.45} />
+      <line x2={5.8} y2={-5.8} stroke={COR.chuva} strokeWidth={1.4} strokeLinecap="round" />
+    </g>
+    <circle r={1.6} fill={COR.chuva} />
+  </g>
+);
+
+const dataBr = (d: string) => d.split('-').reverse().join('/');
+
+/**
+ * Chuva do dia estimada pelo radar na bacia (posto "Precipitação Radar" do
+ * SIBH): a antena, o acumulado e o nome da bacia, do lado `rotulo`.
+ */
+export function PontoRadar({ r, valores, data, modo }: { r: Radar; valores: ValoresSsd; data: string; modo: Modo }) {
+  const v = valores[chaveRadar(r.id)] ?? null;
+  const lado = r.rotulo ?? 'direita';
+  const anc: Ancora = lado === 'direita' ? 'start' : lado === 'esquerda' ? 'end' : 'middle';
+  const x = lado === 'direita' ? 15 : lado === 'esquerda' ? -15 : 0;
+  const [yValor, yNome] = lado === 'acima' ? [-27, -14] : lado === 'abaixo' ? [28, 41] : [1, 14];
+  const valor = textoRadar(valores, r.id);
+  return (
+    <g transform={`translate(${r.x} ${r.y})`} className="un-radar" opacity={modo === 'chuva' || modo === 'vazao' ? 1 : 0.55}>
+      <title>{`Chuva por radar — ${r.nome}: ${valor} em ${dataBr(data)}${v?.hora ? `, de 00h às ${v.hora.replace(':', 'h')}` : ''} (SIBH, posto ${r.prefixo})`}</title>
+      <SimboloRadar choveu={(v?.valor ?? 0) > 0} />
+      <text x={x} y={yValor} textAnchor={anc} fill={COR.chuva} fontSize={modo === 'chuva' ? 16 : 14} fontWeight={800}>
+        {valor}
+      </text>
+      <text x={x} y={yNome} textAnchor={anc} fill={COR.fraco} fontSize={11}>
+        {r.nome}
+      </text>
+    </g>
+  );
 }
 
 export function Ponto({ n, valores, data, modo, vazao }: { n: Exclude<No, { tipo: 'reservatorio' }>; valores: ValoresSsd; data: string; modo: Modo; vazao: number | null }) {

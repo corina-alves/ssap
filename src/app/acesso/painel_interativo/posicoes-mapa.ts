@@ -1,4 +1,4 @@
-import type { Diagrama, No } from '@/conteudo/diagramas-unifilares';
+import type { Diagrama, No, Radar } from '@/conteudo/diagramas-unifilares';
 
 /**
  * Diagrama unifilar sobre o mapa, no lugar real (o desenho em si é o
@@ -37,6 +37,8 @@ export type Escala = {
   origem: Pt;
   /** ponto real de cada nó */
   nos: Pt[];
+  /** ponto de cada posto de radar (Diagrama.radares) */
+  radares: Pt[];
   /** traçado de cada ligação, no sentido da água */
   linhas: Pt[][];
   /** por ligação: onde ficam o valor e o rótulo dela */
@@ -110,6 +112,16 @@ export function caixaComNome(n: No): Caixa {
   const w = 80;
   const x0 = n.valor.ancora === 'start' ? n.valor.dx : n.valor.ancora === 'end' ? n.valor.dx - w : n.valor.dx - w / 2;
   return [Math.min(c[0], x0), Math.min(c[1], n.valor.dy - 15), Math.max(c[2], x0 + w), Math.max(c[3], n.valor.dy + 4)];
+}
+
+/** Caixa do posto de radar com o valor e o nome, como em PontoRadar (simbolos-unifilar.tsx). */
+export function caixaRadar(r: Radar): Caixa {
+  const w = Math.max(66, r.nome.length * 6);
+  const lado = r.rotulo ?? 'direita';
+  if (lado === 'esquerda') return [-15 - w, -14, 10, 17];
+  if (lado === 'acima') return [-w / 2, -42, w / 2, 10];
+  if (lado === 'abaixo') return [-w / 2, -10, w / 2, 44];
+  return [-10, -14, 15 + w, 17];
 }
 
 // afastamento máximo de um símbolo do ponto real (px) e folga entre símbolos vizinhos
@@ -585,7 +597,8 @@ export function planoNoMapa(d: Diagrama, rios: Rio[] = [], aguas: Agua[] = []): 
   // tudo no mundo, uma vez
   const nosMundo = d.nos.map((_, i) => posNo(i));
   const ligMundo = d.ligacoes.map((_, l) => caminho(l)!);
-  const todos = [...nosMundo, ...ligMundo.flatMap((c) => c.pts)];
+  const radaresMundo = (d.radares ?? []).map((r) => noMundo(r.ll));
+  const todos = [...nosMundo, ...radaresMundo, ...ligMundo.flatMap((c) => c.pts)];
   const caixa: PlanoMapa['caixa'] = [Math.min(...todos.map((p) => p[0])), Math.min(...todos.map((p) => p[1])), Math.max(...todos.map((p) => p[0])), Math.max(...todos.map((p) => p[1]))];
 
   return {
@@ -604,6 +617,7 @@ export function planoNoMapa(d: Diagrama, rios: Rio[] = [], aguas: Agua[] = []): 
         f,
         origem,
         nos: nosMundo.map(px),
+        radares: radaresMundo.map(px),
         linhas,
         valores: juntos.ligacoes.map((j) => j.valor && lugar(j.valor)),
         rotulos: juntos.ligacoes.map((j) => j.rotulo && lugar(j.rotulo)),

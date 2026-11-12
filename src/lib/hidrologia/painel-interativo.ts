@@ -3,6 +3,7 @@ import { lembrar } from '../integracoes/cache';
 import { RE_DATA, somarDias } from '../integracoes/comum';
 import { buscarTexto } from '../integracoes/http';
 import { resumoRecente, resumosPeriodo } from '../integracoes/sabesp';
+import { instante, medicoes, somar, type Medicao } from '../integracoes/sibh-medicoes';
 import { catalogo, FREQ_DIARIA, serie, type Ponto } from '../integracoes/ssd';
 import { estagio, type Estagio } from './reservatorios';
 
@@ -447,6 +448,53 @@ export async function valoresDiagrama(pares: [number, number][], data: string): 
       }
   }
   return saida;
+}
+
+// --------------------------------------------------------------- chuva por radar
+
+const HORA_MS = 3_600_000;
+/** Início do dia em Brasília (UTC-3, sem horário de verão desde 2019), em ms. */
+const inicioDiaSp = (data: string) => Date.parse(`${data}T00:00:00-03:00`);
+/** ms → "13:50" em Brasília. */
+const horaSp = (ms: number) => new Date(ms - 3 * HORA_MS).toISOString().slice(11, 16);
+
+/**
+ * Acumulado do dia de cada posto (00h às 24h de Brasília) e a hora da última
+ * leitura somada. Posto sem nenhuma leitura no dia: null.
+ */
+export function acumuladoRadar(med: Medicao[] | null, ids: number[], data: string): Record<string, { valor: number; data: string; hora: string } | null> {
+  const ini = inicioDiaSp(data);
+  const fim = ini + 24 * HORA_MS;
+  const soma = somar(med, ini, fim);
+  const ultima: Record<string, number> = {};
+  for (const [id, d, v] of med ?? []) {
+    const t = instante(d);
+    if (v !== null && t >= ini && t < fim && t > (ultima[id] ?? -Infinity)) ultima[id] = t;
+  }
+  return Object.fromEntries(
+    ids.map((id) => {
+      const t = ultima[String(id)];
+      return [`radar:${id}`, t === undefined ? null : { valor: Math.round((soma[String(id)] ?? 0) * 10) / 10, data, hora: horaSp(t) }];
+    }),
+  );
+}
+
+/**
+ * Chuva do dia estimada pelo radar nas bacias: postos "Precipitação Radar" do
+ * SIBH, com uma leitura a cada 10 min (a consulta do dia inteiro volta em menos
+ * de 1 s). O dia corrente fica guardado 5 min; dia fechado, um dia (as últimas
+ * leituras chegam com uns 30 min de atraso, então o dia que acabou de fechar
+ * ainda segue o prazo curto por 2 h).
+ */
+export async function chuvaRadarDia(ids: number[], data: string): Promise<Record<string, { valor: number; data: string; hora: string } | null>> {
+  if (!ids.length) return {};
+  const ord = [...new Set(ids)].sort((a, b) => a - b);
+  const ini = inicioDiaSp(data);
+  const fim = ini + 24 * HORA_MS;
+  const recente = Date.now() < fim + 2 * HORA_MS;
+  const chave = `${data}:${ord.join(',')}`;
+  const r = await medicoes('painel-radar', { [chave]: { ids: ord, ini, fim, grupo: 'minute', ttlSeg: recente ? 300 : 86_400, timeoutMs: 30_000 } });
+  return acumuladoRadar(r[chave] ?? null, ord, data);
 }
 
 // --------------------------------------------------------------- diagramas

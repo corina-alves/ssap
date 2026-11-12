@@ -83,6 +83,9 @@ export async function montarMenu(a: Acl): Promise<Menu> {
     });
   }
 
+  // Resumo dos Sumários Executivos de Cheias (Tietê-Pinheiros e Ribeira), para o acompanhamento.
+  if (a.podeEmAlguma('visualizar_dashboard')) geral.push(item('Painel de Monitoramento', '/acesso/painel_monitoramento', 'bi-activity'));
+
   // Climatologia da chuva por UGRHI (acervo histórico do SIBH, já processado no banco).
   if (a.podeEmAlguma('visualizar_climatologia')) {
     geral.push({

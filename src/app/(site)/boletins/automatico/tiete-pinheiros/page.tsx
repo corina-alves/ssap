@@ -5,7 +5,7 @@ import { connection } from 'next/server';
 import { cache, Suspense } from 'react';
 import '@/styles/legado/pagina-sumario-automatico.css';
 import { Hero } from '@/components/site/layout';
-import { EIXOS, OPERACIONAL, PENHA_JUSANTE, PENHA_MONTANTE, PROPAGACAO } from '@/conteudo/sumario-automatico-tp';
+import { EIXOS, NOTA_REFERENCIAIS, OPERACIONAL, PENHA_JUSANTE, PENHA_MONTANTE, PROPAGACAO } from '@/conteudo/sumario-automatico-tp';
 import {
   chuva,
   comportas,
@@ -13,13 +13,14 @@ import {
   niveis,
   referencias,
   SITUACOES,
+  textoMovel,
   vazaoBarragemPenha,
-  type Comportas,
   type Estrutura,
   type Ponto,
   type Situacao,
 } from '@/lib/boletins-sala/sumario-automatico-tp';
 import { dataBr, dataHora, hora } from '@/lib/formato';
+import { somarDias } from '@/lib/integracoes/comum';
 import { AtualizacaoAutomatica, DiagramaUnifilar } from './ao-vivo';
 
 export const metadata: Metadata = {
@@ -125,15 +126,6 @@ async function Chuva() {
 
 // ---------------------------------------------------------------- estruturas
 
-function textoMovel(m: NonNullable<Comportas['movel']>): string[] {
-  const { superficie: s, fundo: f } = m;
-  if (f.total > 0 && f.abertas === f.total) return ['Totalmente aberta'];
-  const linha1 = s.abertas === s.total ? `${s.abertas} comportas de superfície abertas operando na normalidade` : `${s.abertas} de ${s.total} comportas de superfície abertas`;
-  if (!f.total) return [linha1];
-  const fechadas = f.total - f.abertas;
-  return [linha1, fechadas === f.total ? `${fechadas} comportas de fundo fechadas` : `${f.abertas} de ${f.total} comportas de fundo abertas`];
-}
-
 function CelulasEmae({ nome, e }: { nome: string; e: Estrutura | null }) {
   return (
     <>
@@ -226,13 +218,12 @@ async function Estruturas() {
         </table>
       </div>
       <p className="sat-nota">
-        *As cotas apresentadas possuem referenciais altimétricos distintos (dados da EMAE seguem o referencial EPUSP/POLI-LIGHT e os da SP-Águas, o IGG). Para fins de
-        comparação, as cotas da EMAE já estão convertidas para o IGG (cota IGG = cota EPUSP + 1,39 m), o que não representa diferença física de nível d&apos;água.
+        *{NOTA_REFERENCIAIS}
         <br />
         Fonte dos dados: <sup className="sat-fonte">(1)</sup>SP-ÁGUAS <sup className="sat-fonte">(2)</sup>EMAE
-        {e.ok && e.dados.hora !== null && ` — planilha da EMAE, leitura das ${String(e.dados.hora).padStart(2, '0')}h`}
+        {e.ok && e.dados.lidoEm !== null && ` (via SAISP) — leitura de ${dataHora(new Date(e.dados.lidoEm))}; variação de 24 h entre as 07h de ${diaMes(somarDias(e.dados.dia, -1))} e de ${diaMes(e.dados.dia)}`}
       </p>
-      {!e.ok && <Aviso texto={`${e.mensagem} As estruturas marcadas com (2) aparecem quando a planilha da EMAE estiver disponível.`} />}
+      {!e.ok && <Aviso texto={`${e.mensagem} As estruturas marcadas com (2) aparecem quando o SAISP responder.`} />}
       {!n.ok && <Aviso texto={`Barragem da Penha: ${n.mensagem}`} />}
 
       <h3 className="sat-secao">SITUAÇÃO OPERACIONAL DAS ESTRUTURAS</h3>

@@ -60,3 +60,18 @@ test('médias do mês: grava, ignora posto desconhecido e valor inválido, apaga
 
   assert.deepEqual(aplicarMedias(atual, { mes: 13 }), { erro: 'Mês inválido.' });
 });
+
+test('meses fechados: dias do mês e total guardado no banco só com o mês inteiro coletado', async () => {
+  const { diasDoMes, totalGuardado } = await import('../src/lib/boletins-sala/pcj');
+  assert.equal(diasDoMes(2026, 2).length, 28);
+  assert.equal(diasDoMes(2028, 2).at(-1), '2028-02-29');
+  assert.deepEqual(diasDoMes(2026, 11).slice(0, 2), ['2026-11-01', '2026-11-02']);
+
+  const fev = diasDoMes(2026, 2);
+  const chuva: Record<string, Record<string, number>> = { '2026-02-01': { '7': 1.5, '8': 0 }, '2026-02-10': { '7': 2.5 } };
+  // posto 8 só tem um dia com registro; posto 9 nenhum (fica de fora, como na soma do SIBH)
+  assert.deepEqual(totalGuardado({ dias: new Set(fev), chuva }, fev), { '7': 4, '8': 0 });
+  // um dia sem coleta: o mês vai ao SIBH
+  assert.equal(totalGuardado({ dias: new Set(fev.slice(1)), chuva }, fev), null);
+  assert.equal(totalGuardado({ dias: new Set(), chuva: {} }, []), null);
+});

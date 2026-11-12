@@ -5,7 +5,8 @@ import { VD } from '@/conteudo/diagramas-unifilares';
  * sobre o mapa em desenho-mapa.tsx): formato, unidade e cores.
  */
 
-export type ValoresSsd = Record<string, { valor: number; data: string } | null>;
+/** `hora`: só na chuva por radar (chave radar:<id>), a hora da última leitura somada ("13:50"). */
+export type ValoresSsd = Record<string, { valor: number; data: string; hora?: string } | null>;
 export type Modo = 'vazao' | 'volume' | 'nivel' | 'chuva';
 
 // casas decimais e unidade por variável do SSD
@@ -30,6 +31,15 @@ export function texto(valores: ValoresSsd, space: number, v: number, data: strin
   const [casas, un] = FORMATO[v] ?? [2, ''];
   const unidade = comUnidade && un ? (un === '%' ? un : ` ${un}`) : '';
   return `${numero(x.valor, casas)}${unidade}${x.data < data ? '*' : ''}`;
+}
+
+/** Chave da chuva do dia por radar (SIBH) de um posto, junto dos valores do SSD. */
+export const chaveRadar = (id: number) => `radar:${id}`;
+
+/** "13,7 mm" (ou "—"): chuva do dia por radar. */
+export function textoRadar(valores: ValoresSsd, id: number): string {
+  const x = valores[chaveRadar(id)];
+  return x ? `${numero(x.valor, 1)} mm` : '—';
 }
 
 /** Valor numérico de um campo do SSD (null sem dado). */

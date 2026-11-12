@@ -77,7 +77,7 @@ function opcoesBase(titulo: string, unidade: string): Opcoes {
 }
 
 /** Desenha o gráfico de um <canvas data-grafico>; devolve os gráficos criados (o hidrograma são dois). */
-function desenhar(canvas: HTMLCanvasElement, s: Spec): Chart[] {
+export function desenhar(canvas: HTMLCanvasElement, s: Spec): Chart[] {
   Chart.defaults.font.family = getComputedStyle(canvas).fontFamily; // Montserrat da página, não a Helvetica do Chart.js
   const novo = (alvo: HTMLCanvasElement, tipo: 'bar' | 'line', rotulos: string[], conjuntos: Conjunto[], opcoes: Opcoes) =>
     new Chart(alvo, { type: tipo, data: { labels: rotulos, datasets: conjuntos }, options: opcoes as ChartOptions } as ChartConfiguration);
@@ -160,13 +160,21 @@ function desenhar(canvas: HTMLCanvasElement, s: Spec): Chart[] {
     // hidrograma: chuva diária (barras) em cima, nível com as cotas de referência embaixo
     case 'hidrograma': {
       const caixa = canvas.parentElement!;
-      caixa.innerHTML = '<div style="height:32%"><canvas></canvas></div><div style="height:68%"><canvas></canvas></div>';
-      const [cChuva, cNivel] = [...caixa.querySelectorAll('canvas')] as [HTMLCanvasElement, HTMLCanvasElement];
-      const dias = Array.from({ length: diasNoMes(s.ano, s.mes) }, (_, i) => i + 1);
-      const chuva = dias.map((d) => s.chuva[`${s.ano}-${String(s.mes).padStart(2, '0')}-${String(d).padStart(2, '0')}`] ?? 0);
-      const o1 = opcoesBase(`${s.titulo} — chuva diária`, 'mm');
-      o1.plugins.legend.display = false;
-      const g1 = novo(cChuva, 'bar', dias.map(String), [{ label: 'Chuva', data: chuva, backgroundColor: degrade(SPA.azul), borderRadius: 4, unidade: 'mm' }], o1);
+      // posto sem pluviômetro no mesmo local: só o nível, na altura toda
+      const comChuva = Object.keys(s.chuva ?? {}).length > 0;
+      caixa.innerHTML = comChuva
+        ? '<div style="height:32%"><canvas></canvas></div><div style="height:68%"><canvas></canvas></div>'
+        : '<div style="height:100%"><canvas></canvas></div>';
+      const canvases = [...caixa.querySelectorAll('canvas')] as HTMLCanvasElement[];
+      const cNivel = canvases.at(-1)!;
+      const graficos: Chart[] = [];
+      if (comChuva) {
+        const dias = Array.from({ length: diasNoMes(s.ano, s.mes) }, (_, i) => i + 1);
+        const chuva = dias.map((d) => s.chuva[`${s.ano}-${String(s.mes).padStart(2, '0')}-${String(d).padStart(2, '0')}`] ?? 0);
+        const o1 = opcoesBase(`${s.titulo} — chuva diária`, 'mm');
+        o1.plugins.legend.display = false;
+        graficos.push(novo(canvases[0]!, 'bar', dias.map(String), [{ label: 'Chuva', data: chuva, backgroundColor: degrade(SPA.azul), borderRadius: 4, unidade: 'mm' }], o1));
+      }
 
       const rot = s.nivel.map((p) => p[0]);
       const ds: Conjunto[] = [{ label: 'Nível', data: s.nivel.map((p) => p[1]), borderColor: SPA.azulEscuro, backgroundColor: degrade(SPA.verde, 0.25, 0.02), fill: 'start', borderWidth: 2.2, tension: 0.25, pointRadius: 0, unidade: 'm' }];
@@ -180,7 +188,7 @@ function desenhar(canvas: HTMLCanvasElement, s: Spec): Chart[] {
       // um rótulo a cada dois dias, à meia-noite
       o2.scales.x.ticks = { autoSkip: false, maxRotation: 0, color: '#334155', callback: (i: number) => { const t = rot[i]; return t && t.slice(11, 13) === '00' && Number(t.slice(8, 10)) % 2 === 0 ? String(Number(t.slice(8, 10))) : ''; } };
       o2.plugins.tooltip.callbacks.title = (it: any[]) => { const t = rot[it[0].dataIndex]; return t ? `${dataCurta(t.slice(0, 10))} ${t.slice(11, 16)}` : ''; };
-      return [g1, novo(cNivel, 'line', rot, ds, o2)];
+      return [...graficos, novo(cNivel, 'line', rot, ds, o2)];
     }
   }
 }

@@ -8,7 +8,8 @@ import { buscarJson } from '../integracoes/http';
 /**
  * Sumários Executivos de Cheias (porte de acesso/sumario_executivo_cheias do
  * PHP): o HTML original é servido sem alteração depois do login, e o
- * JavaScript dele chama, na mesma pasta, o proxy do SIBH. Os dois ficam na
+ * JavaScript dele chama, na mesma pasta, o proxy do SIBH (e, no do
+ * Tietê-Pinheiros, os dados da EMAE no SAISP: api-emae). Os dois ficam na
  * área da Sala Alfredo Pisani; o do Ribeira também pode ser feito pela sala
  * Ribeira. O "Gerar PDF" imprime com o diagrama do SIBH ao vivo (sem captura).
  */
@@ -25,6 +26,8 @@ export const SUMARIOS = {
     titulo: 'Sumário Executivo — Alto Tietê / Pinheiros',
     salas: ['alfredo-pisani'],
     tipos: { 'alfredo-pisani': 'sumario-tiete-pinheiros' } as Record<string, string>,
+    // Versão pública e automática (dados do SIBH e da EMAE pelo SAISP): botão no cabeçalho da página.
+    publico: '/boletins/automatico/tiete-pinheiros',
   },
 } as const;
 export type ChaveSumario = keyof typeof SUMARIOS;

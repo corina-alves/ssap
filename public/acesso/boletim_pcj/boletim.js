@@ -35,6 +35,12 @@
         return p[2] + '/' + p[1] + '/' + p[0];
     }
 
+    function somarDias(data, n) { // '2026-11-12', 6 → '2026-11-18'
+        var d = new Date(data + 'T12:00:00Z');
+        d.setUTCDate(d.getUTCDate() + n);
+        return d.toISOString().slice(0, 10);
+    }
+
     function brCurta(data) { // → '25/09/26'
         var p = String(data).split('-');
         return p[2] + '/' + p[1] + '/' + p[0].slice(2);
@@ -97,8 +103,9 @@
     }
 
     function pctChuva(c) {
-        if (c.mes === null || c.mes === undefined) { return '*'; }
-        if (c.recente || c.media === null || c.media === undefined || !c.media) { return '***'; }
+        // Como nas notas da página: "***" é posto recente; "*", sem a relação com a média.
+        if (c.recente) { return '***'; }
+        if (c.mes === null || c.mes === undefined || c.media === null || c.media === undefined || !c.media) { return '*'; }
         return num(c.mes / c.media * 100, 1) + '%';
     }
 
@@ -122,10 +129,65 @@
     }
 
     function celulaPosto(p) {
+        // Rio e local numa linha só: com uma linha por posto, a letra da tabela pode ser maior.
         var td = el('td', { classe: 'posto', contenteditable: 'true' });
         td.appendChild(el('b', { texto: p.rio }));
-        td.appendChild(document.createTextNode(p.local));
+        td.appendChild(document.createTextNode(' – ' + p.local));
         return td;
+    }
+
+    // ---------------------------------------------------------------- tamanho da letra
+    var FONTE_MAX = 14, FONTE_MIN = 6; // px
+
+    /**
+     * Maior letra (em passos de 0,25 px) com que a tabela cabe na página: na
+     * largura, mantendo a mesma margem dos dois lados, e na altura, até a nota
+     * de baixo. Os tamanhos internos do CSS são em "em" e acompanham.
+     */
+    function encaixar(tab) {
+        var pagina = tab.closest('.pagina');
+        if (!pagina || !tab.offsetParent) { return; } // fora da tela: nada a medir
+        var nota = pagina.querySelector('.notas, .nota-cotas, .obs-flu');
+        var limite = (nota ? nota.offsetTop : pagina.clientHeight - 14) - 6;
+        var larguraMax = pagina.clientWidth - 2 * tab.offsetLeft;
+        function cabe(q) {
+            tab.style.fontSize = (q / 4) + 'px';
+            return tab.offsetTop + tab.offsetHeight <= limite && tab.offsetWidth <= larguraMax + 0.5;
+        }
+        var baixo = FONTE_MIN * 4, alto = FONTE_MAX * 4;
+        if (cabe(alto)) { return; }
+        while (alto - baixo > 1) {
+            var meio = (baixo + alto) >> 1;
+            if (cabe(meio)) { baixo = meio; } else { alto = meio; }
+        }
+        cabe(baixo);
+    }
+
+    /** Texto da previsão: a maior letra (de 7 a 11 px) com que ele cabe na caixa embaixo da imagem. */
+    function encaixarTexto(p) {
+        if (!p.offsetParent) { return; }
+        function cabe(q) {
+            p.style.fontSize = (q / 4) + 'px';
+            return p.scrollHeight <= p.clientHeight + 1;
+        }
+        var baixo = 7 * 4, alto = 11 * 4;
+        if (cabe(alto)) { return; }
+        while (alto - baixo > 1) {
+            var meio = (baixo + alto) >> 1;
+            if (cabe(meio)) { baixo = meio; } else { alto = meio; }
+        }
+        cabe(baixo);
+    }
+
+    function encaixarTabelas() {
+        document.querySelectorAll('table.tab').forEach(encaixar);
+        document.querySelectorAll('.prev-texto').forEach(encaixarTexto);
+    }
+
+    var temporizadorEncaixe = null;
+    function encaixarDepois() {
+        clearTimeout(temporizadorEncaixe);
+        temporizadorEncaixe = setTimeout(encaixarTabelas, 400);
     }
 
     function th(texto, attrs) {
@@ -281,7 +343,11 @@
             if (estado.textos[id] !== undefined) {
                 e.innerText = estado.textos[id];
             } else if (e.dataset.padrao) {
-                e.textContent = e.dataset.padrao.replace('{data}', br(estado.data));
+                e.textContent = e.dataset.padrao
+                    .replace('{data}', br(estado.data))
+                    .replace('{amanha}', br(somarDias(estado.data, 1)))
+                    .replace('{d1}', br(somarDias(estado.data, 1)).slice(0, 5))
+                    .replace('{d6}', br(somarDias(estado.data, 6)));
             } else {
                 e.innerHTML = e.dataset.inicial;
             }
@@ -299,19 +365,61 @@
         });
     }
 
-    document.querySelectorAll('[data-imagem] input[type=file]').forEach(function (inp) {
-        inp.addEventListener('change', function () {
-            var arq = inp.files && inp.files[0];
-            if (!arq || !estado) { return; }
-            var leitor = new FileReader();
-            leitor.onload = function () {
-                estado.imagens[inp.closest('[data-imagem]').dataset.imagem] = leitor.result;
+    // Imagem grande é reduzida (até 1600 px, JPEG) antes de ir para o rascunho:
+    // o navegador guarda só uns 5 MB por site, e o boletim tem até 5 imagens.
+    var IMAGEM_LADO_MAX = 1600, IMAGEM_BYTES_MAX = 500 * 1024;
+    function trocarImagem(bloco, arq) {
+        if (!arq || !estado || !/^image\//.test(arq.type)) { return; }
+        var leitor = new FileReader();
+        leitor.onload = function () {
+            var original = leitor.result;
+            var img = new Image();
+            img.onload = function () {
+                var lado = Math.max(img.naturalWidth, img.naturalHeight);
+                var url = original;
+                if (lado > IMAGEM_LADO_MAX || arq.size > IMAGEM_BYTES_MAX) {
+                    var k = Math.min(1, IMAGEM_LADO_MAX / lado);
+                    var c = document.createElement('canvas');
+                    c.width = Math.round(img.naturalWidth * k);
+                    c.height = Math.round(img.naturalHeight * k);
+                    var ctx = c.getContext('2d');
+                    ctx.fillStyle = '#fff'; // PNG transparente não fica preto no JPEG
+                    ctx.fillRect(0, 0, c.width, c.height);
+                    ctx.drawImage(img, 0, 0, c.width, c.height);
+                    url = c.toDataURL('image/jpeg', 0.9);
+                }
+                estado.imagens[bloco.dataset.imagem] = url;
                 aplicarImagens();
                 salvarDepois();
             };
-            leitor.readAsDataURL(arq);
+            img.onerror = function () { avisar('Não foi possível abrir essa imagem.', true); };
+            img.src = original;
+        };
+        leitor.readAsDataURL(arq);
+    }
+
+    document.querySelectorAll('[data-imagem]').forEach(function (bloco) {
+        bloco.tabIndex = 0; // clicar no quadro e colar (Ctrl+V) também troca a imagem
+        var inp = bloco.querySelector('input[type=file]');
+        if (!inp) { return; }
+        inp.addEventListener('change', function () {
+            trocarImagem(bloco, inp.files && inp.files[0]);
             inp.value = '';
         });
+    });
+
+    document.getElementById('boletim').addEventListener('paste', function (ev) {
+        var bloco = ev.target.closest && ev.target.closest('[data-imagem]');
+        if (!bloco) { return; }
+        var itens = (ev.clipboardData && ev.clipboardData.items) || [];
+        for (var i = 0; i < itens.length; i++) {
+            if (itens[i].kind === 'file' && /^image\//.test(itens[i].type)) {
+                ev.preventDefault();
+                trocarImagem(bloco, itens[i].getAsFile());
+                return;
+            }
+        }
+        avisar('A área de transferência não tem imagem. Copie a imagem (não o arquivo) e cole de novo.', true);
     });
 
     // ---------------------------------------------------------------- montagem
@@ -322,7 +430,12 @@
         tabelaFlu();
         aplicarTextos();
         aplicarImagens();
+        encaixarTabelas();
     }
+
+    // A letra pode mudar de largura quando a fonte termina de carregar; na impressão, confere de novo.
+    if (document.fonts && document.fonts.ready) { document.fonts.ready.then(function () { if (estado) { encaixarTabelas(); } }); }
+    window.addEventListener('beforeprint', function () { if (estado) { encaixarTabelas(); } });
 
     function carregarDoSibh() {
         var d = campoData.value || corpo.dataset.hoje;
@@ -359,7 +472,10 @@
             estado.textos = estado.textos || {};
             estado.imagens = estado.imagens || {};
             montar();
-            avisar('Rascunho deste dia salvo em ' + new Date(r.salvoEm).toLocaleString('pt-BR').slice(0, 17) + '. Use "Carregar dados do SIBH" para atualizar.');
+            var falhas = (r.dados.avisos || []).length;
+            avisar('Rascunho deste dia salvo em ' + new Date(r.salvoEm).toLocaleString('pt-BR').slice(0, 17) + '. ' + (falhas
+                ? 'Nele, ' + falhas + ' consulta(s) do SIBH tinham falhado (campos com *): use "Carregar dados do SIBH" para completar.'
+                : 'Use "Carregar dados do SIBH" para atualizar.'), falhas > 0);
         } else {
             carregarDoSibh();
         }
@@ -369,7 +485,7 @@
     document.getElementById('boletim').addEventListener('input', function (ev) {
         if (!estado) { return; }
         var alvo = ev.target.closest('[data-k], [data-texto]');
-        if (!alvo) { salvarDepois(); return; }
+        if (!alvo) { encaixarDepois(); salvarDepois(); return; }
         if (alvo.dataset.texto) {
             estado.textos[alvo.dataset.texto] = alvo.innerText;
         } else {
@@ -381,6 +497,7 @@
             if (grupo === 'cotas') { sincronizarCotas(linha); }
             recalcular(grupo, i);
         }
+        encaixarDepois(); // texto mais comprido pode não caber mais com a letra atual
         salvarDepois();
     });
 

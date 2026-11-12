@@ -43,6 +43,15 @@ export type No =
       rotulo?: 'acima' | 'abaixo' | 'direita' | 'esquerda';
     });
 
+/**
+ * Posto "Precipitação Radar" do SIBH: a chuva que o radar estima para a bacia,
+ * a cada 10 min (o diagrama mostra o acumulado do dia). `id` é o
+ * station_prefix_id do SIBH (o que a consulta de medições usa), `prefixo` o
+ * código do posto e `ll` a coordenada dele no SIBH. No esquema fica em (x, y),
+ * com o texto do lado `rotulo` (padrão: à direita).
+ */
+export type Radar = { id: number; prefixo: string; nome: string; ll: [number, number]; x: number; y: number; rotulo?: 'acima' | 'abaixo' | 'direita' | 'esquerda' };
+
 export type Diagrama = {
   chave: string;
   titulo: string;
@@ -53,6 +62,8 @@ export type Diagrama = {
   /** valores avulsos, fora de ligação e de nó */
   valores?: Valor[];
   textos?: Texto[];
+  /** chuva por radar nas bacias do sistema */
+  radares?: Radar[];
   notas?: string[];
 };
 
@@ -114,6 +125,14 @@ const altoTiete: Diagrama = {
     { tipo: 'eta', prefixo: 'ETA', nome: 'Taiaçupeba', x: 232, y: 752, rotulo: 'acima' },
     { tipo: 'cidade', nome: 'RMSP', x: 78, y: 752, rotulo: 'acima' },
   ],
+  radares: [
+    { id: 35844, prefixo: '1000925', nome: 'Bacia do Paraitinga', ll: [-23.519, -45.8983], x: 892, y: 28 },
+    { id: 35845, prefixo: '1000923', nome: 'Bacia de Ponte Nova', ll: [-23.5731, -45.926], x: 892, y: 212 },
+    { id: 35842, prefixo: '1000927', nome: 'Bacia Biritiba-Mirim', ll: [-23.6187, -46.0893], x: 1132, y: 398 },
+    { id: 35843, prefixo: '1000930', nome: 'Bacia Biritiba-Mirim Jusante', ll: [-23.5831, -46.0896], x: 702, y: 298 },
+    { id: 35841, prefixo: '1000931', nome: 'Bacia do Jundiaí', ll: [-23.6374, -46.1737], x: 682, y: 622 },
+    { id: 35840, prefixo: '1000933', nome: 'Bacia Taiaçupeba', ll: [-23.5938, -46.2526], x: 522, y: 727 },
+  ],
   textos: [{ texto: 'Rio Tietê', x: 205, y: 192 }],
   notas: ['SEMAE: captação para Mogi das Cruzes.'],
 };
@@ -166,6 +185,17 @@ const cantareira: Diagrama = {
     { tipo: 'eeab', prefixo: 'EEAB', nome: 'Santa Inês', ll: [-23.36962, -46.6688], x: 660, y: 740, rotulo: 'direita' },
     { tipo: 'eta', prefixo: 'ETA', nome: 'Guaraú', ll: [-23.4358, -46.6479], x: 136, y: 740, rotulo: 'abaixo' },
   ],
+  radares: [
+    { id: 35834, prefixo: '1000909', nome: 'Bacia Jaguari/Jacareí', ll: [-22.9632, -46.4253], x: 1142, y: 205 },
+    { id: 35833, prefixo: '1000910', nome: 'Bacia do Cachoeira', ll: [-23.0419, -46.312], x: 1162, y: 372 },
+    { id: 35832, prefixo: '1000911', nome: 'Bacia do Atibainha', ll: [-23.1765, -46.3898], x: 1162, y: 497 },
+    { id: 35831, prefixo: '1000912', nome: 'Bacia Paiva Castro', ll: [-23.332, -46.6468], x: 862, y: 692 },
+    { id: 35809, prefixo: '1002723', nome: 'Bacia Jaguari', ll: [-22.9408, -46.4653], x: 762, y: 36 },
+    { id: 35837, prefixo: '1000972', nome: 'Bacia Jaguari – CESP', ll: [-22.8657, -46.7547], x: 712, y: 124 },
+    { id: 35838, prefixo: '1000970', nome: 'Bacia Buenópolis', ll: [-22.8403, -46.7927], x: 482, y: 124 },
+    { id: 35808, prefixo: '1000971', nome: 'Bacia Atibaia', ll: [-23.0823, -46.5259], x: 522, y: 468 },
+    { id: 35839, prefixo: '1000969', nome: 'Bacia Valinhos', ll: [-22.9167, -46.9466], x: 292, y: 468 },
+  ],
   textos: [
     { texto: 'Rio Jaguari → Rio Piracicaba', x: 20, y: 102, ancora: 'start' },
     { texto: 'Rio Jacareí', x: 1220, y: 157 },
@@ -196,6 +226,11 @@ const guarapiranga: Diagrama = {
     { tipo: 'eta', prefixo: 'ETA', nome: 'Alto da Boa Vista', x: 436, y: 130, rotulo: 'acima' },
     { tipo: 'cidade', nome: 'RMSP', x: 244, y: 130, rotulo: 'acima' },
   ],
+  radares: [
+    { id: 35827, prefixo: '1000914', nome: 'Bacia do Guarapiranga', ll: [-23.7325, -46.7429], x: 742, y: 252 },
+    { id: 35825, prefixo: '1000915', nome: 'Bacia do Taquacetuba', ll: [-23.8337, -46.6], x: 858, y: 432, rotulo: 'esquerda' },
+    { id: 35826, prefixo: '1000913', nome: 'Bacia do Capivari', ll: [-23.9304, -46.7132], x: 1092, y: 432 },
+  ],
   notas: ['¹ Reversão do Res. Billings (braço do Taquacetuba).', '² Rio Capivari, vertente litorânea (bacia do Itanhaém).'],
 };
 
@@ -219,6 +254,10 @@ const cotia: Diagrama = {
     { tipo: 'reservatorio', nome: 'Isolina', ll: [-23.5793, -46.8856], space: 30, num: 3, x: 1088, y: 220 },
     { tipo: 'eta', prefixo: 'ETA', nome: 'Alto Cotia', ll: [-23.6488, -46.9609], x: 658, y: 100, rotulo: 'acima' },
     { tipo: 'eta', prefixo: 'ETA', nome: 'Baixo Cotia', ll: [-23.5378, -46.8627], x: 1088, y: 430, rotulo: 'abaixo' },
+  ],
+  radares: [
+    { id: 35835, prefixo: '1000916', nome: 'Bacia do Alto Cotia', ll: [-23.6184, -46.878], x: 472, y: 232 },
+    { id: 35836, prefixo: '1000917', nome: 'Bacia do Baixo Cotia', ll: [-23.5319, -46.8704], x: 872, y: 158 },
   ],
   // vazão natural da Graça e da Isolina, no trecho que chega a cada uma
   valores: [
@@ -252,6 +291,7 @@ const rioGrande: Diagrama = {
     { tipo: 'eeab', prefixo: 'EEAB', nome: 'Rio Pequeno ¹', ll: [-23.7846, -46.4777], x: 300, y: 576, rotulo: 'abaixo' },
     { tipo: 'eeab', prefixo: 'EEAB', nome: 'Rio Grande', ll: [-23.7399, -46.4183], x: 707, y: 560, rotulo: 'abaixo' },
   ],
+  radares: [{ id: 35824, prefixo: '1000918', nome: 'Bacia do Rio Grande', ll: [-23.7131, -46.3933], x: 882, y: 372 }],
   notas: ['¹ Reversão do braço do Rio Pequeno (Billings) para o Res. Rio Grande.'],
 };
 
@@ -277,6 +317,12 @@ const rioClaro: Diagrama = {
     { tipo: 'posto', prefixo: 'Captação', nome: 'Poço Preto', ll: [-23.6477, -45.8715], x: 760, y: 170, rotulo: 'acima' },
     { tipo: 'eta', prefixo: 'ETA', nome: 'Casa Grande', ll: [-23.6436, -45.9469], x: 400, y: 340, rotulo: 'abaixo' },
     { tipo: 'eeab', prefixo: 'EEAB', nome: 'Guaratuba ¹', ll: [-23.6678, -45.897], x: 900, y: 560, rotulo: 'direita' },
+  ],
+  radares: [
+    { id: 35823, prefixo: '1000919', nome: 'Bacia do Ribeirão do Campo', ll: [-23.5666, -45.8657], x: 1052, y: 444, rotulo: 'esquerda' },
+    { id: 35828, prefixo: '1000922', nome: 'Bacia do Rio Claro', ll: [-23.6395, -45.8605], x: 1132, y: 128 },
+    { id: 35830, prefixo: '1000920', nome: 'Bacia do Rio Claro – Poço Preto', ll: [-23.637, -45.8699], x: 792, y: 222 },
+    { id: 35829, prefixo: '1000921', nome: 'Bacia do Guaratuba', ll: [-23.6621, -45.9052], x: 932, y: 372 },
   ],
   textos: [{ texto: 'Res. Ponte Nova (Alto Tietê) ²', x: 20, y: 192, ancora: 'start' }],
   notas: ['¹ Vertente marítima.', '² O Rio Claro segue para o Sistema Produtor Alto Tietê.'],
@@ -308,6 +354,7 @@ const saoLourenco: Diagrama = {
     { tipo: 'eeab', prefixo: 'EEAB', nome: 'São Lourenço', x: 762, y: 285, rotulo: 'direita' },
     { tipo: 'eta', prefixo: 'ETA', nome: 'Vargem Grande', x: 762, y: 130, rotulo: 'acima' },
   ],
+  radares: [{ id: 35846, prefixo: '1002721', nome: 'Sistema São Lourenço', ll: [-23.9345, -47.0912], x: 902, y: 342 }],
   notas: ['Defluente total = D1 (descarregada) + D2 (turbinada na UHE França).'],
 };
 
@@ -320,6 +367,9 @@ export const DIAGRAMAS_UNIFILARES: Record<string, Diagrama> = {
   'rio-claro': rioClaro,
   'sao-lourenco': saoLourenco,
 };
+
+/** Postos de radar (station_prefix_id do SIBH) de todos os diagramas: os únicos que a API consulta. */
+export const IDS_RADAR: ReadonlySet<number> = new Set(Object.values(DIAGRAMAS_UNIFILARES).flatMap((d) => (d.radares ?? []).map((r) => r.id)));
 
 /** Pares local:variável que um diagrama precisa (valores das ligações, dos nós e dos reservatórios). */
 export function paresDoDiagrama(d: Diagrama): string[] {

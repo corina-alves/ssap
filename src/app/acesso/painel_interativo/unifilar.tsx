@@ -5,7 +5,7 @@ import { paresDoDiagrama, VD, type Diagrama, type No } from '@/conteudo/diagrama
 import { BASES, type NomeBase } from './bases-mapa';
 import { DesenhoNoMapa } from './desenho-mapa';
 import { MapaUnifilar } from './mapa-unifilar';
-import { COR, ESTILO_LINHA, Ponto, Reservatorio, Rotulo, setas, TextoValor } from './simbolos-unifilar';
+import { COR, ESTILO_LINHA, Ponto, PontoRadar, Reservatorio, Rotulo, setas, SimboloRadar, TextoValor } from './simbolos-unifilar';
 import { COR_FAIXA, duracaoFluxo, texto, valorDe, type Modo, type ValoresSsd } from './valores-ssd';
 
 /**
@@ -97,6 +97,9 @@ export function DesenhoUnifilar({
       {(d.textos ?? []).map((t, i) => (
         <Rotulo key={i} t={t} />
       ))}
+      {(d.radares ?? []).map((r) => (
+        <PontoRadar key={r.id} r={r} valores={valores} data={data} modo={modo} />
+      ))}
       {d.nos.map((n, i) =>
         n.tipo === 'reservatorio' ? (
           <Reservatorio key={i} n={n} valores={valores} data={data} modo={modo} ativo={destaque === n.space} aoEscolher={aoEscolher} />
@@ -110,15 +113,16 @@ export function DesenhoUnifilar({
 
 // ---------------------------------------------------------------- com dados
 
-/** Valores do SSD de todos os campos do diagrama, na data (refeito a cada `tick`). */
+/** Valores do SSD de todos os campos do diagrama e a chuva por radar (SIBH), na data (refeito a cada `tick`). */
 function useValoresSsd(d: Diagrama, data: string, tick: number) {
   const [st, setSt] = useState<{ valores: ValoresSsd; carregando: boolean; erro?: string }>({ valores: {}, carregando: true });
   const pares = useMemo(() => paresDoDiagrama(d).join(','), [d]);
+  const radares = useMemo(() => (d.radares ?? []).map((r) => r.id).join(','), [d]);
 
   useEffect(() => {
     let vivo = true;
     setSt((s) => ({ valores: s.valores, carregando: true }));
-    fetch(`/api/acesso/painel_interativo/valores?data=${data}&p=${pares}&t=${tick}`)
+    fetch(`/api/acesso/painel_interativo/valores?data=${data}&p=${pares}${radares ? `&r=${radares}` : ''}&t=${tick}`)
       .then(async (r) => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         return ((await r.json()) as { valores: ValoresSsd }).valores;
@@ -130,7 +134,7 @@ function useValoresSsd(d: Diagrama, data: string, tick: number) {
     return () => {
       vivo = false;
     };
-  }, [pares, data, tick]);
+  }, [pares, radares, data, tick]);
 
   return st;
 }
@@ -157,7 +161,7 @@ const FAIXAS: [number, string][] = [
 ];
 
 /** Legenda; com mapa, o rio é a linha cheia pelo traçado real (desenho-mapa.tsx). */
-function Legenda({ nota, comMapa }: { nota: string; comMapa: boolean }) {
+function Legenda({ nota, comMapa, radar }: { nota: string; comMapa: boolean; radar: boolean }) {
   return (
     <div className="un-legenda" aria-label="Legenda">
       {comMapa ? (
@@ -220,6 +224,14 @@ function Legenda({ nota, comMapa }: { nota: string; comMapa: boolean }) {
         </svg>
         ETA
       </span>
+      {radar && (
+        <span>
+          <svg width="22" height="22" viewBox="-11 -11 22 22" aria-hidden>
+            <SimboloRadar />
+          </svg>
+          Chuva do dia por radar na bacia (SIBH, 00h–24h)
+        </span>
+      )}
       <span>
         Nº da represa: volume útil
         {FAIXAS.map(([p, t]) => (
@@ -309,7 +321,7 @@ export function DiagramaUnifilar({
           </aside>
         )}
       </div>
-      <Legenda nota={antigos ? `${NOTA_FONTE} · ${NOTA_ANTIGOS}` : NOTA_FONTE} comMapa={!!base} />
+      <Legenda nota={antigos ? `${NOTA_FONTE} · ${NOTA_ANTIGOS}` : NOTA_FONTE} comMapa={!!base} radar={!!d.radares?.length} />
       {d.notas?.length ? (
         <ul className="un-notas">
           {d.notas.map((n) => (

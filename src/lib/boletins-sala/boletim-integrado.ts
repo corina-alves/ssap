@@ -4,13 +4,15 @@ import { hojeSp } from '../integracoes/comum';
 import { buscarSibh, cotasAlerta, instante, medicoes, type Cotas, type Medicao, type Pedido } from '../integracoes/sibh-medicoes';
 import { mediasDiarias, PARAMETROS, type MediasDiarias, type Parametro } from '../integracoes/simqua';
 import { serie } from '../integracoes/ssd';
+import { combinarCotas, cotasDaPlanilha } from './cotas-planilha';
 import { dataIso, postosAtivos, SUBBACIAS, type Posto } from './rede-pluviometrica';
 
 /**
  * Boletins mensais do Alto Tietê feitos com a CETESB (porte de
  * C:\xampp_\htdocs\boletim_integrado): Chuva-Vazão, Mananciais e Exutórios.
  * Aqui ficam a configuração (postos, séries, pontos de qualidade) e a coleta
- * dos dados — SIBH (chuva, nível e vazão), SSD SP Águas (mananciais e
+ * dos dados — SIBH (chuva, nível, vazão e cotas, completadas pela planilha
+ * public/acesso/plan/Cotas_extravasamento.csv), SSD SP Águas (mananciais e
  * Billings/Pedreira) e CETESB/SIMQUA (qualidade). O que não tem fonte
  * automática (Pirapora e carga orgânica) é digitado no cadastro dos exutórios.
  * Nada é estimado: sem dado, o boletim mostra "sem dados".
@@ -32,6 +34,14 @@ export const ORDEM_SUBBACIAS = ['cabeceiras', 'cotia_guarapiranga', 'penha_pinhe
 /** Leitura diária de chuva acima disto (ou negativa) é descartada: contador acumulado ou sensor com defeito. */
 export const CHUVA_MAX_DIARIA_MM = 200;
 const INICIO_SERIE_SIBH = 2015;
+/** Histórico da chuva do mês: os 5 anos anteriores ao do boletim (pedido da equipe: leve de montar e de ler). */
+export const ANOS_HISTORICO = 5;
+
+/** Anos do histórico de um boletim: os ANOS_HISTORICO anteriores ao dele, a partir do início da série do SIBH. */
+export function anosHistorico(ano: number): number[] {
+  const ini = Math.max(INICIO_SERIE_SIBH, ano - ANOS_HISTORICO);
+  return Array.from({ length: Math.max(0, ano - ini) }, (_, i) => ini + i);
+}
 
 // --- Boletim Mananciais: séries diárias do SSD SP Águas (chuva, vazão natural, vazão defluente, volume útil %)
 export const MANANCIAIS: Record<string, { nome: string; titulo: string; chuva: number; qnat: number; qjus: number; volume: number }> = {
@@ -251,19 +261,29 @@ export async function chuvaSubbaciasMes(ano: number, mes: number): Promise<Chuva
   return l?.valor ?? null;
 }
 
-export type LinhaChuva = { slug: string; nome: string; atual: number | null; minima: number | null; media: number | null; maxima: number | null };
+export type LinhaChuva = {
+  slug: string;
+  nome: string;
+  atual: number | null;
+  /** Chuva do mesmo mês em cada ano do histórico (null: sem dado). */
+  anos: Record<number, number | null>;
+  minima: number | null;
+  media: number | null;
+  maxima: number | null;
+};
 
 /**
- * Linha da tabela de chuva de uma sub-bacia: o mês do boletim e a mínima, a
- * média e a máxima do mesmo mês em toda a série do SIBH (desde 2015).
+ * Linha da tabela de chuva de uma sub-bacia: o mês do boletim, o mesmo mês em
+ * cada ano do histórico e a mínima, a média e a máxima desses anos (os com dado).
  */
-export function linhaChuva(slug: string, atual: ChuvaMes | null, porAno: Map<number, ChuvaMes>): LinhaChuva {
-  const serie = [...porAno.values()].map((subs) => subs[slug]?.media).filter((v): v is number => v !== undefined);
+export function linhaChuva(slug: string, atual: ChuvaMes | null, porAno: Map<number, ChuvaMes>, anos: number[] = [...porAno.keys()].sort((a, b) => a - b)): LinhaChuva {
+  const doAno = Object.fromEntries(anos.map((a) => [a, porAno.get(a)?.[slug]?.media ?? null])) as Record<number, number | null>;
+  const v = Object.values(doAno).filter((x): x is number => x !== null);
   return {
-    slug, nome: SUBBACIAS[slug]!.replace(/[–-]/g, '/'), atual: atual?.[slug]?.media ?? null,
-    minima: serie.length ? Math.min(...serie) : null,
-    media: serie.length ? serie.reduce((a, b) => a + b, 0) / serie.length : null,
-    maxima: serie.length ? Math.max(...serie) : null,
+    slug, nome: SUBBACIAS[slug]!.replace(/[–-]/g, '/'), atual: atual?.[slug]?.media ?? null, anos: doAno,
+    minima: v.length ? Math.min(...v) : null,
+    media: v.length ? v.reduce((a, b) => a + b, 0) / v.length : null,
+    maxima: v.length ? Math.max(...v) : null,
   };
 }
 
@@ -274,7 +294,10 @@ export function linhaChuva(slug: string, atual: ChuvaMes | null, porAno: Map<num
 /** Leitura de 10 min: horário de Brasília ("AAAA-MM-DD HH:MM"), nível (m) e vazão (m³/s). */
 export type Leitura = { t: string; nivel: number | null; vazao: number | null };
 export type Estat = { media: number; maximo: number; minimo: number; quantidade: number };
-export type Permanencia = Record<'normal' | 'atencao' | 'alerta' | 'emergencia' | 'extravasamento', number>;
+export const FAIXAS_COTA = ['atencao', 'alerta', 'emergencia', 'extravasamento'] as const;
+export type Faixa = 'normal' | (typeof FAIXAS_COTA)[number];
+/** % das leituras em cada faixa; null = faixa sem cota cadastrada (não se aplica ao posto). */
+export type Permanencia = Record<Faixa, number | null>;
 
 /** Medições do SIBH (UTC, nível em cm) → leituras em metros e horário de Brasília, em ordem. */
 export function leituras(medidas: Medicao[]): Leitura[] {
@@ -288,23 +311,33 @@ export function leituras(medidas: Medicao[]): Leitura[] {
 const estat = (v: number[]): Estat | null =>
   v.length ? { media: v.reduce((a, b) => a + b, 0) / v.length, maximo: v.reduce((a, b) => Math.max(a, b)), minimo: v.reduce((a, b) => Math.min(a, b)), quantidade: v.length } : null;
 
-/** Estatísticas do mês: nível, vazão (quando o posto mede) e % do tempo em cada faixa das cotas de referência. */
+/**
+ * Estatísticas do mês: nível, vazão (quando o posto mede) e % do tempo em cada
+ * faixa das cotas de referência. Com só algumas cotas (muitos postos têm só a de
+ * extravasamento), a leitura cai na faixa da maior cota alcançada; abaixo de
+ * todas, normal; as faixas sem cota ficam null.
+ */
 export function estatisticasNivel(lista: Leitura[], cotas: Cotas | null): { nivel: Estat | null; vazao: Estat | null; permanencia: Permanencia | null } {
   const niveis = lista.map((l) => l.nivel).filter((v): v is number => v !== null);
   const vazoes = lista.map((l) => l.vazao).filter((v): v is number => v !== null);
+  const limites = FAIXAS_COTA.flatMap((k) => (cotas?.[k] == null ? [] : [[k, cotas[k]!] as const])).reverse();
   let permanencia: Permanencia | null = null;
-  if (niveis.length && cotas && cotas.atencao !== null) {
-    const cont: Permanencia = { normal: 0, atencao: 0, alerta: 0, emergencia: 0, extravasamento: 0 };
-    for (const n of niveis) {
-      if (cotas.extravasamento !== null && n >= cotas.extravasamento) cont.extravasamento++;
-      else if (cotas.emergencia !== null && n >= cotas.emergencia) cont.emergencia++;
-      else if (cotas.alerta !== null && n >= cotas.alerta) cont.alerta++;
-      else if (n >= cotas.atencao) cont.atencao++;
-      else cont.normal++;
-    }
-    permanencia = Object.fromEntries(Object.entries(cont).map(([k, v]) => [k, (v / niveis.length) * 100])) as Permanencia;
+  if (niveis.length && limites.length) {
+    const cont: Record<Faixa, number> = { normal: 0, atencao: 0, alerta: 0, emergencia: 0, extravasamento: 0 };
+    for (const n of niveis) cont[limites.find(([, c]) => n >= c)?.[0] ?? 'normal']++;
+    permanencia = Object.fromEntries(
+      (['normal', ...FAIXAS_COTA] as Faixa[]).map((k) => [k, k === 'normal' || cotas?.[k] != null ? (cont[k] / niveis.length) * 100 : null]),
+    ) as Permanencia;
   }
   return { nivel: estat(niveis), vazao: estat(vazoes), permanencia };
+}
+
+/** Faixas que geram a página do hidrograma do posto (o posto registrou alerta, emergência ou extravasamento no mês). */
+export const FAIXAS_DESTAQUE = ['extravasamento', 'emergencia', 'alerta'] as const;
+
+/** A faixa mais grave entre as de destaque em que o posto ficou algum tempo no mês, ou null. */
+export function faixaDestaque(p: Permanencia | null): (typeof FAIXAS_DESTAQUE)[number] | null {
+  return FAIXAS_DESTAQUE.find((k) => (p?.[k] ?? 0) > 0) ?? null;
 }
 
 export type ResumoChuva = { diario: Record<string, number>; acumulada: number | null; maxima_diaria: number | null; dias_com_chuva: number; media_dias_com_chuva: number | null };
@@ -334,18 +367,23 @@ export type PostoFlu = {
   cotas: Cotas | null;
 };
 
+/** Hidrograma de um posto: o código da tabela, o título da página e a chuva do pluviômetro do mesmo local. */
+export type Hidrograma = { codigo: string; titulo: string; chuva: ResumoChuva };
+
 export type DadosChuvaVazao = {
-  /** `periodo`: anos da série usados na mínima, média e máxima (ex.: "2015 a 2026"). */
-  chuva: { linhas: LinhaChuva[]; periodo: string };
+  /** `anos`: anos do histórico (colunas da tabela); `periodo`: os que tiveram dado, para a mínima, a média e a máxima (ex.: "2021 a 2025"). */
+  chuva: { linhas: LinhaChuva[]; anos: number[]; periodo: string };
   fluviometria: PostoFlu[];
-  hidrogramas: { codigo: string; titulo: string; chuva: ResumoChuva }[];
+  hidrogramas: Hidrograma[];
+  /** Postos da tabela que registraram alerta, emergência ou extravasamento (fora dos hidrogramas fixos), do mais grave ao menos. */
+  destaques: (Hidrograma & { faixa: (typeof FAIXAS_DESTAQUE)[number] })[];
   mapa: { pluviometria: Posto[]; fluviometria: Posto[] };
 };
 
 export async function dadosChuvaVazao(ano: number, mes: number, c: Coleta): Promise<DadosChuvaVazao> {
   const hoje = hojeSp();
-  const anos: number[] = [];
-  for (let a = INICIO_SERIE_SIBH; a <= Number(hoje.slice(0, 4)); a++) if (mesFechado(a, mes)) anos.push(a);
+  // histórico: o mesmo mês nos 5 anos anteriores ao do boletim (como no modelo: dezembro/2024 × anos anteriores)
+  const anos = anosHistorico(ano).filter((a) => a <= Number(hoje.slice(0, 4)) && mesFechado(a, mes));
 
   const [pluviometros, fluviometros, atual, ...historico] = await Promise.all([
     noPrazo(c, 'cadastro de pluviômetros do SIBH', postosSibh(2)),
@@ -356,7 +394,7 @@ export async function dadosChuvaVazao(ano: number, mes: number, c: Coleta): Prom
   const porAno = new Map<number, ChuvaMes>();
   anos.forEach((a, i) => historico[i] && porAno.set(a, historico[i]!));
   const rotulo = (l: number[]) => (l.length ? `${l[0]} a ${l.at(-1)}` : '—');
-  const comDado = [...porAno.keys()];
+  const comDado = [...porAno.keys()].sort((a, b) => a - b);
 
   // Postos fluviométricos da tabela e pluviômetros dos hidrogramas
   const codigos = FLUVIOMETRIA_TABELA.flatMap(([sub, lista]) => lista.map((codigo) => ({ sub, codigo })));
@@ -367,7 +405,8 @@ export async function dadosChuvaVazao(ano: number, mes: number, c: Coleta): Prom
   const pluvHidro = HIDROGRAMAS.map((h) => (pluviometros ? postoPorCodigo(pluviometros, h.codigo) : null));
   const idsPluv = pluvHidro.map((p) => Number(p?.id_sibh)).filter((n) => Number.isInteger(n) && n > 0);
 
-  const [cotas, chuvaPostos, ...porPosto] = await Promise.all([
+  const [planilha, cotas, chuvaPostos, ...porPosto] = await Promise.all([
+    cotasDaPlanilha(6),
     ids.length ? noPrazo(c, 'cotas de referência (SIBH)', cotasAlerta('sibh_boletim', ids)) : null,
     idsPluv.length
       ? noPrazo(c, 'chuva dos postos dos hidrogramas (SIBH)', medicoes('sibh_boletim', { [`chuva-hidro:${anoMes(ano, mes)}`]: { ids: idsPluv, ini, fim, grupo: 'day', ttlSeg: ttlMes(ano, mes), timeoutMs: 120_000 } }).then((r) => Object.values(r)[0] ?? null))
@@ -381,17 +420,45 @@ export async function dadosChuvaVazao(ano: number, mes: number, c: Coleta): Prom
   const leiturasPorId = new Map(ids.map((id, i) => [String(id), porPosto[i] ? leituras(porPosto[i]!) : null]));
   const diario = chuvaDiaria(chuvaPostos ?? [], ano, mes);
 
+  // Cotas: as do SIBH, completadas pela planilha (pelo prefixo do SIBH)
+  const fluviometria: PostoFlu[] = localizados.map((x) => ({
+    ...x,
+    leituras: x.posto ? (leiturasPorId.get(x.posto.id_sibh) ?? null) : null,
+    cotas: x.posto ? combinarCotas(cotas?.[x.posto.id_sibh] ?? null, planilha.get(x.posto.codigo.toUpperCase()) ?? null) : null,
+  }));
+
+  // Postos que registraram alerta, emergência ou extravasamento: uma página de hidrograma cada,
+  // com a chuva do pluviômetro do mesmo local (quando houver)
+  const fixos = new Set(HIDROGRAMAS.map((h) => h.codigo));
+  const ordemFaixa = (f: (typeof FAIXAS_DESTAQUE)[number]) => FAIXAS_DESTAQUE.indexOf(f);
+  const candidatos = fluviometria
+    .flatMap((p) => {
+      if (!p.posto || !p.leituras || fixos.has(p.codigo)) return [];
+      const faixa = faixaDestaque(estatisticasNivel(p.leituras, p.cotas).permanencia);
+      return faixa ? [{ codigo: p.codigo, titulo: p.posto.nome, faixa, pluv: pluviometros ? postoPorCodigo(pluviometros, p.codigo) : null }] : [];
+    })
+    .sort((a, b) => ordemFaixa(a.faixa) - ordemFaixa(b.faixa));
+  const idsDestaque = [...new Set(candidatos.map((x) => Number(x.pluv?.id_sibh)).filter((n) => Number.isInteger(n) && n > 0))];
+  const chuvaDestaque = idsDestaque.length
+    ? await noPrazo(
+        c,
+        'chuva dos postos em alerta (SIBH)',
+        medicoes('sibh_boletim', { [`chuva-destaque:${anoMes(ano, mes)}:${idsDestaque.join('-')}`]: { ids: idsDestaque, ini, fim, grupo: 'day', ttlSeg: ttlMes(ano, mes), timeoutMs: 120_000 } }).then(
+          (r) => Object.values(r)[0] ?? null,
+        ),
+      )
+    : null;
+  const diarioDestaque = chuvaDiaria(chuvaDestaque ?? [], ano, mes);
+
   return {
     chuva: {
-      linhas: ORDEM_SUBBACIAS.map((slug) => linhaChuva(slug, atual, porAno)),
+      linhas: ORDEM_SUBBACIAS.map((slug) => linhaChuva(slug, atual, porAno, anos)),
+      anos,
       periodo: rotulo(comDado),
     },
-    fluviometria: localizados.map((x) => ({
-      ...x,
-      leituras: x.posto ? (leiturasPorId.get(x.posto.id_sibh) ?? null) : null,
-      cotas: (x.posto && cotas?.[x.posto.id_sibh]) || null,
-    })),
+    fluviometria,
     hidrogramas: HIDROGRAMAS.map((h, i) => ({ ...h, chuva: resumoChuva(pluvHidro[i] ? diario.get(pluvHidro[i]!.id_sibh) : undefined) })),
+    destaques: candidatos.map(({ codigo, titulo, faixa, pluv }) => ({ codigo, titulo, faixa, chuva: resumoChuva(pluv ? diarioDestaque.get(pluv.id_sibh) : undefined) })),
     mapa: { pluviometria: pluviometros ?? [], fluviometria: fluviometros ?? [] },
   };
 }

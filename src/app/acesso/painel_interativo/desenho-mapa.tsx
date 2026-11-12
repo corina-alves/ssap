@@ -2,8 +2,8 @@
 
 import { memo, useMemo } from 'react';
 import type { Ancora, Diagrama, Ligacao, No, Valor } from '@/conteudo/diagramas-unifilares';
-import { afastar, arrumarCartoes, caixaComNome, type Escala, type ItemCartao, type NaLinha, type PlanoMapa, type Pt } from './posicoes-mapa';
-import { COR, Ponto, Reservatorio } from './simbolos-unifilar';
+import { afastar, arrumarCartoes, caixaComNome, caixaRadar, type Escala, type ItemCartao, type NaLinha, type PlanoMapa, type Pt } from './posicoes-mapa';
+import { COR, Ponto, PontoRadar, Reservatorio } from './simbolos-unifilar';
 import { duracaoFluxo, texto, valorDe, type Modo, type ValoresSsd } from './valores-ssd';
 
 /**
@@ -56,12 +56,16 @@ function itemTexto(chave: string, em: NaLinha, linhas: Linha[], ancora: Ancora |
   return { chave, linhas, x, y, w, h, s, p: em.p, pref: [x, y], longe: false };
 }
 
-/** Os símbolos (com o deslocamento, se saíram do ponto real), as guias e os textos numa escala. */
+/**
+ * Os símbolos (com o deslocamento, se saíram do ponto real), as guias e os
+ * textos numa escala. `lugares`: os nós e, depois deles, os postos de radar.
+ */
 function montar(d: Diagrama, esc: Escala, s: number, valores: ValoresSsd, data: string, modo: Modo) {
   // símbolos no ponto real; os que se cobririam saem o mínimo, com uma guia até ele
-  const caixas = d.nos.map(caixaComNome);
-  const lugares = afastar(esc.nos, caixas, s);
-  const guias = esc.nos.flatMap((p, i): [Pt, Pt][] => (Math.hypot(lugares[i]![0] - p[0], lugares[i]![1] - p[1]) > 3 ? [[p, lugares[i]!]] : []));
+  const reais = [...esc.nos, ...esc.radares];
+  const caixas = [...d.nos.map(caixaComNome), ...(d.radares ?? []).map(caixaRadar)];
+  const lugares = afastar(reais, caixas, s);
+  const guias = reais.flatMap((p, i): [Pt, Pt][] => (Math.hypot(lugares[i]![0] - p[0], lugares[i]![1] - p[1]) > 3 ? [[p, lugares[i]!]] : []));
   const fixos = lugares.map((p, i): [number, number, number, number] => {
     const c = caixas[i]!;
     return [p[0] + s * c[0], p[1] + s * c[1], s * (c[2] - c[0]), s * (c[3] - c[1])];
@@ -83,7 +87,7 @@ function montar(d: Diagrama, esc: Escala, s: number, valores: ValoresSsd, data: 
   const ancorasTextos = (d.textos ?? []).filter((t) => !t.semMapa);
   esc.textos.forEach((t, k) => itens.push(itemTexto(`t${k}`, t.em, [{ t: t.texto, ...NOME }], ancorasTextos[k]?.ancora, s)));
 
-  const onde = arrumarCartoes(itens, esc.nos, esc.linhas, fixos);
+  const onde = arrumarCartoes(itens, reais, esc.linhas, fixos);
   return { lugares, guias, textos: itens.map((t, i) => ({ ...t, x: onde[i]![0], y: onde[i]![1] })) };
 }
 
@@ -254,6 +258,14 @@ const Conteudo = memo(function Conteudo({
             ) : (
               <Ponto n={aqui} valores={valores} data={data} modo={modo} vazao={aqui.tipo === 'eeab' || aqui.tipo === 'uhe' ? vazaoNo(n as typeof aqui) : null} />
             )}
+          </g>
+        );
+      })}
+      {(d.radares ?? []).map((r, k) => {
+        const [x, y] = lugares[d.nos.length + k]!;
+        return (
+          <g key={r.id} transform={`translate(${x.toFixed(1)} ${y.toFixed(1)}) scale(${s})`}>
+            <PontoRadar r={{ ...r, x: 0, y: 0 }} valores={valores} data={data} modo={modo} />
           </g>
         );
       })}

@@ -1,5 +1,5 @@
 import { lembrar } from './cache';
-import { buscarJson } from './http';
+import { buscarJson, ErroFonte } from './http';
 
 /**
  * Medições e cotas do SIBH para os boletins das salas (porte de
@@ -45,7 +45,23 @@ async function comVaga<T>(fn: () => Promise<T>): Promise<T> {
   }
 }
 
-const sibh = (url: string, timeoutMs = TIMEOUT_MS) => comVaga(() => buscarJson(url, { timeoutMs }));
+// Com várias consultas ao mesmo tempo, o SIBH às vezes recusa na hora (HTTP 502, em menos de 1 s;
+// medido em 11/11/2026: 53 recusas na montagem de um boletim mensal). Recusa passageira: tenta
+// de novo, fora da vaga, com espera crescente. Sem isso, um lote recusado deixava o mês sem chuva.
+const TRANSITORIOS = new Set([502, 503, 504]);
+const TENTATIVAS = 4;
+
+async function sibh(url: string, timeoutMs = TIMEOUT_MS): Promise<unknown> {
+  for (let tentativa = 1; ; tentativa++) {
+    try {
+      return await comVaga(() => buscarJson(url, { timeoutMs }));
+    } catch (e) {
+      const status = e instanceof ErroFonte ? e.status : null;
+      if (tentativa >= TENTATIVAS || status === null || !TRANSITORIOS.has(status)) throw e;
+      await new Promise((ok) => setTimeout(ok, 1500 * tentativa + Math.random() * 1000));
+    }
+  }
+}
 
 /** GET na API v2 do SIBH (caminho depois de /api/v2/), respeitando o limite de conexões. */
 export const buscarSibh = (caminho: string, timeoutMs = 40_000) => sibh(SIBH + caminho, timeoutMs);

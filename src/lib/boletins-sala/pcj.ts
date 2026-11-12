@@ -1,11 +1,18 @@
 import mediasIniciais from '@/conteudo/pcj-medias.json';
 import postosJson from '@/conteudo/pcj-postos.json';
+import { query } from '../db';
 import { hojeSp, RE_DATA } from '../integracoes/comum';
 import { cotasAlerta, leitura, mediaVazao, medicoes, somar, type Pedido } from '../integracoes/sibh-medicoes';
+import { erroSeguro, log } from '../log';
 
 /**
  * Dados do Boletim Diário PCJ (porte de acesso/boletim_pcj/dados.php), a partir
  * da API do SIBH. "7h" = 07:00 de Brasília.
+ *
+ * Chuva dos meses fechados: vem primeiro do banco, da chuva diária que a coleta
+ * do Painel de Climatologia guarda (clima_telemetria_dia, o mesmo SIBH). Só o
+ * mês que o banco não cobre inteiro é pedido ao SIBH, onde 10 postos × 1 mês
+ * podem levar mais de 20 s e o mês ficava com "*".
  *
  * Postos: src/conteudo/pcj-postos.json (config/postos.php do PHP).
  * Médias históricas: as do arquivo pcj-medias.json, até alguém usar "Salvar
@@ -31,6 +38,48 @@ const local = (ymd: string, hora = 0, minuto = 0) =>
   Date.parse(`${ymd}T${String(hora).padStart(2, '0')}:${String(minuto).padStart(2, '0')}:00-03:00`);
 
 const arred = (v: number | null | undefined, casas = 2) => (v == null ? null : Math.round(v * 10 ** casas) / 10 ** casas);
+
+/** Dias AAAA-MM-DD do mês `m` (1 a 12). */
+export function diasDoMes(ano: number, m: number): string[] {
+  const n = new Date(Date.UTC(ano, m, 0)).getUTCDate();
+  const mm = String(m).padStart(2, '0');
+  return Array.from({ length: n }, (_, i) => `${ano}-${mm}-${String(i + 1).padStart(2, '0')}`);
+}
+
+/**
+ * Chuva diária já guardada no banco: `dias` são os dias de Brasília que a coleta
+ * consultou no SIBH; `chuva[dia][id]`, o total do posto no dia. Posto sem linha
+ * num dia consultado não teve registro, como na soma do SIBH.
+ */
+export type ChuvaGuardada = { dias: Set<string>; chuva: Record<string, Record<string, number>> };
+
+/** Total de cada posto nos dias pedidos, ou null se a coleta não cobriu todos eles. */
+export function totalGuardado(g: ChuvaGuardada, dias: string[]): Record<string, number> | null {
+  if (!dias.length || !dias.every((d) => g.dias.has(d))) return null;
+  const s: Record<string, number> = {};
+  for (const d of dias) for (const [id, v] of Object.entries(g.chuva[d] ?? {})) s[id] = (s[id] ?? 0) + v;
+  return s;
+}
+
+/** Chuva diária dos postos no banco, de `ini` até antes de `fim`. Sem banco: vazio (tudo vai ao SIBH). */
+async function chuvaGuardada(ids: number[], ini: string, fim: string): Promise<ChuvaGuardada> {
+  const g: ChuvaGuardada = { dias: new Set(), chuva: {} };
+  if (fim <= ini) return g;
+  try {
+    const [dias, linhas] = await Promise.all([
+      query<{ dia: string }>('SELECT dia::text AS dia FROM clima_telemetria_coleta WHERE dia >= $1 AND dia < $2', [ini, fim]),
+      query<{ posto_id: number; dia: string; chuva: string }>(
+        'SELECT posto_id, dia::text AS dia, chuva FROM clima_telemetria_dia WHERE posto_id = ANY($1::int[]) AND dia >= $2 AND dia < $3',
+        [ids, ini, fim],
+      ),
+    ]);
+    for (const { dia } of dias) g.dias.add(dia);
+    for (const l of linhas) (g.chuva[l.dia] ??= {})[String(l.posto_id)] = Number(l.chuva);
+  } catch (e) {
+    log.warn('pcj_chuva_banco_falhou', { erro: erroSeguro(e) });
+  }
+  return g;
+}
 
 /** Mesmo dia do ano anterior (29/02 vira 01/03, como o "-1 year" do PHP). */
 function anoAnterior(ymd: string): string {
@@ -71,7 +120,15 @@ export async function dadosPcj(dataPedida: string, medias: Medias) {
   const ano = dia.slice(0, 4);
   const inicioDoMes = (m: number) => local(`${ano}-${String(m).padStart(2, '0')}-01`);
   const chaveMes = (m: number) => `plu_mes_${ano}${String(m).padStart(2, '0')}`;
+  // Meses fechados que o banco cobre inteiros não vão ao SIBH.
+  const guardada = mesesAno.length ? await chuvaGuardada(idsPlu, `${ano}-01-01`, `${ano}-${String(mes).padStart(2, '0')}-01`) : null;
+  const doBanco = new Map<number, Record<string, number>>();
   for (const m of mesesAno) {
+    const t = guardada && totalGuardado(guardada, diasDoMes(Number(ano), m));
+    if (t) doBanco.set(m, t);
+  }
+  for (const m of mesesAno) {
+    if (doBanco.has(m)) continue;
     const fim = m === mes - 1 ? iniMes : inicioDoMes(m + 1);
     // Nos 3 primeiros dias depois do fechamento o total do mês ainda pode mudar.
     // Limite de 20 s: às vezes o SIBH demora na primeira consulta de um mês
@@ -94,6 +151,8 @@ export async function dadosPcj(dataPedida: string, medias: Medias) {
   const chuva24 = somar(pluHora, h7Ontem, h7);
   const chuvaMes = somar(pluHora, iniMes, h7);
   const porMes = mesesAno.map((m) => {
+    const banco = doBanco.get(m);
+    if (banco) return banco;
     const soma: Record<string, number> = {};
     for (const [id, , v] of med[chaveMes(m)] ?? []) if (v !== null) soma[id] = (soma[id] ?? 0) + v;
     return soma;
@@ -129,6 +188,8 @@ export async function dadosPcj(dataPedida: string, medias: Medias) {
     ano: Number(dia.slice(0, 4)),
     data_ano_anterior: diaAnoAnt,
     meses_fechados: mesesAno,
+    /** meses fechados cuja chuva veio do banco (coleta da climatologia), não do SIBH */
+    meses_banco: [...doBanco.keys()],
     chuva,
     fluviometria,
     cotas: POSTOS.cotas.map((p) => ({ mapa: p.mapa, nome: p.nome, codigo: p.codigo, orto: !!p.orto, ...(cotas?.[p.id] ?? semCota) })),

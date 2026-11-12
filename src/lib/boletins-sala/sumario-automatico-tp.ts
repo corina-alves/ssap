@@ -4,7 +4,6 @@ import {
   ESTACOES,
   GRADE_PREVISAO_RMSP,
   MAPA_PLANILHA,
-  OFFSET_IGG,
   RMSP_COD_IBGE,
   vazaoPenha,
   volumeUtil,
@@ -13,7 +12,7 @@ import {
 import { query } from '../db';
 import { lembrar, TTL } from '../integracoes/cache';
 import { comoDado, hojeSp, somarDias, type Dado } from '../integracoes/comum';
-import { planilhaEmae } from '../integracoes/emae';
+import { emaeSaisp, instanteDaPosicao, linhaPreenchida, numeroPlanilha, slotsHorarios } from '../integracoes/emae-saisp';
 import { arred, buscarJson, numero } from '../integracoes/http';
 import { buscarSibh, cotasAlerta, instante, medicoes, type Cotas, type Medicao } from '../integracoes/sibh-medicoes';
 import { erroSeguro, log } from '../log';
@@ -23,7 +22,7 @@ import { erroSeguro, log } from '../log';
  * sumário tradicional (que não muda), com os dados buscados no servidor:
  *   SIBH        níveis, cotas de referência, comportas e chuva da RMSP
  *   Open-Meteo  previsão de chuva nas próximas 24 h na RMSP
- *   EMAE        planilha horária das estruturas (OneDrive, via Microsoft Graph)
+ *   EMAE        dados horários das estruturas no SAISP (layout da planilha da EMAE)
  * As leituras das 07h ficam em sumario_tp_leituras (comparação ontem × hoje).
  * Cada fonte falha sozinha: a página mostra o que as outras trouxeram.
  */
@@ -304,76 +303,102 @@ export type Estrutura = {
 };
 
 export type Emae = {
-  /** Hora (0–23) da última linha preenchida da planilha. */
+  /** Hora (0–23) e instante da leitura mostrada: a última hora já lançada no dia operacional. */
   hora: number | null;
+  lidoEm: number | null;
+  /** Dia operacional dos dados (AAAA-MM-DD): antes de a EMAE lançar as 07h de hoje, o anterior. */
+  dia: string;
   estruturas: Record<string, Estrutura>;
   operacao: { retiro: string | null; usinaSp: string | null; pedreira: string | null };
 };
 
-const numeroPlanilha = (t: string | undefined) => {
-  const s = String(t ?? '').trim().replace(',', '.');
-  return /^-?\d+(\.\d+)?$/.test(s) ? Number(s) : null;
-};
-
-/**
- * Linhas horárias da planilha, na ordem do dia (07h … 24h, 01h … 07h): hora na
- * 1ª coluna e ao menos um valor numérico (a mesma regra do CSV do sumário tradicional).
- */
-export function linhasHorarias(linhas: string[][]): { hora: number; celulas: string[] }[] {
-  return linhas.flatMap((l) => {
-    const h = String(l[0] ?? '').trim();
-    if (!/^\d{1,2}(\.0+)?$/.test(h) || !l.slice(1, 30).some((c) => numeroPlanilha(c) !== null)) return [];
-    return [{ hora: Number(h) % 24, celulas: l }];
-  });
-}
-
 /** Regras da situação operacional, as mesmas do sumário tradicional. */
 const statusBomba = (q: number | null) => (q === null || q > 0 ? null : q < 0 ? 'Bombeamento ligado' : 'Bombeamento desligado');
+// Usina São Paulo (Traição, vazão de Pinheiros Inferior/Superior): negativa → ligado; zero ou positiva → desligado
+const statusUsinaSaoPaulo = (q: number | null) => (q === null ? null : q < 0 ? 'Bombeamento ligado' : 'Bombeamento desligado');
 const statusRetiro = (q: number | null) => (q === null ? null : q !== 0 ? 'Parcialmente aberta' : 'Totalmente fechada');
 
-export async function emae(ref: Referencias): Promise<Dado<Emae>> {
-  const p = await planilhaEmae();
-  if (!p.ok) return p;
-  const horas = linhasHorarias(p.dados);
-  const atual = horas.at(-1);
-  if (!atual) return { ok: false, fonte: p.fonte, mensagem: 'A planilha da EMAE ainda não tem leituras hoje.' };
-  // A 1ª linha das 07h é a abertura do dia operacional (a última 07h, se houver, já é a do dia seguinte).
-  const linha07 = horas.find((h) => h.hora === 7) ?? null;
-  const hist = await historico07('emae', [ref.ontem, ref.dia]);
+const FONTE_EMAE = 'EMAE (SAISP)';
+const ymdDeDmy = (dmy: string) => `${dmy.slice(6, 10)}-${dmy.slice(3, 5)}-${dmy.slice(0, 2)}`;
 
+/**
+ * Estruturas da EMAE pelo SAISP (src/lib/integracoes/emae-saisp.ts): a cota da
+ * última hora lançada, o movimento desde as 07h e a variação de 24 h (07h do dia
+ * − 07h do dia anterior), com a diferença de referencial de cada estrutura.
+ */
+export async function emae(ref: Referencias): Promise<Dado<Emae>> {
+  const p = await emaeSaisp('', ref.agora);
+  if (!p.ok) return { ok: false, fonte: FONTE_EMAE, mensagem: `Dados da EMAE no SAISP indisponíveis: ${p.erro}` };
+  const dia = ymdDeDmy(p.aba);
+  const ontem = somarDias(dia, -1);
+  const slots = slotsHorarios(p.linhas);
+  const anterior = slotsHorarios(p.linhas_anterior);
+  const posicao = slots.map(linhaPreenchida).lastIndexOf(true);
+  if (posicao < 0) return { ok: false, fonte: FONTE_EMAE, mensagem: 'A EMAE ainda não lançou leituras no SAISP hoje.' };
+  const atual = slots[posicao]!;
+  const linha07 = linhaPreenchida(slots[0]) ? slots[0]! : null;
+  const linha07Ontem = linhaPreenchida(anterior[0]) ? anterior[0]! : null;
+  const hist = await historico07('emae', [ontem, dia]);
+
+  const cotaIgg = (l: string[] | null, m: (typeof MAPA_PLANILHA)[number]) => {
+    const v = l ? numeroPlanilha(l[m.cota]) : null;
+    return v === null ? null : arred(v + m.igg, 2);
+  };
   const estruturas: Record<string, Estrutura> = {};
   const lidas07: Leitura07[] = [];
   for (const m of MAPA_PLANILHA) {
-    const bruta = numeroPlanilha(atual.celulas[m.cota]);
-    const bruta07 = linha07 ? numeroPlanilha(linha07.celulas[m.cota]) : null;
-    const cota = bruta === null ? null : arred(bruta + OFFSET_IGG, 2);
-    const cota07 = bruta07 === null ? null : arred(bruta07 + OFFSET_IGG, 2);
-    const vazao = m.vazao === null ? null : numeroPlanilha(atual.celulas[m.vazao]);
-    if (cota07 !== null) lidas07.push({ ponto: m.nome, nivel: cota07, vazao: m.vazao === null || !linha07 ? null : numeroPlanilha(linha07.celulas[m.vazao]), lidoEm: ref.t07 });
+    const bruta = numeroPlanilha(atual[m.cota]);
+    const cota = cotaIgg(atual, m);
+    const lida07 = cotaIgg(linha07, m);
+    const cota07 = lida07 ?? hist.get(`${dia}|${m.nome}`)?.nivel ?? null;
+    const cota07Ontem = cotaIgg(linha07Ontem, m) ?? hist.get(`${ontem}|${m.nome}`)?.nivel ?? null;
+    if (lida07 !== null) {
+      lidas07.push({ ponto: m.nome, nivel: lida07, vazao: m.vazao === null ? null : numeroPlanilha(linha07![m.vazao]), lidoEm: instanteDaPosicao(p.aba, 0) });
+    }
     estruturas[m.nome] = {
       nome: m.nome,
       cota,
       volumePct: m.volumeUtil && bruta !== null ? volumeUtil(m.volumeUtil, bruta) : null,
-      vazao,
+      vazao: m.vazao === null ? null : numeroPlanilha(atual[m.vazao]),
       desde07: dif(cota, cota07),
-      variacao24h: dif(cota07 ?? hist.get(`${ref.dia}|${m.nome}`)?.nivel ?? null, hist.get(`${ref.ontem}|${m.nome}`)?.nivel ?? null),
+      variacao24h: dif(cota07, cota07Ontem),
     };
   }
-  await gravar07('emae', ref.dia, lidas07, hist);
+  await gravar07('emae', dia, lidas07, hist);
 
   const q = (nome: string) => estruturas[nome]?.vazao ?? null;
+  const lidoEm = instanteDaPosicao(p.aba, posicao);
   return {
-    ...p,
+    ok: true,
+    fonte: FONTE_EMAE,
+    obtidoEm: new Date(),
+    desatualizado: p.desatualizado,
     dados: {
-      hora: atual.hora,
+      hora: Number.isNaN(lidoEm) ? null : Number(fmtHora.format(lidoEm)),
+      lidoEm: Number.isNaN(lidoEm) ? null : lidoEm,
+      dia,
       estruturas,
-      operacao: { retiro: statusRetiro(q('Estrutura de Retiro')), usinaSp: statusBomba(q('Pinheiros Inferior')), pedreira: statusBomba(q('Pedreira')) },
+      operacao: {
+        retiro: statusRetiro(q('Estrutura de Retiro')),
+        usinaSp: statusUsinaSaoPaulo(q('Pinheiros Inferior') ?? q('Pinheiros Superior')),
+        pedreira: statusBomba(q('Pedreira')),
+      },
     },
   };
 }
 
 /** Vazão da Barragem da Penha pela curva: nível de montante atual × comportas abertas. */
 export const vazaoBarragemPenha = (nivelMontante: number | null, c: Comportas['penha']) => (c ? vazaoPenha(nivelMontante, c.abertas) : null);
+
+/** Situação das comportas da Barragem Móvel, nos termos do sumário tradicional (uma linha por grupo). */
+export function textoMovel(m: NonNullable<Comportas['movel']>): string[] {
+  const { superficie: s, fundo: f } = m;
+  if (f.total > 0 && f.abertas === f.total) return ['Totalmente aberta'];
+  const linha1 = s.abertas === s.total ? `${s.abertas} comportas de superfície abertas operando na normalidade` : `${s.abertas} de ${s.total} comportas de superfície abertas`;
+  if (!f.total) return [linha1];
+  const fechadas = f.total - f.abertas;
+  return [linha1, fechadas === f.total ? `${fechadas} comportas de fundo fechadas` : `${f.abertas} de ${f.total} comportas de fundo abertas`];
+}
 
 // ---------------------------------------------------------------- coleta em segundo plano
 

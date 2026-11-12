@@ -99,10 +99,14 @@ for (const pasta of ['boletim_pcj', 'boletim_paraiba']) {
   const publico = join(RAIZ, 'public', 'acesso', pasta);
   mkdirSync(join(publico, 'img'), { recursive: true });
   cpSync(join(origem, 'img'), join(publico, 'img'), { recursive: true });
-  copyFileSync(join(origem, 'boletim.css'), join(publico, 'boletim.css'));
-  // No PHP a página chamava "dados" (dados.php na mesma pasta); aqui a rota fica em /api.
-  const js = readFileSync(join(origem, 'boletim.js'), 'utf8').replace("fetch('dados'", `fetch('/api/acesso/${pasta}/dados'`);
-  writeFileSync(join(publico, 'boletim.js'), js);
+  // O CSS e o script do PCJ passaram a ser mantidos aqui (12/11/2026: letra das
+  // tabelas ajustada à página, posto numa linha): não voltam à cópia do PHP.
+  if (pasta !== 'boletim_pcj') {
+    copyFileSync(join(origem, 'boletim.css'), join(publico, 'boletim.css'));
+    // No PHP a página chamava "dados" (dados.php na mesma pasta); aqui a rota fica em /api.
+    const js = readFileSync(join(origem, 'boletim.js'), 'utf8').replace("fetch('dados'", `fetch('/api/acesso/${pasta}/dados'`);
+    writeFileSync(join(publico, 'boletim.js'), js);
+  }
 
   writeFileSync(
     join(destino, `${pasta}.ts`),
@@ -127,14 +131,17 @@ for (const a of ['estilo', 'protocolo_escassez']) {
 // Sumários Executivos de Cheias (acesso/sumario_executivo_cheias): o HTML
 // original vai inteiro (só mudam os endereços que ele chama) e é servido pela rota depois do login;
 // imagens e contornos (sem dado restrito) ficam em public/acesso/sumario_executivo_cheias/.
+// O do Tietê-Pinheiros vem do SSSP_limpo, que tem os dados da EMAE pelo SAISP (emae_saisp.php).
+const SUMARIO_ORIGEM = { tiete_pinheiros: 'C:/xampp_/htdocs/SSSP_limpo/sumario_executivo_cheias' };
 {
   const pasta = 'sumario_executivo_cheias';
   const origem = join(PHP_DIR, 'acesso', pasta);
   const publico = join(RAIZ, 'public', 'acesso', pasta);
   for (const chave of ['ribeira_iguape', 'tiete_pinheiros']) {
-    // As chamadas do sumário (proxy do SIBH e captura do diagrama) ganham os nomes das rotas do Next.
-    const html = readFileSync(join(origem, `sumario_executivo_${chave}.html`), 'utf8')
+    // As chamadas do sumário (proxies do SIBH e da EMAE, captura do diagrama) ganham os nomes das rotas do Next.
+    const html = readFileSync(join(SUMARIO_ORIGEM[chave] ?? origem, `sumario_executivo_${chave}.html`), 'utf8')
       .replaceAll('api_proxy.php', 'api-sibh')
+      .replaceAll('emae_saisp.php', 'api-emae')
       .replaceAll('capturar_diagrama_ribeira.php', 'capturar-diagrama-ribeira')
       .replaceAll('capturar_diagrama.php', 'capturar-diagrama');
     if (/[\w-]+\.php/.test(html)) throw new Error(`sumário ${chave}: sobrou chamada a .php`);

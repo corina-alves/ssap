@@ -35,7 +35,7 @@ Onde ficam os dados (volumes do Docker — sobrevivem a reinício, atualização
 
    - `APP_URL`: endereço que as pessoas usam (ex.: `https://salasituacao.sp.gov.br`).
    - `TRUST_PROXY`: `true` com proxy reverso na frente; `false` sem.
-   - `SAISP_USUARIO` / `SAISP_SENHA`: login do SAISP para a imagem de radar do Boletim Diário (opcional).
+   - `SAISP_USUARIO` / `SAISP_SENHA`: login do SAISP para a imagem de radar do Boletim Diário e os dados da EMAE dos Sumários Executivos Alto Tietê/Pinheiros (opcional).
 
 2. **Senhas do banco.** Ficam em dois arquivos na pasta `secrets/`, que não vai para o repositório. Gere senhas longas e aleatórias, só com letras e números, sem quebra de linha no fim:
 

@@ -139,6 +139,8 @@ body {
     color: #5a6b7b;
     font-size: 16px;
 }
+/* com a imagem escolhida, o aviso some (o display:flex acima venceria o atributo hidden) */
+.imagem-trocavel [hidden] { display: none !important; }
 .trocar {
     position: absolute;
     right: 12px;
@@ -152,48 +154,48 @@ body {
 }
 .trocar input { display: none; }
 
-/* ---------- Tabelas ---------- */
+/* ---------- Tabelas ----------
+ * O tamanho da letra de cada tabela é o maior que cabe na página (encaixar() no
+ * boletim.js, entre 6 e 14 px): este font-size é só o ponto de partida. Os
+ * tamanhos internos são em "em", para crescerem junto. */
 .tab {
     position: absolute;
     border-collapse: collapse;
-    font-size: 7.4px;
-    line-height: 1.05;
+    font-size: 11px;
+    line-height: 1.15;
+    font-variant-numeric: tabular-nums;
 }
-.tab th, .tab td { border: 1px solid var(--linha); padding: 1px 3px; }
-.tab thead th { background: var(--azul-tab); color: #fff; font-weight: 400; text-align: center; }
+.tab th, .tab td { border: 1px solid var(--linha); padding: .12em .4em; vertical-align: middle; }
+.tab thead th { background: var(--azul-tab); color: #fff; font-weight: 700; font-size: .92em; text-align: center; }
 .tab tbody td { text-align: center; }
-.tab .posto { text-align: left; background: var(--azul-claro); }
-.tab .posto b { display: block; }
+/* linhas alternadas (só o fundo neutro: as cores de nível e o nome do posto ficam por cima) */
+.tab :where(tbody tr:nth-child(even) td) { background: #eef3f8; }
+.tab .posto { text-align: left; background: var(--azul-claro); white-space: nowrap; }
+.tab .posto b { font-weight: 700; }
 .tab .mapa { font-weight: 700; }
-.tab td.num { text-align: center; }
+.tab td.num { text-align: center; white-space: nowrap; }
 
-.tab-chuva { top: 58px; left: 13px; width: 934px; font-size: 6.6px; line-height: 1; }
-.tab-chuva th, .tab-chuva td { padding: 0 3px; }
-.tab-chuva thead th { padding: 1px 3px; }
-.tab-chuva .posto { width: 118px; white-space: nowrap; }
+.tab-chuva { top: 58px; left: 13px; width: 934px; }
 
-.notas { position: absolute; left: 20px; right: 36px; bottom: 16px; font-size: 8.5px; font-weight: 700; }
+.notas { position: absolute; left: 20px; right: 36px; bottom: 16px; font-size: 10px; font-weight: 700; }
 .notas p { margin: 1px 0; }
 .notas .fonte { position: absolute; right: 0; bottom: 12px; }
 
-.tab-cotas { top: 40px; left: 213px; width: 560px; font-size: 7.2px; }
-.tab-cotas thead th { font-weight: 700; padding: 2px 3px; }
-.tab-cotas tbody td { font-weight: 700; font-size: 9.5px; padding: 3px 4px; }
-.tab-cotas tbody td.nome { text-align: left; font-size: 6.8px; }
-.tab-cotas tbody td.cod, .tab-cotas tbody td.mapa { font-size: 6.8px; }
-.tab-cotas .titulo-rede { background: var(--azul-tab); font-size: 10px; }
+.tab-cotas { top: 44px; left: 60px; width: 840px; }
+.tab-cotas thead th { padding: .25em .4em; }
+.tab-cotas tbody td { font-weight: 700; }
+.tab-cotas tbody td.nome { text-align: left; font-weight: 400; }
+.tab-cotas tbody td.cod { font-weight: 400; white-space: nowrap; }
+.tab-cotas .titulo-rede { background: var(--azul-tab); font-size: 1.15em; }
 .tab-cotas .c-atencao { background: var(--atencao); color: #000; }
 .tab-cotas .c-alerta { background: var(--alerta); color: #000; }
 .tab-cotas .c-emerg { background: var(--emerg); color: #000; }
 .tab-cotas .c-extra { background: var(--extra); color: #000; }
-.tab-cotas tbody tr:nth-child(odd) td { background: var(--azul-claro); }
 .tab-cotas td.orto { color: var(--orto); }
-.nota-cotas { position: absolute; left: 240px; bottom: 16px; margin: 0; font-size: 7.5px; font-weight: 700; }
+.nota-cotas { position: absolute; left: 60px; bottom: 16px; margin: 0; font-size: 10px; font-weight: 700; }
 
-.tab-flu { top: 50px; left: 10px; width: 940px; font-size: 6.4px; line-height: 1; }
-.tab-flu th, .tab-flu td { padding: 0 2px; }
-.tab-flu thead th { padding: 1px 2px; }
-.tab-flu .posto { white-space: nowrap; width: 112px; }
+.tab-flu { top: 50px; left: 10px; width: 940px; }
+.tab-flu .posto, .tab-flu tbody td:nth-child(3) { white-space: nowrap; } /* posto e código numa linha */
 .tab-flu thead .grupo-q { background: #d8e4bc; color: #000; }
 .tab-flu thead .grupo-n { background: #b7dee8; color: #000; }
 .tab-flu thead .sub { background: var(--azul-claro); color: #000; }
@@ -212,14 +214,60 @@ body {
     bottom: 13px;
     display: flex;
     justify-content: space-between;
+    align-items: flex-end;
     gap: 10px;
-    font-size: 6.6px;
+    font-size: 9px;
     font-weight: 700;
 }
 .obs-flu p { margin: 1px 0; }
 .legenda { display: flex; align-items: center; gap: 0; white-space: nowrap; }
-.legenda span { padding: 1px 12px; margin-left: 2px; }
+.legenda span { padding: 1px 10px; margin-left: 2px; }
 .legenda em { font-style: normal; margin-left: 12px; }
+
+/* ---------- Previsão do tempo (Simepar) ---------- */
+.prev-titulo {
+    position: absolute;
+    top: 46px;
+    left: 0;
+    width: 316px;
+    height: 31px;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #adb9ca;
+    font-size: 16px;
+    font-weight: 700;
+}
+.prev-col { position: absolute; top: 100px; width: 268px; }
+.prev-col1 { left: 38px; }
+.prev-col2 { left: 346px; }
+.prev-col3 { left: 654px; }
+.imagem-trocavel.prev-img { position: relative; left: auto; right: auto; height: 207px; }
+.prev-img:focus { outline: 2px solid #5b9bd5; }
+.prev-img .vazio { inset: 6px; padding: 10px; font-size: 12px; }
+.prev-img .trocar { right: 6px; bottom: 6px; }
+.prev-texto {
+    height: 168px; /* a letra diminui (encaixarTexto) se o texto não couber */
+    margin: 10px 0 0;
+    overflow: hidden;
+    font-size: 11px;
+    line-height: 1.3;
+    text-align: justify;
+}
+.prev-texto [data-vazio]:empty::before { content: attr(data-vazio); color: #8795a5; font-style: italic; }
+.prev-fonte { position: absolute; right: 38px; bottom: 44px; margin: 0; font-size: 10px; font-weight: 700; }
+.prev-rodape {
+    position: absolute;
+    left: 20px;
+    right: 20px;
+    bottom: 15px;
+    margin: 0;
+    text-align: center;
+    font-size: 11.5px;
+    font-weight: 700;
+    font-style: italic;
+}
 
 /* ---------- Impressão / PDF ---------- */
 @page { size: 960px 540px; margin: 0; }
@@ -229,4 +277,6 @@ body {
     .pagina { margin: 0; box-shadow: none; break-after: page; page-break-after: always; }
     .pagina:last-child { break-after: auto; page-break-after: auto; }
     [contenteditable="true"]:hover, [contenteditable="true"]:focus { outline: none; background: transparent; }
+    .prev-texto [data-vazio]:empty::before { content: none; } /* o aviso de "clique para escrever" não sai no PDF */
+    .prev-img:focus { outline: none; }
 }
