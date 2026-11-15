@@ -28,7 +28,10 @@ services:
       CACHE_DIR: /dados/cache
     volumes:
       - .:/app
-      - dev_node_modules:/app/node_modules # dependências do Linux, não as do Windows
+      # Dependências do Linux, não as do Windows. Ao subir, o docker/dev.sh reinstala se o
+      # package-lock.json mudou. (v2: o volume antigo, dev_node_modules, era do root e
+      # ficava desatualizado; não é mais usado e pode ser apagado à mão.)
+      - dev_node_modules_v2:/app/node_modules
       - dev_next:/app/.next
     read_only: false
     healthcheck:
@@ -40,5 +43,5 @@ services:
           memory: 4g
 
 volumes:
-  dev_node_modules:
+  dev_node_modules_v2:
   dev_next:

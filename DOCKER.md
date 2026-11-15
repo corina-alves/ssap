@@ -381,7 +381,7 @@ Para mudar a porta local do site (padrão 3000), crie um arquivo `.env` com `APP
 
 Para voltar ao modo de produção depois de usar o de desenvolvimento: `docker compose up -d`.
 
-As dependências do desenvolvimento ficam num volume (`dev_node_modules`), preenchido só na primeira subida. Depois de um `package.json` novo, atualize o volume com `docker compose -f compose.yaml -f compose.dev.yaml exec -u root app npm install`.
+As dependências do desenvolvimento ficam num volume (`dev_node_modules_v2`). Não é preciso instalar nada dentro do contêiner: a cada subida o `docker/dev.sh` confere o `package-lock.json` e, se ele mudou, reinstala as dependências (`npm ci`) antes do `next dev` — a primeira subida depois de uma dependência nova demora alguns minutos a mais (`docker compose logs -f app` mostra o andamento). O volume antigo, `sala-situacao_dev_node_modules`, não é mais usado; para liberar o espaço: `docker volume rm sala-situacao_dev_node_modules`.
 
 As imagens não trazem navegador: o "Gerar PDF" dos sumários de cheias imprime com o diagrama do SIBH ao vivo. Para sair com as cores, marque "Gráficos de plano de fundo" em Mais configurações na janela de impressão.
 

@@ -48,16 +48,24 @@ ENV NODE_ENV=production \
 USER node
 # Sem CMD: o compose define o comando (npm run db:migrar, npm run admin:criar).
 
-FROM deps AS dev
+FROM base AS dev
 ENV NODE_ENV=development \
     HOSTNAME=0.0.0.0 \
     PORT=3000
-# .next fica num volume próprio (compose.dev.yaml), gravável pelo usuário "node".
-RUN mkdir -p /app/.next && chown node:node /app/.next
+# node_modules e .next ficam em volumes próprios (compose.dev.yaml), que nascem desta
+# imagem: tudo do usuário "node", para o dev-inicio poder reinstalar sem root.
+# .ssap-lock marca qual package-lock.json foi instalado (docker/dev.sh).
+COPY --from=deps --chown=node:node /app/node_modules ./node_modules
+COPY --from=deps /app/package-lock.json /tmp/package-lock.json
+COPY docker/dev.sh /usr/local/bin/dev-inicio
+RUN sed -i 's/\r$//' /usr/local/bin/dev-inicio && chmod 755 /usr/local/bin/dev-inicio \
+ && sha256sum /tmp/package-lock.json | cut -d' ' -f1 > node_modules/.ssap-lock && rm /tmp/package-lock.json \
+ && chown node:node /app/node_modules /app/node_modules/.ssap-lock \
+ && mkdir -p /app/.next && chown node:node /app/.next
 USER node
 EXPOSE 3000
-# O código vem por volume (compose.dev.yaml).
-CMD ["npm", "run", "dev"]
+# O código vem por volume (compose.dev.yaml); dependências conferidas a cada subida.
+CMD ["dev-inicio"]
 
 FROM deps AS build
 COPY . .
