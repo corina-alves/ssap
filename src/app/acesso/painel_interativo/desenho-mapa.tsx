@@ -1,7 +1,7 @@
 'use client';
 
 import { memo, useMemo } from 'react';
-import type { Ancora, Diagrama, Ligacao, No, Valor } from '@/conteudo/diagramas-unifilares';
+import { ehPostoSibh, VD, type Ancora, type Diagrama, type Ligacao, type No, type NoSibh, type Valor } from '@/conteudo/diagramas-unifilares';
 import { afastar, arrumarCartoes, caixaComNome, caixaRadar, type Escala, type ItemCartao, type NaLinha, type PlanoMapa, type Pt } from './posicoes-mapa';
 import { COR, Ponto, PontoRadar, Reservatorio } from './simbolos-unifilar';
 import { duracaoFluxo, texto, valorDe, type Modo, type ValoresSsd } from './valores-ssd';
@@ -74,7 +74,8 @@ function montar(d: Diagrama, esc: Escala, s: number, valores: ValoresSsd, data: 
   // valores (no modo vazão, como no esquema) e nomes junto das linhas
   const itens: (Texto & ItemCartao)[] = [];
   const valor = (chave: string, v: Valor, em: NaLinha | null | undefined) => {
-    if (modo !== 'vazao' || !em) return;
+    // a vazão descarregada fica fora do mapa (poluía demais): está no esquema "Sem mapa" e, no Cantareira, no cartão ao lado
+    if (modo !== 'vazao' || !em || v.v === VD.descarregada) return;
     const linhas: Linha[] = [{ t: texto(valores, v.space, v.v, data), ...VALOR }, ...(v.rotulo ? [{ t: v.rotulo, ...SOB_VALOR }] : [])];
     itens.push(itemTexto(chave, em, linhas, v.ancora, s));
   };
@@ -207,6 +208,8 @@ const Conteudo = memo(function Conteudo({
   modo,
   destaque,
   aoEscolher,
+  postoAtivo,
+  aoPosto,
 }: {
   d: Diagrama;
   esc: Escala;
@@ -216,6 +219,8 @@ const Conteudo = memo(function Conteudo({
   modo: Modo;
   destaque?: number | null;
   aoEscolher?: (space: number) => void;
+  postoAtivo?: number | null;
+  aoPosto?: (n: NoSibh) => void;
 }) {
   const { lugares, guias, textos } = useMemo(() => montar(d, esc, s, valores, data, modo), [d, esc, s, valores, data, modo]);
   // vazão de um ponto (EEAB, UHE): a dele ou a da ligação que começa ou termina nele no esquema (gira o rotor)
@@ -256,7 +261,15 @@ const Conteudo = memo(function Conteudo({
             {aqui.tipo === 'reservatorio' ? (
               <Reservatorio n={aqui} valores={valores} data={data} modo={modo} ativo={destaque === aqui.space} aoEscolher={aoEscolher} />
             ) : (
-              <Ponto n={aqui} valores={valores} data={data} modo={modo} vazao={aqui.tipo === 'eeab' || aqui.tipo === 'uhe' ? vazaoNo(n as typeof aqui) : null} />
+              <Ponto
+                n={aqui}
+                valores={valores}
+                data={data}
+                modo={modo}
+                vazao={aqui.tipo === 'eeab' || aqui.tipo === 'uhe' ? vazaoNo(n as typeof aqui) : null}
+                ativo={ehPostoSibh(n) && n.sibh.id === postoAtivo}
+                aoPosto={aoPosto && ehPostoSibh(n) ? () => aoPosto(n) : undefined}
+              />
             )}
           </g>
         );
@@ -285,6 +298,8 @@ export function DesenhoNoMapa({
   modo,
   destaque,
   aoEscolher,
+  postoAtivo,
+  aoPosto,
 }: {
   d: Diagrama;
   plano: PlanoMapa;
@@ -296,6 +311,8 @@ export function DesenhoNoMapa({
   modo: Modo;
   destaque?: number | null;
   aoEscolher?: (space: number) => void;
+  postoAtivo?: number | null;
+  aoPosto?: (n: NoSibh) => void;
 }) {
   const esc = useMemo(() => plano.naEscala(f), [plano, f]);
   return (
@@ -308,7 +325,7 @@ export function DesenhoNoMapa({
         </linearGradient>
       </defs>
       <g transform={`translate(${(t[0] + esc.origem[0]).toFixed(1)} ${(t[1] + esc.origem[1]).toFixed(1)})`}>
-        <Conteudo d={d} esc={esc} s={s} valores={valores} data={data} modo={modo} destaque={destaque} aoEscolher={aoEscolher} />
+        <Conteudo d={d} esc={esc} s={s} valores={valores} data={data} modo={modo} destaque={destaque} aoEscolher={aoEscolher} postoAtivo={postoAtivo} aoPosto={aoPosto} />
       </g>
     </svg>
   );

@@ -1,8 +1,8 @@
 'use client';
 
 import { useId, type CSSProperties } from 'react';
-import { VD, type Ancora, type Ligacao, type No, type Radar, type Valor } from '@/conteudo/diagramas-unifilares';
-import { chaveRadar, COR_FAIXA, texto, textoRadar, type Modo, type ValoresSsd } from './valores-ssd';
+import { ehPostoSibh, VD, type Ancora, type Ligacao, type No, type NoSibh, type Radar, type Valor } from '@/conteudo/diagramas-unifilares';
+import { chaveNivel, chaveRadar, chaveVazao, COR_FAIXA, texto, textoMes, textoRadar, textoSibh, type Modo, type ValoresSsd } from './valores-ssd';
 
 /**
  * Símbolos e textos dos diagramas unifilares, os mesmos no esquema ("Sem mapa",
@@ -21,6 +21,8 @@ export const COR = {
   nome: '#f2f7fc',
   fraco: '#8fb3d9',
   chuva: '#b9ff4f',
+  // vazão descarregada (o que a represa solta no rio), em destaque
+  descarregada: '#ffb020',
 };
 
 // ---------------------------------------------------------------- símbolos
@@ -56,6 +58,19 @@ const BACIA = '-52,-20 78,-20 52,20 -52,20';
 
 export function TextoValor({ v, valores, data, mostrar }: { v: Valor; valores: ValoresSsd; data: string; mostrar: boolean }) {
   if (!mostrar) return null;
+  // vazão descarregada: em destaque, com a média do mês em cima (embaixo fica a linha do rio)
+  if (v.v === VD.descarregada)
+    return (
+      <g className="un-valor un-valor--descarregada">
+        <title>{`Vazão descarregada: ${texto(valores, v.space, v.v, data)} (média do dia) · média do mês: ${textoMes(valores, v.space, v.v)}`}</title>
+        <text x={v.x} y={v.y - 16} textAnchor={v.ancora ?? 'middle'} fill={COR.descarregada} fontSize={11} fontWeight={700}>
+          {`${v.rotulo ? `${v.rotulo} · ` : ''}descarregada · mês ${textoMes(valores, v.space, v.v)}`}
+        </text>
+        <text x={v.x} y={v.y} textAnchor={v.ancora ?? 'middle'} fill={COR.descarregada} fontSize={16} fontWeight={900} className="un-sombra">
+          {texto(valores, v.space, v.v, data)}
+        </text>
+      </g>
+    );
   return (
     <g className="un-valor">
       <text x={v.x} y={v.y} textAnchor={v.ancora ?? 'middle'} fill={COR.valor} fontSize={15} fontWeight={800}>
@@ -246,7 +261,7 @@ export function PontoRadar({ r, valores, data, modo }: { r: Radar; valores: Valo
   const [yValor, yNome] = lado === 'acima' ? [-27, -14] : lado === 'abaixo' ? [28, 41] : [1, 14];
   const valor = textoRadar(valores, r.id);
   return (
-    <g transform={`translate(${r.x} ${r.y})`} className="un-radar" opacity={modo === 'chuva' || modo === 'vazao' ? 1 : 0.55}>
+    <g transform={`translate(${r.x} ${r.y})`} className="un-radar">
       <title>{`Chuva por radar — ${r.nome}: ${valor} em ${dataBr(data)}${v?.hora ? `, de 00h às ${v.hora.replace(':', 'h')}` : ''} (SIBH, posto ${r.prefixo})`}</title>
       <SimboloRadar choveu={(v?.valor ?? 0) > 0} />
       <text x={x} y={yValor} textAnchor={anc} fill={COR.chuva} fontSize={modo === 'chuva' ? 16 : 14} fontWeight={800}>
@@ -259,7 +274,38 @@ export function PontoRadar({ r, valores, data, modo }: { r: Radar; valores: Valo
   );
 }
 
-export function Ponto({ n, valores, data, modo, vazao }: { n: Exclude<No, { tipo: 'reservatorio' }>; valores: ValoresSsd; data: string; modo: Modo; vazao: number | null }) {
+/**
+ * O que um posto do SIBH mostra no modo: no de vazão, a vazão (o posto que só
+ * mede nível, o nível); no de nível, o nível. Junto, a hora da leitura (ou
+ * "média do dia", dia que já acabou) para a dica.
+ */
+function valorSibh(n: NoSibh, valores: ValoresSsd, modo: Modo): { texto: string; hora: string | null } | null {
+  const id = n.sibh.id;
+  const q = valores[chaveVazao(id)];
+  const h = valores[chaveNivel(id)];
+  const qual = modo === 'nivel' || (modo === 'vazao' && !q && h) ? 'nivel' : modo === 'vazao' ? 'vazao' : null;
+  if (!qual) return null;
+  const x = qual === 'nivel' ? h : q;
+  return { texto: textoSibh(valores, id, qual), hora: x ? (x.hora ?? 'média do dia') : null };
+}
+
+export function Ponto({
+  n,
+  valores,
+  data,
+  modo,
+  vazao,
+  ativo = false,
+  aoPosto,
+}: {
+  n: Exclude<No, { tipo: 'reservatorio' }>;
+  valores: ValoresSsd;
+  data: string;
+  modo: Modo;
+  vazao: number | null;
+  ativo?: boolean;
+  aoPosto?: (n: NoSibh) => void;
+}) {
   const lado = n.rotulo ?? 'acima';
   const raio = n.tipo === 'eta' || n.tipo === 'cidade' ? 24 : n.tipo === 'eeab' || n.tipo === 'uhe' ? 18 : 12;
   const pos =
@@ -271,9 +317,43 @@ export function Ponto({ n, valores, data, modo, vazao }: { n: Exclude<No, { tipo
           ? { x: raio + 6, y1: -2, y2: 14, anc: 'start' as Ancora }
           : { x: -raio - 6, y1: -2, y2: 14, anc: 'end' as Ancora };
   const titulo = [n.prefixo, n.nome].filter(Boolean).join(' ');
+  const sibh = ehPostoSibh(n) ? n : null;
+  // vazão do SSD (média do dia) no modo de vazão; o SIBH no lugar dela no de nível, ou no lugar próprio do posto sem SSD
+  const doSsd = n.valor && modo === 'vazao';
+  const lido = sibh && !doSsd ? valorSibh(sibh, valores, modo) : null;
+  const ondeSibh = n.valor ?? { dx: sibh?.sibh.dx ?? 0, dy: sibh?.sibh.dy ?? -50, ancora: sibh?.sibh.ancora };
+  const dica = [
+    n.valor ? `${titulo}: ${texto(valores, n.valor.space, n.valor.v, data)} (média do dia, SSD)` : titulo,
+    ...(sibh
+      ? [
+          `SIBH: nível ${textoSibh(valores, sibh.sibh.id, 'nivel')} · vazão ${textoSibh(valores, sibh.sibh.id, 'vazao')}${
+            valores[chaveNivel(sibh.sibh.id)]?.hora ? ` às ${valores[chaveNivel(sibh.sibh.id)]!.hora!.replace(':', 'h')}` : valores[chaveNivel(sibh.sibh.id)] ? ' (média do dia)' : ''
+          }`,
+          'Clique para ver os gráficos de vazão e chuva',
+        ]
+      : []),
+  ].join('\n');
+  const abrir = sibh && aoPosto ? () => aoPosto(sibh) : undefined;
   return (
-    <g transform={`translate(${n.x} ${n.y})`} className="un-ponto">
-      <title>{n.valor ? `${titulo}: ${texto(valores, n.valor.space, n.valor.v, data)}` : titulo}</title>
+    <g
+      transform={`translate(${n.x} ${n.y})`}
+      className={`un-ponto${abrir ? ' un-ponto--clicavel' : ''}${ativo ? ' is-ativo' : ''}`}
+      onClick={abrir}
+      role={abrir ? 'button' : undefined}
+      tabIndex={abrir ? 0 : undefined}
+      aria-label={abrir ? `${titulo}: gráficos de vazão e chuva` : undefined}
+      onKeyDown={
+        abrir
+          ? (e) => {
+              if (e.key !== 'Enter' && e.key !== ' ') return;
+              e.preventDefault();
+              abrir();
+            }
+          : undefined
+      }
+    >
+      <title>{dica}</title>
+      {ativo && <circle r={15} fill="none" stroke="#ffb020" strokeWidth={2.5} />}
       <Simbolo n={n} ativo={vazao !== null && vazao > 0} />
       {n.prefixo && (
         <text x={pos.x} y={pos.y1} textAnchor={pos.anc} fill={COR.fraco} fontSize={11}>
@@ -283,9 +363,14 @@ export function Ponto({ n, valores, data, modo, vazao }: { n: Exclude<No, { tipo
       <text x={pos.x} y={n.prefixo ? pos.y2 : pos.y1 + 8} textAnchor={pos.anc} fill={COR.nome} fontSize={13} fontWeight={700}>
         {n.nome}
       </text>
-      {n.valor && modo === 'vazao' && (
-        <text x={n.valor.dx} y={n.valor.dy} textAnchor={n.valor.ancora ?? 'middle'} fill={COR.valor} fontSize={15} fontWeight={800}>
-          {texto(valores, n.valor.space, n.valor.v, data)}
+      {doSsd && (
+        <text x={n.valor!.dx} y={n.valor!.dy} textAnchor={n.valor!.ancora ?? 'middle'} fill={COR.valor} fontSize={15} fontWeight={800}>
+          {texto(valores, n.valor!.space, n.valor!.v, data)}
+        </text>
+      )}
+      {lido && (
+        <text x={ondeSibh.dx} y={ondeSibh.dy} textAnchor={ondeSibh.ancora ?? 'middle'} fill={modo === 'nivel' ? COR.chuva : COR.valor} fontSize={15} fontWeight={800}>
+          {lido.texto}
         </text>
       )}
     </g>

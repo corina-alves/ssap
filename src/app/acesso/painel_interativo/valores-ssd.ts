@@ -5,7 +5,11 @@ import { VD } from '@/conteudo/diagramas-unifilares';
  * sobre o mapa em desenho-mapa.tsx): formato, unidade e cores.
  */
 
-/** `hora`: só na chuva por radar (chave radar:<id>), a hora da última leitura somada ("13:50"). */
+/**
+ * `hora`: só nos postos do SIBH, a hora da última leitura (chuva por radar:
+ * somada até ela; nível e vazão: a leitura em si). Nível e vazão sem hora são a
+ * média do dia (dia que já acabou).
+ */
 export type ValoresSsd = Record<string, { valor: number; data: string; hora?: string } | null>;
 export type Modo = 'vazao' | 'volume' | 'nivel' | 'chuva';
 
@@ -33,6 +37,12 @@ export function texto(valores: ValoresSsd, space: number, v: number, data: strin
   return `${numero(x.valor, casas)}${unidade}${x.data < data ? '*' : ''}`;
 }
 
+/** "0,25 m³/s" (ou "—"): média do mês de um campo (só a vazão descarregada vem com ela; chave local:variável:mes). */
+export function textoMes(valores: ValoresSsd, space: number, v: number): string {
+  const x = valores[`${space}:${v}:mes`];
+  return x ? `${numero(x.valor, 2)} m³/s` : '—';
+}
+
 /** Chave da chuva do dia por radar (SIBH) de um posto, junto dos valores do SSD. */
 export const chaveRadar = (id: number) => `radar:${id}`;
 
@@ -40,6 +50,16 @@ export const chaveRadar = (id: number) => `radar:${id}`;
 export function textoRadar(valores: ValoresSsd, id: number): string {
   const x = valores[chaveRadar(id)];
   return x ? `${numero(x.valor, 1)} mm` : '—';
+}
+
+/** Chaves do nível (m) e da vazão (m³/s) de um posto fluviométrico do SIBH. */
+export const chaveNivel = (id: number) => `sibh-nivel:${id}`;
+export const chaveVazao = (id: number) => `sibh-vazao:${id}`;
+
+/** "2,03 m" ou "48,59 m³/s" (ou "—") de um posto do SIBH. */
+export function textoSibh(valores: ValoresSsd, id: number, qual: 'nivel' | 'vazao'): string {
+  const x = valores[qual === 'nivel' ? chaveNivel(id) : chaveVazao(id)];
+  return x ? `${numero(x.valor, 2)} ${qual === 'nivel' ? 'm' : 'm³/s'}` : '—';
 }
 
 /** Valor numérico de um campo do SSD (null sem dado). */

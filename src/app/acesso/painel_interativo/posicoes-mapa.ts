@@ -107,11 +107,12 @@ export function caixaComNome(n: No): Caixa {
         : lado === 'esquerda'
           ? [-raio - 6 - 2 * meio, -raio, raio, Math.max(raio, 18)]
           : [-meio, -raio - 34, meio, raio];
-  if (!n.valor) return c;
-  // o valor (vazão), em (dx, dy): uns 9 caracteres de 15 px
+  // o valor (vazão do SSD ou nível e vazão do SIBH), em (dx, dy): uns 9 caracteres de 15 px
+  const v = n.valor ?? (n.tipo === 'posto' && n.sibh ? { dx: n.sibh.dx ?? 0, dy: n.sibh.dy ?? -50, ancora: n.sibh.ancora } : null);
+  if (!v) return c;
   const w = 80;
-  const x0 = n.valor.ancora === 'start' ? n.valor.dx : n.valor.ancora === 'end' ? n.valor.dx - w : n.valor.dx - w / 2;
-  return [Math.min(c[0], x0), Math.min(c[1], n.valor.dy - 15), Math.max(c[2], x0 + w), Math.max(c[3], n.valor.dy + 4)];
+  const x0 = v.ancora === 'start' ? v.dx : v.ancora === 'end' ? v.dx - w : v.dx - w / 2;
+  return [Math.min(c[0], x0), Math.min(c[1], v.dy - 15), Math.max(c[2], x0 + w), Math.max(c[3], v.dy + 4)];
 }
 
 /** Caixa do posto de radar com o valor e o nome, como em PontoRadar (simbolos-unifilar.tsx). */
@@ -254,6 +255,9 @@ type Caminho = { pts: Pt[]; marcas: { a: number; lambda: number }[] };
 /** Texto junto de uma ligação: posição `a` nela (esquema) e afastamento [ao longo, de lado] no sentido dela. */
 type Junto = { l: number; a: number; o: Pt };
 
+/** A ponta j da ligação tem coordenada própria no mapa (mapa.inicio ou mapa.fim). */
+const temPontaPropria = (lg: Diagrama['ligacoes'][number], j: number) => (j === 0 && !!lg.mapa?.inicio) || (j === lg.pontos.length - 1 && !!lg.mapa?.fim);
+
 export function planoNoMapa(d: Diagrama, rios: Rio[] = [], aguas: Agua[] = []): PlanoMapa {
   // ------------------------------------------------------------ esquema
   const presoA = (v: Pt): number | null => {
@@ -324,7 +328,7 @@ export function planoNoMapa(d: Diagrama, rios: Rio[] = [], aguas: Agua[] = []): 
     const conhecidos: Ancora[] = [];
     lg.pontos.forEach((_, j) => {
       const i = presos[l]![j];
-      if (i != null && d.nos[i]!.ll) conhecidos.push({ a: arcos[l]![j]!, p: noMundo(d.nos[i]!.ll!) });
+      if (i != null && d.nos[i]!.ll && !temPontaPropria(lg, j)) conhecidos.push({ a: arcos[l]![j]!, p: noMundo(d.nos[i]!.ll!) });
     });
     d.nos.forEach((n, i) => {
       if (n.ll && noSobre[i]?.l === l) conhecidos.push({ a: noSobre[i]!.a, p: noMundo(n.ll) });
@@ -496,8 +500,9 @@ export function planoNoMapa(d: Diagrama, rios: Rio[] = [], aguas: Agua[] = []): 
       const i = presos[l]![j];
       const s = vertSobre[l]![j];
       const ll = j === 0 ? lg.mapa?.inicio : j === ultimoJ ? lg.mapa?.fim : undefined;
-      if (i != null) itens.push({ a, pos: () => posNo(i), res: d.nos[i]!.tipo === 'reservatorio' ? i : undefined });
-      else if (ll) itens.push({ a, pos: () => noMundo(ll) });
+      // ponta com coordenada própria vale mais que o nó (rio que sai de outra barragem da mesma represa)
+      if (ll) itens.push({ a, pos: () => noMundo(ll) });
+      else if (i != null) itens.push({ a, pos: () => posNo(i), res: d.nos[i]!.tipo === 'reservatorio' ? i : undefined });
       else if (s && j === ultimoJ && lg.tipo === 'rio') desague = { ...s, aqui: a };
       else if (s) itens.push({ a, pos: () => naLigacao(s.l, s.a) });
       else if (j === 0) soltoInicio = true;

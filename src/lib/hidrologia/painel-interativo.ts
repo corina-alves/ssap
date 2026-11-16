@@ -2,7 +2,7 @@ import { lembrar } from '../integracoes/cache';
 import { RE_DATA, somarDias } from '../integracoes/comum';
 import { resumoRecente, resumosPeriodo } from '../integracoes/sabesp';
 import { instante, medicoes, somar, type Medicao } from '../integracoes/sibh-medicoes';
-import { catalogo, FREQ_DIARIA, serie, type Ponto } from '../integracoes/ssd';
+import { catalogo, FREQ_DIARIA, FREQ_MENSAL, serie, type Ponto } from '../integracoes/ssd';
 import { estagio, type Estagio } from './reservatorios';
 
 /**
@@ -213,11 +213,11 @@ async function comVez<T>(f: () => Promise<T>): Promise<T> {
   }
 }
 
-/** Id da série diária de um local e variável; null se o SSD não tem. */
-export async function idSerieDiaria(space: number, variavelId: number): Promise<number | null> {
+/** Id da série diária (ou mensal) de um local e variável; null se o SSD não tem. */
+export async function idSerieDiaria(space: number, variavelId: number, frequencia = FREQ_DIARIA): Promise<number | null> {
   const c = await catalogo();
   if (!c.ok) throw new Error(c.mensagem);
-  return c.dados.find((s) => s.spaceId === space && s.variavelId === variavelId && s.frequencia === FREQ_DIARIA)?.id ?? null;
+  return c.dados.find((s) => s.spaceId === space && s.variavelId === variavelId && s.frequencia === frequencia)?.id ?? null;
 }
 
 /** Locais que o painel consulta: sistemas, reservatórios, transferências, postos e ETAs (os dos diagramas). */
@@ -229,6 +229,19 @@ export async function localPermitido(space: number): Promise<boolean> {
 /** Pontos diários de um local e variável; [] se o SSD não tem a série. */
 export async function pontosDiarios(space: number, variavelId: number, de: string, ate: string): Promise<Ponto[]> {
   const id = await idSerieDiaria(space, variavelId);
+  if (!id) return [];
+  const r = await comVez(() => serie(id, de, ate));
+  if (!r.ok) throw new Error(r.mensagem);
+  return r.dados.pontos;
+}
+
+/**
+ * Pontos mensais (série mensal do SSD, data no dia 1º) de um local e variável;
+ * [] se o SSD não tem. Chuva: total do mês; vazão: média do mês (o mês corrente
+ * vai até o último dia com dado).
+ */
+export async function pontosMensais(space: number, variavelId: number, de: string, ate: string): Promise<Ponto[]> {
+  const id = await idSerieDiaria(space, variavelId, FREQ_MENSAL);
   if (!id) return [];
   const r = await comVez(() => serie(id, de, ate));
   if (!r.ok) throw new Error(r.mensagem);
@@ -412,6 +425,7 @@ export async function detalheSistema(chave: string, data: string) {
 /**
  * Valores na data para os campos de um diagrama (pares local:variável). Usa o
  * último valor dos 7 dias anteriores, como o SSD mostra o dado mais recente.
+ * Vazão descarregada vem também com a média do mês (chave local:5:mes).
  */
 export async function valoresDiagrama(pares: [number, number][], data: string): Promise<Record<string, { valor: number; data: string } | null>> {
   const saida: Record<string, { valor: number; data: string } | null> = {};
@@ -421,6 +435,14 @@ export async function valoresDiagrama(pares: [number, number][], data: string): 
       const ult = ps.filter((p) => p.data <= data).at(-1);
       saida[`${space}:${v}`] = ult ? { valor: ult.valor, data: ult.data } : null;
     }),
+  );
+  await Promise.all(
+    pares
+      .filter(([, v]) => v === VAR.descarregada)
+      .map(async ([space, v]) => {
+        const mes = (await pontosMensais(space, v, `${data.slice(0, 8)}01`, data).catch(() => [])).at(-1);
+        saida[`${space}:${v}:mes`] = mes ? { valor: mes.valor, data: mes.data } : null;
+      }),
   );
   // volume que o SSD não tem há 7 dias: o da Sabesp, onde ela publica (VOLUME_SABESP)
   const faltam = pares.filter(([space, v]) => (v === VAR.volumePct || v === VAR.volumeHm3) && VOLUME_SABESP[space] && !saida[`${space}:${v}`]);

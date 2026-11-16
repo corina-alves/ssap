@@ -33,6 +33,15 @@ export type Ligacao = {
 };
 
 type Base = { nome: string; x: number; y: number; ll?: [number, number] };
+
+/**
+ * Posto do SIBH: `id` é o station_prefix_id (o que a consulta de medições usa) e
+ * `radar` o posto de radar da bacia dele (a chuva dos gráficos ao clicar). O
+ * nível (e a vazão, quando o posto mede) vai em (dx, dy); sem eles, no lugar
+ * do valor do SSD do nó.
+ */
+export type PostoSibh = { id: number; radar: number; dx?: number; dy?: number; ancora?: Ancora };
+
 export type No =
   | (Base & { tipo: 'reservatorio'; space: number; num: number; prefixo?: string; rotulo?: 'acima' | 'abaixo' | 'direita' | 'esquerda' })
   | (Base & {
@@ -41,6 +50,7 @@ export type No =
       valor?: Omit<Valor, 'x' | 'y'> & { dx: number; dy: number };
       /** posição do nome em relação ao símbolo */
       rotulo?: 'acima' | 'abaixo' | 'direita' | 'esquerda';
+      sibh?: PostoSibh;
     });
 
 /**
@@ -145,18 +155,20 @@ const cantareira: Diagrama = {
   altura: 820,
   ligacoes: [
     // Jaguari/Jacareí (Rio Jaguari e Rio Jacareí)
-    { tipo: 'rio', pontos: [[1290, 80], [1062, 80]], setas: [0.3], valor: { space: 20, v: natural, x: 1110, y: 68 } },
+    { tipo: 'rio', pontos: [[1290, 80], [1062, 80]], setas: [0.3], valor: { space: 20, v: natural, x: 1095, y: 68 } },
     { tipo: 'rio', pontos: [[1290, 135], [1120, 135], [1120, 80]], setas: [0.4] },
-    { tipo: 'rio', pontos: [[902, 80], [12, 80]], setas: [0.1, 0.45, 0.8], valor: { space: 20, v: desc, x: 850, y: 68 } },
+    { tipo: 'rio', pontos: [[902, 80], [12, 80]], setas: [0.1, 0.45, 0.8], valor: { space: 20, v: desc, x: 845, y: 68 } },
+    // Rio Jacareí a jusante da barragem do Jacareí (longe da do Jaguari, que é o ponto da represa): deságua no Jaguari
+    { tipo: 'rio', mapa: { inicio: [-22.9548, -46.4451] }, pontos: [[950, 100], [950, 165], [835, 165], [835, 80]], setas: [0.55] },
     // Cachoeira
-    { tipo: 'rio', pontos: [[1290, 260], [1062, 260]], valor: { space: 15, v: natural, x: 1220, y: 248 }, rotulo: { texto: 'Rio Cachoeira', x: 1220, y: 282 } },
-    { tipo: 'rio', pontos: [[902, 260], [720, 260], [720, 430]], setas: [0.35], valor: { space: 15, v: desc, x: 820, y: 248 } },
+    { tipo: 'rio', pontos: [[1290, 280], [1062, 280]], valor: { space: 15, v: natural, x: 1220, y: 268 }, rotulo: { texto: 'Rio Cachoeira', x: 1220, y: 302 } },
+    { tipo: 'rio', pontos: [[902, 280], [720, 280], [720, 430]], setas: [0.62], valor: { space: 15, v: desc, x: 732, y: 360, ancora: 'start' } },
     // Atibainha → Rio Atibaia
     { tipo: 'rio', pontos: [[1290, 430], [1062, 430]], valor: { space: 12, v: natural, x: 1220, y: 418 }, rotulo: { texto: 'Rio Atibainha', x: 1220, y: 452 } },
-    { tipo: 'rio', pontos: [[902, 430], [12, 430]], setas: [0.08, 0.5, 0.85], valor: { space: 12, v: desc, x: 820, y: 418 } },
+    { tipo: 'rio', pontos: [[902, 430], [12, 430]], setas: [0.08, 0.5, 0.85], valor: { space: 12, v: desc, x: 652, y: 418 } },
     // Túneis 7, 6 e 5
-    { tipo: 'tunel', mapa: { via: [[-22.95456, -46.4438], [-22.9725, -46.3297]] }, pontos: [[1034, 100], [1060, 240]], valor: { space: 47, v: vazao, x: 1058, y: 160, ancora: 'start' }, rotulo: { texto: 'Túnel 7', x: 1058, y: 182, ancora: 'start' } },
-    { tipo: 'tunel', mapa: { via: [[-23.1083, -46.2872]] }, pontos: [[1034, 280], [1060, 410]], valor: { space: 46, v: vazao, x: 1058, y: 335, ancora: 'start' }, rotulo: { texto: 'Túnel 6', x: 1058, y: 357, ancora: 'start' } },
+    { tipo: 'tunel', mapa: { via: [[-22.95456, -46.4438], [-22.9725, -46.3297]] }, pontos: [[1034, 100], [1060, 260]], valor: { space: 47, v: vazao, x: 1058, y: 160, ancora: 'start' }, rotulo: { texto: 'Túnel 7', x: 1058, y: 182, ancora: 'start' } },
+    { tipo: 'tunel', mapa: { via: [[-23.1083, -46.2872]] }, pontos: [[1034, 300], [1060, 410]], valor: { space: 46, v: vazao, x: 1058, y: 335, ancora: 'start' }, rotulo: { texto: 'Túnel 6', x: 1058, y: 357, ancora: 'start' } },
     { tipo: 'tunel', pontos: [[960, 452], [960, 520], [740, 520], [740, 610]], valor: { space: 45, v: vazao, x: 850, y: 508 }, rotulo: { texto: 'Túnel 5', x: 850, y: 542 } },
     // Paiva Castro (Rio Juqueri)
     { tipo: 'rio', pontos: [[1040, 630], [740, 630]], valor: { space: 22, v: natural, x: 960, y: 618 }, rotulo: { texto: 'Rio Juqueri', x: 960, y: 652 } },
@@ -173,15 +185,26 @@ const cantareira: Diagrama = {
   ],
   nos: [
     { tipo: 'reservatorio', nome: 'Jaguari/Jacareí', space: 20, ll: [-22.9223, -46.4223], num: 1, x: 982, y: 80 },
-    { tipo: 'reservatorio', nome: 'Cachoeira', space: 15, ll: [-23.0508, -46.3192], num: 2, x: 982, y: 260 },
+    { tipo: 'reservatorio', nome: 'Cachoeira', space: 15, ll: [-23.0508, -46.3192], num: 2, x: 982, y: 280 },
     { tipo: 'reservatorio', nome: 'Atibainha', space: 12, ll: [-23.17391, -46.3927], num: 3, x: 982, y: 430 },
     { tipo: 'reservatorio', nome: 'Paiva Castro', space: 22, ll: [-23.329, -46.6784], num: 4, x: 660, y: 630 },
     { tipo: 'reservatorio', nome: 'Águas Claras', space: 11, ll: [-23.3979, -46.6586], num: 5, x: 420, y: 740, rotulo: 'acima' },
     { tipo: 'reservatorio', nome: 'UHE Jaguari', prefixo: 'Paraíba do Sul', space: 34, ll: [-23.213, -46.0791], num: 6, x: 1122, y: 730, rotulo: 'abaixo' },
-    { tipo: 'posto', prefixo: 'Posto', nome: 'F-25BT', ll: [-22.8668, -46.3588], x: 1200, y: 80, valor: { space: 61, v: vazao, dx: 0, dy: -50 }, rotulo: 'abaixo' },
-    { tipo: 'posto', prefixo: 'Posto', nome: 'Buenópolis', ll: [-22.8497, -46.7783], x: 650, y: 80, valor: { space: 58, v: vazao, dx: 0, dy: -50 }, rotulo: 'abaixo' },
-    { tipo: 'posto', prefixo: 'Posto', nome: 'Atibaia', ll: [-23.1061, -46.5566], x: 470, y: 430, valor: { space: 60, v: vazao, dx: 0, dy: -50 }, rotulo: 'abaixo' },
-    { tipo: 'posto', prefixo: 'Posto', nome: 'Captação Valinhos', ll: [-22.9287, -46.9395], x: 200, y: 430, valor: { space: 59, v: vazao, dx: 0, dy: -50 }, rotulo: 'abaixo' },
+    { tipo: 'posto', prefixo: 'Posto', nome: 'F-25BT', ll: [-22.8668, -46.3588], x: 1255, y: 80, valor: { space: 61, v: vazao, dx: 0, dy: -50 }, rotulo: 'abaixo' },
+    // postos de controle da Resolução ANA/DAEE 925/2017 (art. 5º, § 1º): vazão do SSD e, ao clicar, os gráficos do SIBH
+    { tipo: 'posto', prefixo: '3D-009', nome: 'Buenópolis', ll: [-22.8497, -46.7783], x: 650, y: 80, valor: { space: 58, v: vazao, dx: 0, dy: -50 }, rotulo: 'abaixo', sibh: { id: 29592, radar: 35838 } },
+    { tipo: 'posto', prefixo: '3E-063', nome: 'Atibaia', ll: [-23.1061, -46.5566], x: 470, y: 430, valor: { space: 60, v: vazao, dx: 0, dy: -50 }, rotulo: 'abaixo', sibh: { id: 30863, radar: 35808 } },
+    { tipo: 'posto', prefixo: '3D-007', nome: 'Captação Valinhos', ll: [-22.9287, -46.9395], x: 200, y: 430, valor: { space: 59, v: vazao, dx: 0, dy: -50 }, rotulo: 'abaixo', sibh: { id: 30846, radar: 35839 } },
+    // postos do SIBH: canais de jusante das barragens (só nível) e postos nos rios
+    { tipo: 'posto', prefixo: '3D-016', nome: 'Extrema', ll: [-22.8712, -46.3631], x: 1172, y: 80, rotulo: 'abaixo', sibh: { id: 805, radar: 35834, dx: 0, dy: -28 } },
+    { tipo: 'posto', prefixo: '1000719', nome: 'Canal Jaguari', ll: [-22.9228, -46.4249], x: 885, y: 80, rotulo: 'abaixo', sibh: { id: 24, radar: 35834, dx: -40, dy: -50 } },
+    { tipo: 'posto', prefixo: '1001720', nome: 'Canal Jacareí', ll: [-22.9529, -46.4472], x: 895, y: 165, rotulo: 'abaixo', sibh: { id: 23, radar: 35834, dx: 0, dy: -22 } },
+    { tipo: 'posto', prefixo: '3D-015', nome: 'Guaripocaba', ll: [-22.9067, -46.4769], x: 760, y: 80, rotulo: 'abaixo', sibh: { id: 15314, radar: 35809, dx: 0, dy: -50 } },
+    { tipo: 'posto', prefixo: '1000718', nome: 'Canal Cachoeira', ll: [-23.0525, -46.3205], x: 885, y: 280, rotulo: 'abaixo', sibh: { id: 22, radar: 35833, dx: -12, dy: -18 } },
+    { tipo: 'posto', prefixo: '3E-145', nome: 'Piracaia', ll: [-23.05, -46.3589], x: 770, y: 280, rotulo: 'abaixo', sibh: { id: 832, radar: 35833, dx: 0, dy: -40 } },
+    { tipo: 'posto', prefixo: '1000721', nome: 'Canal Atibainha', ll: [-23.1739, -46.3927], x: 885, y: 430, rotulo: 'abaixo', sibh: { id: 20, radar: 35832, dx: -12, dy: -18 } },
+    { tipo: 'posto', prefixo: '3E-089', nome: 'Mascate', ll: [-23.1678, -46.4156], x: 780, y: 430, rotulo: 'abaixo', sibh: { id: 29652, radar: 35832, dx: 0, dy: -40 } },
+    { tipo: 'posto', prefixo: '3D-006', nome: 'Itatiba', ll: [-22.9831, -46.8297], x: 335, y: 430, rotulo: 'abaixo', sibh: { id: 29591, radar: 35839, dx: 0, dy: -50 } },
     { tipo: 'eeab', prefixo: 'EEAB', nome: 'Santa Inês', ll: [-23.36962, -46.6688], x: 660, y: 740, rotulo: 'direita' },
     { tipo: 'eta', prefixo: 'ETA', nome: 'Guaraú', ll: [-23.4358, -46.6479], x: 136, y: 740, rotulo: 'abaixo' },
   ],
@@ -190,11 +213,11 @@ const cantareira: Diagrama = {
     { id: 35833, prefixo: '1000910', nome: 'Bacia do Cachoeira', ll: [-23.0419, -46.312], x: 1162, y: 372 },
     { id: 35832, prefixo: '1000911', nome: 'Bacia do Atibainha', ll: [-23.1765, -46.3898], x: 1162, y: 497 },
     { id: 35831, prefixo: '1000912', nome: 'Bacia Paiva Castro', ll: [-23.332, -46.6468], x: 862, y: 692 },
-    { id: 35809, prefixo: '1002723', nome: 'Bacia Jaguari', ll: [-22.9408, -46.4653], x: 762, y: 36 },
-    { id: 35837, prefixo: '1000972', nome: 'Bacia Jaguari – CESP', ll: [-22.8657, -46.7547], x: 712, y: 124 },
-    { id: 35838, prefixo: '1000970', nome: 'Bacia Buenópolis', ll: [-22.8403, -46.7927], x: 482, y: 124 },
+    { id: 35809, prefixo: '1002723', nome: 'Bacia Jaguari', ll: [-22.9408, -46.4653], x: 712, y: 182 },
+    { id: 35837, prefixo: '1000972', nome: 'Bacia Jaguari – CESP', ll: [-22.8657, -46.7547], x: 552, y: 150 },
+    { id: 35838, prefixo: '1000970', nome: 'Bacia Buenópolis', ll: [-22.8403, -46.7927], x: 422, y: 124 },
     { id: 35808, prefixo: '1000971', nome: 'Bacia Atibaia', ll: [-23.0823, -46.5259], x: 522, y: 468 },
-    { id: 35839, prefixo: '1000969', nome: 'Bacia Valinhos', ll: [-22.9167, -46.9466], x: 292, y: 468 },
+    { id: 35839, prefixo: '1000969', nome: 'Bacia Valinhos', ll: [-22.9167, -46.9466], x: 292, y: 505 },
   ],
   textos: [
     { texto: 'Rio Jaguari → Rio Piracicaba', x: 20, y: 102, ancora: 'start' },
@@ -370,6 +393,17 @@ export const DIAGRAMAS_UNIFILARES: Record<string, Diagrama> = {
 
 /** Postos de radar (station_prefix_id do SIBH) de todos os diagramas: os únicos que a API consulta. */
 export const IDS_RADAR: ReadonlySet<number> = new Set(Object.values(DIAGRAMAS_UNIFILARES).flatMap((d) => (d.radares ?? []).map((r) => r.id)));
+
+/** Nó de um posto do SIBH. */
+export type NoSibh = Exclude<No, { tipo: 'reservatorio' }> & { tipo: 'posto'; sibh: PostoSibh };
+export const ehPostoSibh = (n: No): n is NoSibh => n.tipo === 'posto' && !!n.sibh;
+
+/** Postos do SIBH de todos os diagramas, por station_prefix_id (os únicos que a API consulta), com o radar da bacia. */
+export const POSTOS_SIBH: ReadonlyMap<number, { no: NoSibh; radar: Radar | undefined }> = new Map(
+  Object.values(DIAGRAMAS_UNIFILARES).flatMap((d) =>
+    d.nos.filter(ehPostoSibh).map((n) => [n.sibh.id, { no: n, radar: d.radares?.find((r) => r.id === n.sibh.radar) }] as const),
+  ),
+);
 
 /** Pares local:variável que um diagrama precisa (valores das ligações, dos nós e dos reservatórios). */
 export function paresDoDiagrama(d: Diagrama): string[] {

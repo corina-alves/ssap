@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-import { paresDoDiagrama, VD, type Diagrama, type No } from '@/conteudo/diagramas-unifilares';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { ehPostoSibh, paresDoDiagrama, VD, type Diagrama, type No, type NoSibh } from '@/conteudo/diagramas-unifilares';
 import { BASES, type NomeBase } from './bases-mapa';
 import { DesenhoNoMapa } from './desenho-mapa';
 import { MapaUnifilar } from './mapa-unifilar';
@@ -35,6 +35,8 @@ export function DesenhoUnifilar({
   modo,
   destaque,
   aoEscolher,
+  postoAtivo,
+  aoPosto,
   classe = 'un-svg',
 }: {
   d: Diagrama;
@@ -43,6 +45,9 @@ export function DesenhoUnifilar({
   modo: Modo;
   destaque?: number | null;
   aoEscolher?: (space: number) => void;
+  /** posto do SIBH com os gráficos abertos (station_prefix_id) */
+  postoAtivo?: number | null;
+  aoPosto?: (n: NoSibh) => void;
   classe?: string;
 }) {
   const vazoes = modo === 'vazao';
@@ -104,7 +109,16 @@ export function DesenhoUnifilar({
         n.tipo === 'reservatorio' ? (
           <Reservatorio key={i} n={n} valores={valores} data={data} modo={modo} ativo={destaque === n.space} aoEscolher={aoEscolher} />
         ) : (
-          <Ponto key={i} n={n} valores={valores} data={data} modo={modo} vazao={n.tipo === 'eeab' || n.tipo === 'uhe' ? vazaoNo(n) : null} />
+          <Ponto
+            key={i}
+            n={n}
+            valores={valores}
+            data={data}
+            modo={modo}
+            vazao={n.tipo === 'eeab' || n.tipo === 'uhe' ? vazaoNo(n) : null}
+            ativo={ehPostoSibh(n) && n.sibh.id === postoAtivo}
+            aoPosto={aoPosto}
+          />
         ),
       )}
     </svg>
@@ -113,16 +127,16 @@ export function DesenhoUnifilar({
 
 // ---------------------------------------------------------------- com dados
 
-/** Valores do SSD de todos os campos do diagrama e a chuva por radar (SIBH), na data (refeito a cada `tick`). */
-function useValoresSsd(d: Diagrama, data: string, tick: number) {
-  const [st, setSt] = useState<{ valores: ValoresSsd; carregando: boolean; erro?: string }>({ valores: {}, carregando: true });
-  const pares = useMemo(() => paresDoDiagrama(d).join(','), [d]);
-  const radares = useMemo(() => (d.radares ?? []).map((r) => r.id).join(','), [d]);
+type EstadoValores = { valores: ValoresSsd; carregando: boolean; erro?: string };
 
+/** Valores da API de valores do painel para a consulta `q` (refeitos quando ela muda). */
+function useValores(q: string | null): EstadoValores {
+  const [st, setSt] = useState<EstadoValores>({ valores: {}, carregando: !!q });
   useEffect(() => {
+    if (!q) return;
     let vivo = true;
     setSt((s) => ({ valores: s.valores, carregando: true }));
-    fetch(`/api/acesso/painel_interativo/valores?data=${data}&p=${pares}${radares ? `&r=${radares}` : ''}&t=${tick}`)
+    fetch(`/api/acesso/painel_interativo/valores?${q}`)
       .then(async (r) => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         return ((await r.json()) as { valores: ValoresSsd }).valores;
@@ -134,9 +148,23 @@ function useValoresSsd(d: Diagrama, data: string, tick: number) {
     return () => {
       vivo = false;
     };
-  }, [pares, radares, data, tick]);
-
+  }, [q]);
   return st;
+}
+
+/**
+ * Valores do SSD de todos os campos do diagrama e, numa consulta à parte (o
+ * SIBH às vezes demora e não pode segurar o SSD), a chuva por radar e o nível e
+ * a vazão dos postos do SIBH, na data (refeitos a cada `tick`).
+ */
+function useValoresSsd(d: Diagrama, data: string, tick: number) {
+  const pares = useMemo(() => paresDoDiagrama(d).join(','), [d]);
+  const radares = useMemo(() => (d.radares ?? []).map((r) => r.id).join(','), [d]);
+  const postos = useMemo(() => d.nos.filter(ehPostoSibh).map((n) => n.sibh.id).join(','), [d]);
+  const ssd = useValores(`data=${data}&p=${pares}&t=${tick}`);
+  const sibh = useValores(radares || postos ? `data=${data}${radares ? `&r=${radares}` : ''}${postos ? `&f=${postos}` : ''}&t=${tick}` : null);
+  const valores = useMemo(() => ({ ...ssd.valores, ...sibh.valores }), [ssd.valores, sibh.valores]);
+  return { valores, carregando: ssd.carregando, erro: ssd.erro, carregandoSibh: sibh.carregando, erroSibh: sibh.erro };
 }
 
 function BotoesModo({ modo, aoMudar }: { modo: Modo; aoMudar: (m: Modo) => void }) {
@@ -161,7 +189,7 @@ const FAIXAS: [number, string][] = [
 ];
 
 /** Legenda; com mapa, o rio é a linha cheia pelo traçado real (desenho-mapa.tsx). */
-function Legenda({ nota, comMapa, radar }: { nota: string; comMapa: boolean; radar: boolean }) {
+function Legenda({ nota, comMapa, radar, sibh }: { nota: string; comMapa: boolean; radar: boolean; sibh: boolean }) {
   return (
     <div className="un-legenda" aria-label="Legenda">
       {comMapa ? (
@@ -193,6 +221,12 @@ function Legenda({ nota, comMapa, radar }: { nota: string; comMapa: boolean; rad
         </svg>
         Adução para ETA
       </span>
+      {!comMapa && (
+        <span>
+          <b style={{ color: COR.descarregada }}>0,25 m³/s</b>
+          Vazão descarregada (média do dia; em cima, a média do mês)
+        </span>
+      )}
       <span>
         <svg width="34" height="10" aria-hidden className="un-parado">
           <line x1="1" y1="5" x2="33" y2="5" stroke={COR.rio} strokeWidth="3" strokeDasharray="9 6" />
@@ -203,7 +237,7 @@ function Legenda({ nota, comMapa, radar }: { nota: string; comMapa: boolean; rad
         <svg width="26" height="16" viewBox="-12 -8 24 16" aria-hidden>
           <circle r="6" fill={COR.fundoSimbolo} stroke={COR.contorno} strokeWidth="1.6" />
         </svg>
-        Posto fluviométrico
+        {sibh ? 'Posto fluviométrico (do SIBH: clique para ver os gráficos)' : 'Posto fluviométrico'}
       </span>
       <span>
         <svg width="34" height="16" viewBox="-74 -24 156 48" aria-hidden>
@@ -249,6 +283,7 @@ function Legenda({ nota, comMapa, radar }: { nota: string; comMapa: boolean; rad
 const BASE_PADRAO: NomeBase = 'Satélite';
 
 const NOTA_FONTE = 'Vazões médias diárias (SSD SP Águas)';
+const NOTA_SIBH = 'postos do SIBH: leitura mais recente do dia (dia que já acabou: média do dia)';
 const NOTA_ANTIGOS = '* último dado disponível, anterior à data escolhida';
 
 /** Diagrama com os valores do SSD na data, os botões de modo, as barras de volume e a legenda. */
@@ -258,12 +293,22 @@ export function DiagramaUnifilar({
   tick = 0,
   destaque,
   aoEscolher,
+  postoAtivo,
+  aoPosto,
+  sobre,
+  lateral,
 }: {
   d: Diagrama;
   data: string;
   tick?: number;
   destaque?: number | null;
   aoEscolher?: (space: number) => void;
+  postoAtivo?: number | null;
+  aoPosto?: (n: NoSibh) => void;
+  /** painel por cima do desenho (gráficos do posto clicado) */
+  sobre?: ReactNode;
+  /** mais conteúdo na coluna da direita, abaixo dos volumes (Cantareira: vazão descarregada) */
+  lateral?: ReactNode;
 }) {
   const [modo, setModo] = useState<Modo>('vazao');
   const [base, setBase] = useState<NomeBase | null>(BASE_PADRAO);
@@ -271,6 +316,7 @@ export function DiagramaUnifilar({
   const st = useValoresSsd(d, data, tick);
   const reservatorios = d.nos.filter((n): n is Extract<No, { tipo: 'reservatorio' }> => n.tipo === 'reservatorio');
   const antigos = Object.values(st.valores).some((v) => v && v.data < data);
+  const comSibh = d.nos.some(ehPostoSibh);
 
   return (
     <div className="un">
@@ -291,17 +337,25 @@ export function DiagramaUnifilar({
         </div>
         {st.carregando && <span className="un-status">Atualizando valores…</span>}
         {st.erro && <span className="un-status is-erro">Valores indisponíveis ({st.erro}).</span>}
+        {!st.carregando && st.carregandoSibh && <span className="un-status">Buscando radar e postos no SIBH…</span>}
+        {st.erroSibh && <span className="un-status is-erro">SIBH indisponível ({st.erroSibh}): radar e postos sem valor.</span>}
       </div>
       <div className="un-corpo">
-        <div className={`un-desenho${st.carregando ? ' is-carregando' : ''}${base ? ` com-mapa com-mapa--${base === 'Escuro' ? 'escuro' : base === 'Satélite' ? 'satelite' : 'claro'}` : ''}`}>
-          {base ? (
-            <MapaUnifilar d={d} base={base} hidro={hidro}>
-              {(v) => <DesenhoNoMapa d={d} {...v} valores={st.valores} data={data} modo={modo} destaque={destaque} aoEscolher={aoEscolher} />}
-            </MapaUnifilar>
-          ) : (
-            <DesenhoUnifilar d={d} valores={st.valores} data={data} modo={modo} destaque={destaque} aoEscolher={aoEscolher} />
-          )}
+        <div className="un-palco">
+          <div className={`un-desenho${st.carregando ? ' is-carregando' : ''}${base ? ` com-mapa com-mapa--${base === 'Escuro' ? 'escuro' : base === 'Satélite' ? 'satelite' : 'claro'}` : ''}`}>
+            {base ? (
+              <MapaUnifilar d={d} base={base} hidro={hidro}>
+                {(v) => (
+                  <DesenhoNoMapa d={d} {...v} valores={st.valores} data={data} modo={modo} destaque={destaque} aoEscolher={aoEscolher} postoAtivo={postoAtivo} aoPosto={aoPosto} />
+                )}
+              </MapaUnifilar>
+            ) : (
+              <DesenhoUnifilar d={d} valores={st.valores} data={data} modo={modo} destaque={destaque} aoEscolher={aoEscolher} postoAtivo={postoAtivo} aoPosto={aoPosto} />
+            )}
+          </div>
+          {sobre}
         </div>
+        <div className="un-lateral">
         {reservatorios.length > 0 && (
           <aside className="un-volumes" aria-label="Volumes dos reservatórios">
             <h4>Volumes dos reservatórios</h4>
@@ -320,8 +374,10 @@ export function DiagramaUnifilar({
             <p>Clique num reservatório para ver os gráficos dele.</p>
           </aside>
         )}
+        {lateral}
+        </div>
       </div>
-      <Legenda nota={antigos ? `${NOTA_FONTE} · ${NOTA_ANTIGOS}` : NOTA_FONTE} comMapa={!!base} radar={!!d.radares?.length} />
+      <Legenda nota={[NOTA_FONTE, ...(comSibh ? [NOTA_SIBH] : []), ...(antigos ? [NOTA_ANTIGOS] : [])].join(' · ')} comMapa={!!base} radar={!!d.radares?.length} sibh={comSibh} />
       {d.notas?.length ? (
         <ul className="un-notas">
           {d.notas.map((n) => (

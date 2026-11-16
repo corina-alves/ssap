@@ -66,16 +66,28 @@ export async function queryOne<T extends pg.QueryResultRow = pg.QueryResultRow>(
 /** Executa `fn` numa transação; desfaz tudo se lançar erro. */
 export async function transacao<T>(fn: (c: pg.PoolClient) => Promise<T>): Promise<T> {
   const c = await pool().connect();
+  // Emprestada, a conexão fica sem o tratador de erro do pool: se o banco a derrubar
+  // no meio da transação (transação parada além do prazo, banco reiniciado), o erro
+  // viraria exceção não capturada (visto em 16/11/2026 com o processo travado por
+  // minutos). Aqui ele fica registrado e a conexão é descartada, não devolvida ao pool.
+  let caiu: Error | undefined;
+  const aoErro = (e: Error) => {
+    caiu = e;
+    log.warn('banco_conexao_encerrada', { erro: erroSeguro(e) });
+  };
+  c.on('error', aoErro);
   try {
     await c.query('BEGIN');
     const r = await fn(c);
     await c.query('COMMIT');
     return r;
   } catch (e) {
-    await c.query('ROLLBACK');
+    // com a conexão caída não há o que desfazer (o banco já descartou a transação)
+    await c.query('ROLLBACK').catch(() => {});
     log.warn('banco_transacao_desfeita', { req: await idRequisicao(), erro: erroSeguro(e) });
     throw e;
   } finally {
-    c.release();
+    c.off('error', aoErro);
+    c.release(caiu);
   }
 }

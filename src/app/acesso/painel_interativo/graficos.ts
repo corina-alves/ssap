@@ -191,7 +191,8 @@ export function opcaoDistribuicao(itens: { nome: string; hm3: number | null; pct
         return `<b>${i.nome}</b><br>${fmt(i.hm3, 2, ' hm³')} · ${fmt(total ? ((i.hm3 ?? 0) / total) * 100 : null, 1, '% do total')}<br>Volume útil: ${fmt(i.pct, 1, '%')}`;
       },
     },
-    toolbox: { show: true, right: 4, top: 0, iconStyle: { borderColor: TEMA.fraco }, feature: { saveAsImage: { title: 'Baixar PNG', backgroundColor: TEMA.fundoExportacao, pixelRatio: 2 } } },
+    // sem eixo de tempo: só o botão de baixar (vem do EChart)
+    toolbox: { feature: { dataZoom: { show: false }, restore: { show: false } } },
     grid: { left: 110, right: 70, top: 24, bottom: 24 },
     xAxis: eixoValor('hm³'),
     yAxis: { type: 'category', data: ord.map((i) => i.nome), axisLabel: { color: TEMA.texto } },
@@ -203,6 +204,253 @@ export function opcaoDistribuicao(itens: { nome: string; hm3: number | null; pct
         itemStyle: { color: COR.atual, borderRadius: [0, 4, 4, 0] },
         label: { show: true, position: 'right', color: TEMA.texto, formatter: (p) => fmt(p.value as number, 1, ' hm³') },
       },
+    ],
+  };
+}
+
+// ---------------------------------------------------------------- operação do Cantareira (cantareira.tsx)
+
+/**
+ * Cores dos três reservatórios que despejam no PCJ (e das bacias deles no
+ * radar), na ordem fixa; validadas no fundo do painel (#11294b) com o
+ * validador de paleta: faixa de luminosidade, croma, daltonismo e contraste.
+ */
+export const COR_RESERVATORIO = { jaguari: '#3b97d6', cachoeira: '#36a35c', atibainha: '#a476e0' } as const;
+const COR_MM = '#d95926';
+const COR_MINIMO = '#e66767';
+const COR_REFERENCIA = '#9fb5cb';
+
+type Lugar = 'insideEndTop' | 'insideEndBottom' | 'insideStartTop' | 'insideStartBottom' | 'insideMiddleTop' | 'insideMiddleBottom';
+/** Linha de referência horizontal com o texto junto dela (linhas próximas: textos em lugares diferentes). */
+const referencia = (y: number, texto: string, cor: string, tipo: 'dashed' | 'dotted' = 'dashed', lugar: Lugar = 'insideEndTop') => ({
+  yAxis: y,
+  lineStyle: { color: cor, type: tipo, width: 1.4 },
+  label: { formatter: texto, position: lugar, color: TEMA.texto, fontSize: 11 },
+});
+/** Legenda à esquerda, sem chegar nos botões da barra de ferramentas (à direita). */
+const legenda = { type: 'scroll' as const, top: 0, left: 0, right: 118, textStyle: { color: TEMA.texto }, pageTextStyle: { color: TEMA.texto } };
+
+type Dica = { dataIndex: number; seriesIndex: number; marker: string; seriesName: string; value: unknown };
+const lista = (ps: unknown) => (Array.isArray(ps) ? ps : [ps]) as Dica[];
+
+/** Vazão despachada (descarregada) de cada reservatório para o PCJ, empilhada: o topo é o total. */
+export function opcaoDespachada(serie: { data: string; jaguari: number | null; cachoeira: number | null; atibainha: number | null; total: number | null }[]): EChartsOption {
+  const camada = (nome: string, chave: 'jaguari' | 'cachoeira' | 'atibainha') => ({
+    name: nome,
+    type: 'line' as const,
+    stack: 'pcj',
+    step: 'middle' as const,
+    showSymbol: false,
+    lineStyle: { width: 1.5, color: COR_RESERVATORIO[chave] },
+    itemStyle: { color: COR_RESERVATORIO[chave] },
+    areaStyle: { color: COR_RESERVATORIO[chave], opacity: 0.55 },
+    data: serie.map((d) => d[chave]),
+  });
+  return {
+    tooltip: {
+      trigger: 'axis',
+      formatter: (ps) => {
+        const l = lista(ps);
+        const d = serie[l[0]?.dataIndex ?? 0];
+        return `<b>${d ? dataBr(d.data) : ''}</b><br>${l.map((p) => `${p.marker}${p.seriesName}: ${fmt(p.value as number | null, 2, ' m³/s')}`).join('<br>')}<br><b>Total para o PCJ: ${fmt(d?.total, 2, ' m³/s')}</b>`;
+      },
+    },
+    legend: legenda,
+    grid: { left: 52, right: 24, top: 58, bottom: 56 },
+    xAxis: eixoTempo(serie.map((d) => diaMes(d.data))),
+    yAxis: eixoValor('m³/s'),
+    dataZoom: zoom,
+    series: [camada('Jaguari/Jacareí (Rio Jaguari)', 'jaguari'), camada('Cachoeira (Rio Atibaia)', 'cachoeira'), camada('Atibainha (Rio Atibaia)', 'atibainha')],
+  };
+}
+
+const LUGARES_MEDIA: Lugar[] = ['insideStartTop', 'insideEndTop', 'insideMiddleBottom'];
+
+/**
+ * Chuva por radar no mês nas bacias dos reservatórios: o acumulado dia a dia de
+ * cada bacia (linhas) e a média climatológica do mês de cada reservatório
+ * (tracejadas, mesma cor); a chuva de cada dia vai na dica.
+ */
+export function opcaoChuvaRadarMes(
+  dias: string[],
+  bacias: { chave: 'jaguari' | 'cachoeira' | 'atibainha'; reservatorio: string; dias: { data: string; mm: number | null }[]; climatologia: { media: number } | null }[],
+): EChartsOption {
+  const porDia = bacias.map((b) => new Map(b.dias.map((d) => [d.data, d.mm])));
+  const max = Math.max(0, ...bacias.map((b) => b.climatologia?.media ?? 0), ...bacias.map((_, i) => acumular(dias.map((d) => porDia[i]!.get(d) ?? null)).reduce<number>((m, x) => Math.max(m, x ?? 0), 0)));
+  return {
+    tooltip: {
+      trigger: 'axis',
+      formatter: (ps) => {
+        const l = lista(ps);
+        const dia = dias[l[0]?.dataIndex ?? 0]!;
+        const linhas = l.map((p) => {
+          const b = bacias[p.seriesIndex]!;
+          return `${p.marker}${b.reservatorio}: ${fmt(porDia[p.seriesIndex]!.get(dia), 1, ' mm')} no dia · ${fmt(p.value as number | null, 1, ' mm')} no mês${b.climatologia ? ` (média do mês: ${fmt(b.climatologia.media, 0, ' mm')})` : ''}`;
+        });
+        return `<b>${dataBr(dia)}</b><br>${linhas.join('<br>')}`;
+      },
+    },
+    legend: legenda,
+    grid: { left: 52, right: 16, top: 58, bottom: 28 },
+    xAxis: eixoTempo(dias.map(diaMes)),
+    yAxis: eixoValor('mm no mês', { min: 0, max: Math.max(10, Math.ceil((max * 1.12) / 10) * 10) }),
+    series: bacias.map((b, i) => ({
+      name: b.reservatorio,
+      type: 'line' as const,
+      showSymbol: false,
+      connectNulls: false,
+      lineStyle: { width: 2, color: COR_RESERVATORIO[b.chave] },
+      itemStyle: { color: COR_RESERVATORIO[b.chave] },
+      data: acumular(dias.map((d) => porDia[i]!.get(d) ?? null)),
+      markLine: b.climatologia
+        ? { silent: true, symbol: 'none', data: [referencia(b.climatologia.media, `média ${b.reservatorio}: ${fmt(b.climatologia.media, 0, ' mm')}`, COR_RESERVATORIO[b.chave], 'dashed', LUGARES_MEDIA[i % 3]!)] }
+        : undefined,
+    })),
+  };
+}
+
+/**
+ * Posto de controle, 15 dias: vazão média de cada dia (barras), a média móvel de
+ * 15 dias (linha) e as metas de média móvel das Faixas 1–2 e 3–4 e a mínima
+ * média diária (Res. ANA/DAEE 925, art. 5º, §§ 2º e 3º).
+ */
+export function opcaoControle15(dias: { data: string; vazao: number | null; mm15: number | null }[], metas: { faixas12: number; faixas34: number }, minimoDiario: number | null): EChartsOption {
+  const linhas = [
+    referencia(metas.faixas12, `meta Faixas 1–2: ${fmt(metas.faixas12, 1, ' m³/s')}`, COR_REFERENCIA, 'dashed', 'insideEndTop'),
+    referencia(metas.faixas34, `meta Faixas 3–4: ${fmt(metas.faixas34, 1, ' m³/s')}`, COR_REFERENCIA, 'dotted', 'insideEndBottom'),
+  ];
+  // a mínima diária igual a uma meta (Atibaia e Buenópolis nas Faixas 3–4) iria em cima dela: só o texto da meta
+  if (minimoDiario !== null && minimoDiario !== metas.faixas34 && minimoDiario !== metas.faixas12) linhas.push(referencia(minimoDiario, `mínima diária: ${fmt(minimoDiario, 1, ' m³/s')}`, COR_MINIMO, 'dashed', 'insideStartBottom'));
+  const max = Math.max(...dias.flatMap((d) => [d.vazao ?? 0, d.mm15 ?? 0]), metas.faixas12);
+  return {
+    tooltip: { trigger: 'axis', valueFormatter: (x) => fmt(x as number, 2, ' m³/s') },
+    legend: legenda,
+    grid: { left: 46, right: 16, top: 58, bottom: 28 },
+    xAxis: eixoTempo(dias.map((d) => diaMes(d.data))),
+    yAxis: eixoValor('m³/s', { min: 0, max: Math.ceil(max * 1.15) }),
+    series: [
+      { name: 'Média do dia', type: 'bar', barMaxWidth: 18, itemStyle: { color: COR_RESERVATORIO.jaguari, borderRadius: [4, 4, 0, 0] }, data: dias.map((d) => d.vazao), markLine: { silent: true, symbol: 'none', data: linhas } },
+      { name: 'Média móvel de 15 dias', type: 'line', showSymbol: true, symbolSize: 8, lineStyle: { width: 2, color: COR_MM }, itemStyle: { color: COR_MM }, data: dias.map((d) => d.mm15) },
+    ],
+  };
+}
+
+const horaBr = (t: number) => new Date(t).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+
+/**
+ * Posto de controle, 7 dias hora a hora: vazão em cima (com a mínima média
+ * diária) e nível embaixo, cada um no seu gráfico, com o mesmo eixo do tempo.
+ */
+export function opcaoControle7(horas: { t: number; nivel: number | null; vazao: number | null }[], minimoDiario: number | null): EChartsOption {
+  const eixoHora = (grade: number, rotulos: boolean) => ({
+    type: 'time' as const,
+    gridIndex: grade,
+    axisLabel: { show: rotulos, color: TEMA.fraco, formatter: (v: number) => new Date(v).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit' }) },
+    axisLine: { lineStyle: { color: TEMA.grade } },
+    splitLine: { show: false },
+  });
+  return {
+    tooltip: {
+      trigger: 'axis',
+      axisPointer: { link: [{ xAxisIndex: 'all' }] },
+      formatter: (ps) => {
+        const l = lista(ps);
+        const v = (p: Dica) => p.value as [number, number | null];
+        return `<b>${l[0] ? horaBr(v(l[0])[0]) : ''}</b><br>${l.map((p) => `${p.marker}${p.seriesName}: ${fmt(v(p)[1], 2, p.seriesName === 'Nível' ? ' m' : ' m³/s')}`).join('<br>')}`;
+      },
+    },
+    legend: legenda,
+    grid: [
+      { left: 46, right: 16, top: 60, height: '30%' },
+      { left: 46, right: 16, top: '70%', bottom: 26 },
+    ],
+    xAxis: [eixoHora(0, false), eixoHora(1, true)],
+    yAxis: [
+      eixoValor('vazão (m³/s)', {
+        gridIndex: 0,
+        splitNumber: 3,
+        min: (v: { min: number }) => Math.max(0, Math.floor(Math.min(v.min, minimoDiario ?? v.min) * 0.9)),
+        nameTextStyle: { color: TEMA.fraco, align: 'left' },
+      }),
+      eixoValor('nível (m)', { gridIndex: 1, scale: true, splitNumber: 2, nameTextStyle: { color: TEMA.fraco, align: 'left' } }),
+    ],
+    series: [
+      {
+        name: 'Vazão',
+        type: 'line',
+        xAxisIndex: 0,
+        yAxisIndex: 0,
+        showSymbol: false,
+        lineStyle: { width: 2, color: COR_RESERVATORIO.jaguari },
+        itemStyle: { color: COR_RESERVATORIO.jaguari },
+        data: horas.map((h) => [h.t, h.vazao]),
+        markLine: minimoDiario === null ? undefined : { silent: true, symbol: 'none', data: [referencia(minimoDiario, `mínima diária: ${fmt(minimoDiario, 1, ' m³/s')}`, COR_MINIMO)] },
+      },
+      { name: 'Nível', type: 'line', xAxisIndex: 1, yAxisIndex: 1, showSymbol: false, lineStyle: { width: 2, color: COR_RESERVATORIO.cachoeira }, itemStyle: { color: COR_RESERVATORIO.cachoeira }, data: horas.map((h) => [h.t, h.nivel]) },
+    ],
+  };
+}
+
+/**
+ * Posto do diagrama: vazão (em cima) e nível (embaixo) médios de cada dia, cada
+ * um no seu gráfico com o mesmo eixo do tempo; a dica mostra os dois. Posto que
+ * só mede nível: só o nível.
+ */
+export function opcaoPostoDias(dias: { data: string; vazao: number | null; nivel: number | null }[]): EChartsOption {
+  const comVazao = dias.some((d) => d.vazao !== null);
+  const rotulos = dias.map((d) => diaMes(d.data));
+  const eixoX = (grade: number, mostrar: boolean) => ({ ...eixoTempo(rotulos), gridIndex: grade, axisLabel: { show: mostrar, color: TEMA.fraco } });
+  const nivel = {
+    name: 'Nível médio',
+    type: 'line' as const,
+    xAxisIndex: comVazao ? 1 : 0,
+    yAxisIndex: comVazao ? 1 : 0,
+    showSymbol: true,
+    symbolSize: 6,
+    lineStyle: { width: 2, color: COR_RESERVATORIO.cachoeira },
+    itemStyle: { color: COR_RESERVATORIO.cachoeira },
+    data: dias.map((d) => d.nivel),
+  };
+  return {
+    tooltip: {
+      trigger: 'axis',
+      axisPointer: { link: [{ xAxisIndex: 'all' }] },
+      formatter: (ps) => {
+        const d = dias[lista(ps)[0]?.dataIndex ?? 0];
+        return d ? `<b>${dataBr(d.data)}</b>${comVazao ? `<br>Vazão média: ${fmt(d.vazao, 2, ' m³/s')}` : ''}<br>Nível médio: ${fmt(d.nivel, 2, ' m')}` : '';
+      },
+    },
+    legend: legenda,
+    grid: comVazao
+      ? [
+          { left: 52, right: 16, top: 52, height: '27%' },
+          { left: 52, right: 16, top: '63%', bottom: 50 },
+        ]
+      : [{ left: 52, right: 16, top: 52, bottom: 50 }],
+    xAxis: comVazao ? [eixoX(0, false), eixoX(1, true)] : [eixoX(0, true)],
+    yAxis: comVazao
+      ? [eixoValor('vazão (m³/s)', { gridIndex: 0, scale: true, splitNumber: 3, nameTextStyle: { color: TEMA.fraco, align: 'left' } }), eixoValor('nível (m)', { gridIndex: 1, scale: true, splitNumber: 3, nameTextStyle: { color: TEMA.fraco, align: 'left' } })]
+      : [eixoValor('nível (m)', { gridIndex: 0, scale: true, nameTextStyle: { color: TEMA.fraco, align: 'left' } })],
+    dataZoom: [{ type: 'inside' as const, xAxisIndex: comVazao ? [0, 1] : [0] }, { type: 'slider' as const, xAxisIndex: comVazao ? [0, 1] : [0], height: 14, bottom: 6, textStyle: { color: TEMA.fraco }, borderColor: TEMA.grade }],
+    series: comVazao
+      ? [{ name: 'Vazão média', type: 'line' as const, xAxisIndex: 0, yAxisIndex: 0, showSymbol: true, symbolSize: 6, lineStyle: { width: 2, color: COR_RESERVATORIO.jaguari }, itemStyle: { color: COR_RESERVATORIO.jaguari }, data: dias.map((d) => d.vazao) }, nivel]
+      : [nivel],
+  };
+}
+
+/** Chuva por radar na bacia: a de cada dia (barras) e o acumulado no período (linha), no mesmo eixo (mm). */
+export function opcaoChuvaDias(dias: { data: string; chuva: number | null }[]): EChartsOption {
+  const v = dias.map((d) => d.chuva);
+  return {
+    tooltip: { trigger: 'axis', valueFormatter: (x) => fmt(x as number, 1, ' mm') },
+    legend: legenda,
+    grid: { left: 52, right: 16, top: 58, bottom: 56 },
+    xAxis: eixoTempo(dias.map((d) => diaMes(d.data))),
+    yAxis: eixoValor('mm', { min: 0 }),
+    dataZoom: zoom,
+    series: [
+      { name: 'Chuva do dia', type: 'bar', barMaxWidth: 12, itemStyle: { color: COR_RESERVATORIO.jaguari, borderRadius: [4, 4, 0, 0] }, data: v },
+      { name: 'Acumulado no período', type: 'line', showSymbol: false, lineStyle: { width: 2, color: COR_MM }, itemStyle: { color: COR_MM }, data: acumular(v) },
     ],
   };
 }

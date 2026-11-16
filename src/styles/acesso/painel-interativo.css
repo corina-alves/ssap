@@ -384,3 +384,138 @@
 .pi-pnl .pi-subir { background: #12a8d2; color: #04222c; box-shadow: 0 6px 18px rgba(18, 168, 210, .4); }
 .pi-pnl .pi-subir:hover { background: #4fc3f7; }
 .pi-pnl .pi-subir:focus-visible { outline-color: rgba(79, 195, 247, .5); }
+
+/* Postos do SIBH no diagrama: clicáveis (gráficos abaixo do diagrama) */
+.un-ponto--clicavel { cursor: pointer; outline: none; }
+.un-ponto--clicavel:hover circle, .un-ponto--clicavel:focus-visible circle { filter: brightness(1.35); }
+.un-ponto--clicavel:focus-visible circle:first-of-type { stroke: #ffb020; }
+
+/* Gráficos do posto clicado (grafico-posto.tsx): painel por cima do diagrama/mapa */
+.un-palco { position: relative; min-width: 0; }
+/* coluna da direita do diagrama: volumes e, no Cantareira, a vazão descarregada */
+.un-lateral { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.un-descarregada {
+  padding: 12px 12px 10px; border-radius: 14px; border: 1px solid rgba(255, 176, 32, .5);
+  background: linear-gradient(180deg, rgba(255, 176, 32, .14), rgba(255, 176, 32, .03)), var(--un-fundo);
+  transition: opacity .2s;
+}
+.un-descarregada.is-carregando { opacity: .55; }
+.un-descarregada h4 { margin: 0 0 6px; font-size: .9rem; color: #ffd27a; }
+.un-descarregada p { margin: 8px 0 0; color: #8fa6bd; font-size: .72rem; }
+.un-descarregada .pc-tabela { font-size: .78rem; margin: 0; }
+.un-descarregada .pc-tabela td { font-size: .82rem; padding: 3px 2px; }
+.un-descarregada .pc-tabela th { padding: 2px; }
+.un-descarregada .pc-tabela th:first-child { text-transform: none; }
+.un-descarregada .pc-tabela tr.is-total td { color: #ffcf6e; }
+.un-sobre {
+  position: absolute; top: 10px; right: 10px; z-index: 1100;
+  width: min(540px, calc(100% - 20px)); max-height: calc(100% - 20px); overflow: auto;
+  display: flex; flex-direction: column; gap: 4px; padding: 10px 12px;
+  background: rgba(9, 25, 47, .96); color: #eaf2fa; border: 1px solid rgba(255, 255, 255, .2); border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, .5);
+}
+.un-sobre-topo { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.un-sobre-topo h4 { margin: 0; font-size: .95rem; color: #fff; display: flex; align-items: center; gap: 6px; }
+.un-sobre-topo h4 i { color: #4fc3f7; }
+.un-sobre-topo button { background: transparent; color: #fff; border: 1px solid rgba(255, 255, 255, .25); border-radius: 8px; padding: 2px 9px; font: inherit; cursor: pointer; }
+.un-sobre-topo button:hover, .un-sobre-topo button:focus-visible { background: rgba(255, 255, 255, .1); }
+.un-sobre h5 { margin: 6px 0 0; font-size: .78rem; font-weight: 700; color: #9fb5cb; }
+.un-sobre-agora { margin: 2px 0 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; font-size: .8rem; color: #9fb5cb; }
+.un-sobre-agora b { color: #fff; font-size: 1.02rem; font-weight: 800; }
+@media (max-width: 760px) {
+  .un-sobre { position: static; width: auto; max-height: none; margin-top: 8px; }
+}
+
+/* Operação do Cantareira e vazões para o PCJ (cantareira.tsx) */
+.pc { display: flex; flex-direction: column; gap: 12px; }
+.pc-cartoes { display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 10px; }
+.pc-cartao {
+  --pc-cor: var(--pi-ciano);
+  display: flex; flex-direction: column; gap: 3px; min-width: 0;
+  background: var(--pi-card2); border: 1px solid var(--pi-borda); border-left: 4px solid var(--pc-cor); border-radius: 12px; padding: 10px 12px;
+  font-size: .78rem; color: var(--pi-fraco);
+}
+.pc-cartao > small { font-size: .7rem; text-transform: uppercase; letter-spacing: .04em; }
+.pc-cartao > b { color: #fff; font-size: clamp(1.05rem, 1.4vw, 1.4rem); font-weight: 900; line-height: 1.15; }
+.pc-cartao > b:empty { display: none; }
+.pc-cartao span b, .pc-lista b { color: #fff; }
+.pc-cartao em { font-style: normal; font-size: .7rem; opacity: .85; margin-top: auto; padding-top: 4px; }
+.pc-lista { list-style: none; margin: 2px 0 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.pc-lista li { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.pc-lista i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; flex: none; }
+/* vazão descarregada em destaque (a mesma cor âmbar do diagrama) */
+.pc-cartao--descarregada { --pc-cor: #ffb020; background: linear-gradient(180deg, rgba(255, 176, 32, .12), rgba(255, 176, 32, .03)), var(--pi-card2); border-color: rgba(255, 176, 32, .45); }
+.pc-cartao--descarregada > small { color: #ffd27a; }
+.pc-cartao--descarregada > b { color: #ffcf6e; }
+.pc-tabela { width: 100%; border-collapse: collapse; font-size: .8rem; margin-top: 4px; }
+.pc-tabela th { font-size: .66rem; font-weight: 400; text-transform: uppercase; letter-spacing: .03em; color: var(--pi-fraco); text-align: right; padding: 2px 4px; }
+.pc-tabela th:first-child, .pc-tabela td:first-child { text-align: left; }
+.pc-tabela td { padding: 3px 4px; text-align: right; color: #fff; font-weight: 700; border-top: 1px solid var(--pi-borda); white-space: nowrap; }
+.pc-tabela td:first-child { font-weight: 400; color: var(--pi-texto); }
+.pc-tabela td:first-child i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+.pc-tabela tr.is-total td { color: #ffcf6e; font-weight: 900; }
+.pc-tabela td.is-parcial, .pc-tabela small { color: var(--pi-fraco); font-weight: 400; }
+.pc-cartao .pc-tabela td { font-size: .86rem; }
+/* chuva por radar em destaque (o verde-limão do radar no diagrama) */
+.pc-radar {
+  display: grid; grid-template-columns: minmax(280px, 1fr) 2fr; gap: 12px;
+  padding: 12px; border-radius: 14px; border: 1px solid rgba(185, 255, 79, .45);
+  background: linear-gradient(180deg, rgba(185, 255, 79, .09), rgba(185, 255, 79, .02)), var(--pi-card2);
+}
+.pc-radar > h4 { grid-column: 1 / -1; margin: 0; display: flex; align-items: center; gap: 8px; color: #e6ffc2; font-size: 1rem; }
+.pc-radar > h4 i { color: #b9ff4f; }
+.pc-radar-bacias { display: flex; flex-direction: column; gap: 8px; }
+.pc-radar-bacia { padding: 8px 10px; border-radius: 10px; background: rgba(6, 20, 38, .55); border-left: 4px solid var(--pc-cor, #b9ff4f); }
+.pc-radar-bacia span { display: block; font-size: .78rem; color: var(--pi-fraco); }
+.pc-radar-bacia strong { display: block; font-size: 1.7rem; line-height: 1.1; font-weight: 900; color: #d9ff9e; }
+.pc-radar-bacia strong small { font-size: .78rem; font-weight: 400; color: var(--pi-fraco); margin-left: 6px; }
+.pc-radar-bacia em { display: block; font-style: normal; font-size: .76rem; color: var(--pi-texto); }
+.pc-radar-bacia em b { color: #fff; }
+.pc-radar-grafico { min-width: 0; }
+.pc-radar-titulo { margin: 0 0 2px; font-size: .8rem; font-weight: 700; color: #e6ffc2; }
+.pc-radar.is-carregando .pc-radar-bacias, .pc-radar.is-carregando .pc-radar-grafico { opacity: .5; }
+.pc-descarregada { display: grid; grid-template-columns: 1.3fr 1fr; gap: 12px; }
+.pc-destaque-descarregada { border-color: rgba(255, 176, 32, .4); }
+.pc-destaque-descarregada > h4 { color: #ffd27a; }
+.pc-destaque-descarregada .pc-tabela td:nth-last-child(2) b { color: #ffcf6e; }
+.pc-tabela tr.is-parcial td { font-style: italic; }
+/* rodapé da tabela mensal: soma do período (hm³) e média do período (m³/s) */
+.pc-tabela tfoot tr:first-child td { border-top: 2px solid rgba(255, 176, 32, .55); }
+.pc-tabela tfoot tr.is-media td { color: var(--pi-texto); font-weight: 600; }
+.pc-tabela tfoot tr.is-media td b { color: #ffcf6e; }
+.pc-subtitulo { display: flex; align-items: center; gap: 8px; margin: 6px 0 0 !important; font-size: .95rem !important; }
+.pc-subtitulo i { color: var(--pi-ciano); }
+.pc-posto {
+  display: grid; grid-template-columns: minmax(260px, .9fr) 1.2fr 1.2fr; gap: 10px; align-items: stretch;
+  background: var(--pi-card2); border: 1px solid var(--pi-borda); border-radius: 12px; padding: 10px 12px; margin-top: 10px;
+}
+.pc-posto h4 { margin: 0 0 6px; display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.pc-posto h4 small { color: var(--pi-fraco); font-weight: 400; font-size: .75rem; }
+.pc-posto h5 { margin: 0; font-size: .78rem; font-weight: 700; color: var(--pi-fraco); }
+.pc-posto dl { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 12px; margin: 0; }
+.pc-posto dt { font-size: .68rem; color: var(--pi-fraco); text-transform: uppercase; letter-spacing: .03em; font-weight: 400; }
+.pc-posto dd { margin: 0; font-size: 1.05rem; font-weight: 800; color: #fff; }
+.pc-situacoes { display: flex; flex-direction: column; gap: 3px; margin-top: 8px; }
+.pc-situacao { font-size: .74rem; display: inline-flex; align-items: center; gap: 5px; }
+.pc-situacao.is-ok { color: #7ee2a8; }
+.pc-situacao.is-abaixo { color: #ffb3b3; }
+.pc-nota { font-size: .72rem; color: var(--pi-fraco); }
+.pc-chuva { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--pi-borda); font-size: .74rem; color: var(--pi-fraco); }
+.pc-chuva ul { list-style: none; display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin: 4px 0 0; padding: 0; }
+.pc-chuva li { display: flex; flex-direction: column; }
+.pc-chuva li b { color: #fff; font-size: .95rem; }
+.pc-chuva em { font-style: normal; font-size: .7rem; }
+.pc-posto-grafico { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+@media (max-width: 1400px) {
+  .pc-cartoes { grid-template-columns: 1fr 1fr; }
+  .pc-radar, .pc-descarregada { grid-template-columns: 1fr; }
+  .pc-posto { grid-template-columns: 1fr 1fr; }
+  .pc-posto-dados { grid-column: 1 / -1; }
+}
+@media (max-width: 800px) {
+  .pc-cartoes { grid-template-columns: 1fr 1fr; }
+  .pc-posto { grid-template-columns: 1fr; }
+}
+@media (max-width: 520px) {
+  .pc-cartoes { grid-template-columns: 1fr; }
+}

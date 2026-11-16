@@ -1,9 +1,13 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { DIAGRAMAS_UNIFILARES } from '@/conteudo/diagramas-unifilares';
+import { DIAGRAMAS_UNIFILARES, type NoSibh } from '@/conteudo/diagramas-unifilares';
+import type { OperacaoCantareira } from '@/lib/hidrologia/cantareira-operacao';
 import type { CartaoSistema, Indicadores, ValorTransferencia } from '@/lib/hidrologia/painel-interativo';
+import { CartaoDescarregada, PainelCantareira, urlOperacao } from './cantareira';
+import { GraficosPosto } from './grafico-posto';
 import { MapaSim } from './mapa-sim';
+import { Estado, useJson } from './usar-json';
 import { DiagramaUnifilar } from './unifilar';
 import { EChart } from './echart';
 import { VISTAS, type Vista } from './vistas';
@@ -34,41 +38,8 @@ const TRANSF_ENTRADA = 44; // UHE Jaguari → Atibainha
 type LocalDetalhe = { chave: string; nome: string; space: number; ind: Indicadores | null; erro?: string };
 type Detalhe = { data: string; chave: string; diagrama: string; reservatorios: LocalDetalhe[]; aParte: LocalDetalhe[]; transferencias: ValorTransferencia[] };
 
-/** fetch JSON com estado de carregamento e erro, refeito quando a URL muda. */
-function useJson<T>(url: string | null) {
-  const [st, setSt] = useState<{ dados?: T; erro?: string; carregando: boolean }>({ carregando: !!url });
-  useEffect(() => {
-    if (!url) return;
-    let vivo = true;
-    setSt((s) => ({ dados: s.dados, carregando: true }));
-    fetch(url)
-      .then(async (r) => {
-        const j = await r.json().catch(() => ({}));
-        if (!r.ok) throw new Error(j.erro ?? `HTTP ${r.status}`);
-        return j as T;
-      })
-      .then(
-        (dados) => vivo && setSt({ dados, carregando: false }),
-        (e: Error) => vivo && setSt({ erro: e.message, carregando: false }),
-      );
-    return () => {
-      vivo = false;
-    };
-  }, [url]);
-  return st;
-}
-
 const sinal = (v: number | null | undefined, casas = 2, suf = ' p.p.') => (v === null || v === undefined ? '—' : `${v > 0 ? '+' : v < 0 ? '−' : ''}${fmt(Math.abs(v), casas, suf)}`);
 const classeVar = (v: number | null | undefined) => (v === null || v === undefined || v === 0 ? '' : v > 0 ? 'sobe' : 'desce');
-
-function Estado({ carregando, erro, children }: { carregando: boolean; erro?: string; children: React.ReactNode }) {
-  if (erro) return <div className="pi-erro">Dado indisponível ({erro}).</div>;
-  return (
-    <div className={`pi-estado${carregando ? ' is-carregando' : ''}`} aria-busy={carregando}>
-      {children}
-    </div>
-  );
-}
 
 function Minigrafico({ pontos }: { pontos: Ponto[] }) {
   if (pontos.length < 2) return null;
@@ -132,6 +103,7 @@ export function TelaPainel({ data, hoje, sistemaInicial, vistaInicial }: { data:
   const [sistema, setSistema] = useState(sistemaInicial);
   const [vista, setVista] = useState<Vista>(vistaInicial);
   const [local, setLocal] = useState<number | null>(null); // reservatório escolhido no detalhamento
+  const [posto, setPosto] = useState<NoSibh | null>(null); // posto do SIBH clicado no diagrama (gráficos abaixo dele)
   const [periodo, setPeriodo] = useState<number | 'livre'>(30);
   const [livre, setLivre] = useState({ de: '', ate: '' });
   const [tick, setTick] = useState(0);
@@ -173,6 +145,8 @@ export function TelaPainel({ data, hoje, sistemaInicial, vistaInicial }: { data:
   const unifilar = DIAGRAMAS_UNIFILARES[sistema];
   const detalhe = useJson<Detalhe>(temDetalhe ? `${API}/detalhe/${sistema}?data=${data}&t=${tick}` : null);
   const det = temDetalhe ? detalhe.dados : undefined;
+  // operação do Cantareira (SSD): o cartão da vazão descarregada ao lado do diagrama e o painel abaixo dele
+  const opCantareira = useJson<OperacaoCantareira>(sistema === 'cantareira' && vista === 'diagrama' ? urlOperacao(data, tick) : null);
 
   const locaisDetalhe = det ? [...det.reservatorios, ...det.aParte] : [];
   const escolhido = locaisDetalhe.find((l) => l.space === local) ?? null;
@@ -229,12 +203,16 @@ export function TelaPainel({ data, hoje, sistemaInicial, vistaInicial }: { data:
   const escolherSistema = (chave: string) => {
     setSistema(chave);
     setLocal(null);
+    setPosto(null);
   };
+  // clicar de novo no mesmo posto fecha os gráficos
+  const escolherPosto = (n: NoSibh) => setPosto((p) => (p?.sibh.id === n.sibh.id ? null : n));
   const escolherLocal = (sp: number) => setLocal(local === sp ? null : sp);
   // da galeria de diagramas (SIM) para o sistema, já com o reservatório clicado; volta ao topo da análise
   const abrirSistema = (chave: string, space?: number) => {
     setSistema(chave);
     setLocal(space ?? null);
+    setPosto(null);
     inicio.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
   const sim = sistemas.find((x) => x.chave === 'sim');
@@ -352,7 +330,17 @@ export function TelaPainel({ data, hoje, sistemaInicial, vistaInicial }: { data:
             <h3>
               <i className="bi bi-diagram-3" /> Diagrama unifilar — {unifilar.titulo}
             </h3>
-            <DiagramaUnifilar d={unifilar} data={data} tick={tick} destaque={local} aoEscolher={escolherLocal} />
+            <DiagramaUnifilar
+              d={unifilar}
+              data={data}
+              tick={tick}
+              destaque={local}
+              aoEscolher={escolherLocal}
+              postoAtivo={posto?.sibh.id ?? null}
+              aoPosto={escolherPosto}
+              sobre={posto ? <GraficosPosto key={posto.sibh.id} posto={posto} data={data} tick={tick} aoFechar={() => setPosto(null)} /> : null}
+              lateral={sistema === 'cantareira' ? <CartaoDescarregada op={opCantareira} data={data} /> : null}
+            />
           </section>
         ) : (
           <section className="pi-card" aria-label="Sistemas produtores">
@@ -374,6 +362,9 @@ export function TelaPainel({ data, hoje, sistemaInicial, vistaInicial }: { data:
             <p className="pi-nota">Escolha um sistema (nos botões acima, nos cartões, na lista ou clicando no mapa) para ver o diagrama unifilar, os gráficos e os reservatórios dele.</p>
           </section>
         ))}
+
+      {/* operação do Cantareira e vazões para o PCJ, abaixo do diagrama */}
+      {vista === 'diagrama' && sistema === 'cantareira' && <PainelCantareira data={data} tick={tick} op={opCantareira} />}
 
       {/* gráficos por período */}
       {vista === 'graficos' && (
