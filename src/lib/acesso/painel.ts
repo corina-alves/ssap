@@ -128,6 +128,7 @@ export async function montarMenu(a: Acl): Promise<Menu> {
       filhos: [
         item('Volumes de espera e operacional', '/acesso/acompanhamento/volumes-espera', 'bi-moisture'),
         item('Transposição Paraíba do Sul', '/acesso/acompanhamento/transposicao', 'bi-arrow-left-right'),
+        item('Resumo dos sistemas', '/acesso/acompanhamento/resumo-sistemas', 'bi-card-list'),
       ],
     });
   }

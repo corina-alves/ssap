@@ -94,3 +94,24 @@
 .trp-medidor__numero { fill: var(--marca-profundo); font-size: 34px; font-weight: 800; }
 .trp-medidor__legenda { fill: var(--ac-cinza); font-size: 11px; }
 
+/* Resumo dos sistemas produtores (app/acesso/(app)/acompanhamento/resumo-sistemas): 8 cartões
+   com a cor do estágio na borda e o texto da análise. */
+.acesso-conteudo .cartao.rsm-filtro { padding: 14px 24px; }
+.rsm-filtro .filtros { margin-bottom: 0; }
+.rsm-cartoes { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 12px; margin-bottom: 20px; }
+.rsm-cartao {
+    display: flex; flex-direction: column; gap: 3px; min-width: 0; padding: 12px 14px; border-radius: var(--ac-raio);
+    background: #fff; border: 1px solid var(--ac-borda); border-left: 5px solid var(--cor-estagio, var(--ac-borda)); box-shadow: var(--ac-sombra);
+}
+.rsm-cartao__nome { margin: 0; color: var(--ac-cinza); font-size: .82rem; font-weight: 700; }
+.rsm-cartao__volume { color: var(--marca-profundo); font-size: 1.3rem; font-weight: 800; line-height: 1.2; }
+.rsm-cartao__estagio { color: var(--ac-tinta); font-size: .75rem; font-weight: 600; }
+.rsm-variacao { font-size: .82rem; font-weight: 700; }
+.rsm-variacao--sobe { color: #137a45; }
+.rsm-variacao--desce { color: #b42318; }
+.rsm-variacao--igual, .rsm-variacao--sem { color: var(--ac-cinza); }
+.rsm-cartao__nota { color: var(--ac-cinza); font-size: .72rem; }
+.rsm-analise__cabeca { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 12px; }
+.rsm-analise__texto { padding: 16px 18px; border: 1px solid var(--ac-borda); border-radius: 8px; background: #f8fafc; font-size: .92rem; line-height: 1.65; }
+@media (max-width: 1399.98px) { .rsm-cartoes { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@media (max-width: 575.98px) { .rsm-cartoes { grid-template-columns: 1fr 1fr; } }
