@@ -1,9 +1,11 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { Cabecalho, Mensagem } from '@/components/acesso/pecas';
+import { redirect } from 'next/navigation';
+import { AvisoSucesso } from '@/components/acesso/aviso';
+import { Cabecalho, EstadoVazio, Mensagem, SeletorSala } from '@/components/acesso/pecas';
 import { ScriptsLegado } from '@/components/acesso/scripts-legado';
 import { atalhosDaSala } from '@/lib/acesso/atalhos';
-import { exigirSalaModulo } from '@/lib/acesso/painel';
+import { exigirSalaModulo, salasDoModulo } from '@/lib/acesso/painel';
 import { acl } from '@/lib/auth/acl';
 import { dataHora } from '@/lib/formato';
 import { listar } from '@/lib/graficos';
@@ -27,6 +29,9 @@ const AVISOS: Record<string, ['sucesso' | 'erro', string]> = {
 export default async function Graficos({ searchParams }: { searchParams: Promise<{ sala?: string; aviso?: string }> }) {
   const sp = await searchParams;
   const a = await acl();
+  const salas = await salasDoModulo(a, 'graficos');
+  // Sem sala na URL (menu "Gráficos"): abre a primeira que o usuário vê.
+  if (!sp.sala) redirect(salas[0] ? `/acesso/graficos?sala=${salas[0].id}` : '/acesso/sem-acesso');
   const sala = await exigirSalaModulo(a, Number(sp.sala) || 0, 'graficos', 'visualizar_graficos');
   const graficos = await listar(sala.id);
   const podeCriar = a.pode('criar_graficos', sala.id);
@@ -37,21 +42,24 @@ export default async function Graficos({ searchParams }: { searchParams: Promise
 
   return (
     <>
-      {aviso && <Mensagem tipo={aviso[0]}>{aviso[1]}</Mensagem>}
+      {aviso && (aviso[0] === 'sucesso' ? <AvisoSucesso>{aviso[1]}</AvisoSucesso> : <Mensagem tipo={aviso[0]}>{aviso[1]}</Mensagem>)}
       <Cabecalho
         titulo="Gráficos"
         subtitulo={sala.nome}
         trilha={[
-          ['Painel', '/acesso'],
+          ['Início', '/acesso'],
           [sala.sigla || sala.nome, `/acesso/salas/sala?s=${sala.slug}`],
           ['Gráficos', null],
         ]}
         acoes={
-          podeCriar && (
-            <Link className="btn btn-primary" href={`/acesso/graficos/editar?sala=${sala.id}`}>
-              <i className="bi bi-plus-lg me-1" /> Novo gráfico
-            </Link>
-          )
+          <>
+            <SeletorSala salas={salas} atual={sala.id} href={(id) => `/acesso/graficos?sala=${id}`} />
+            {podeCriar && (
+              <Link className="btn btn-primary" href={`/acesso/graficos/editar?sala=${sala.id}`}>
+                <i className="bi bi-plus-lg me-1" /> Novo gráfico
+              </Link>
+            )}
+          </>
         }
       />
 
@@ -78,7 +86,13 @@ export default async function Graficos({ searchParams }: { searchParams: Promise
 
       {graficos.length === 0 ? (
         <div className="acesso-card">
-          <p className="text-secondary mb-0">Nenhum gráfico cadastrado.</p>
+          <EstadoVazio
+            icone="bi-graph-up"
+            titulo="Nenhum gráfico salvo nesta sala."
+            acao={podeCriar ? { rotulo: 'Criar o primeiro', href: `/acesso/graficos/editar?sala=${sala.id}` } : undefined}
+          >
+            {atalhos.length > 0 ? 'Os gráficos das análises prontas, acima, também podem ser salvos aqui.' : undefined}
+          </EstadoVazio>
         </div>
       ) : (
         <div className="row g-3">

@@ -94,7 +94,7 @@ export default async function CriarSsd({ searchParams }: { searchParams: Promise
         titulo="Gráficos com dados do SSD"
         subtitulo="Qualquer série do SSD SP Águas: sistemas, reservatórios, túneis e transferências, ETAs, postos e bacias — chuva, vazões, volume, nível."
         trilha={[
-          ['Painel', '/acesso'],
+          ['Início', '/acesso'],
           ['Gráficos', `/acesso/graficos?sala=${sala.id}`],
           ['Dados do SSD', null],
         ]}

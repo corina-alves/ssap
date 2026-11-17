@@ -1,5 +1,6 @@
 import 'server-only';
 import { query } from '../db';
+import { lembrar } from '../integracoes/cache';
 import { anoAtual } from './selecao';
 
 /**
@@ -78,11 +79,26 @@ export async function chuvaDoMes(escala: Escala, ano: number, mes: number): Prom
   return r;
 }
 
+/**
+ * Anos (desde INICIO_HISTORICO) com algum posto válido. A consulta lê a tabela
+ * inteira (775 mil linhas; de 0,8 a 15 s no desenvolvimento, conforme o cache do
+ * banco), e a lista quase nunca muda. Por isso fica 1 h no cache das
+ * integrações. A chave leva a última importação ou cálculo concluído
+ * (`clima_execucoes`): depois de um deles, a lista é refeita na hora.
+ */
+async function anosComDado(): Promise<number[]> {
+  const ler = async () =>
+    (await query<{ ano: number }>('SELECT DISTINCT ano FROM clima_chuva_mes WHERE ano >= $1 AND valido_padrao ORDER BY ano DESC', [INICIO_HISTORICO])).map((a) => a.ano);
+  const [exec] = await query<{ id: string | null }>("SELECT max(id)::text AS id FROM clima_execucoes WHERE situacao = 'concluida'");
+  const l = await lembrar('climatologia', `anos:${INICIO_HISTORICO}:${exec?.id ?? 0}`, 60 * 60, ler);
+  return l?.valor ?? ler(); // sem nada guardado e a consulta falhou: tenta direto (o erro aparece como antes)
+}
+
 /** Mês mais recente com algum posto válido, e os anos (desde INICIO_HISTORICO) que têm dado. */
 export async function mesesDisponiveis(): Promise<{ recente: { ano: number; mes: number } | null; anos: number[] }> {
   const [recente, anos] = await Promise.all([
     query<{ ano: number; mes: number }>('SELECT ano, mes FROM clima_chuva_mes WHERE valido_padrao ORDER BY ano DESC, mes DESC LIMIT 1'),
-    query<{ ano: number }>('SELECT DISTINCT ano FROM clima_chuva_mes WHERE ano >= $1 AND valido_padrao ORDER BY ano DESC', [INICIO_HISTORICO]),
+    anosComDado(),
   ]);
-  return { recente: recente[0] ?? null, anos: anos.map((a) => a.ano) };
+  return { recente: recente[0] ?? null, anos };
 }

@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { AvisoSucesso } from '@/components/acesso/aviso';
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { acl } from '@/lib/auth/acl';
@@ -33,7 +34,7 @@ export default async function VerDocumento({
         <Link href="/acesso/documentos">Documentos</Link> / {d.sala_nome}
       </p>
       <h1>{d.titulo}</h1>
-      {enviado && <div className="alerta alerta-ok">Documento enviado.</div>}
+      {enviado && <AvisoSucesso>Documento enviado.</AvisoSucesso>}
       <section className="cartao">
         <p>
           <a href={`/acesso/documentos/${d.id}/arquivo`}>{d.nome_original}</a>{' '}

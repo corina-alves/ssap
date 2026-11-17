@@ -39,7 +39,7 @@ export default async function PaginaSumario({ params, searchParams }: { params: 
         titulo={sumario.titulo}
         subtitulo={sala.nome}
         trilha={[
-          ['Painel', '/acesso'],
+          ['Início', '/acesso'],
           [sala.sigla || sala.nome, hrefSala],
           ['Boletins', `/acesso/boletins?sala=${sala.id}`],
           [sumario.titulo, null],

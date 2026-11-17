@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { AvisoSucesso } from '@/components/acesso/aviso';
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { Cabecalho, Mensagem } from '@/components/acesso/pecas';
@@ -48,7 +49,7 @@ export default async function VerBoletim({ params, searchParams }: { params: Pro
 
   return (
     <>
-      {aviso && <Mensagem tipo="sucesso">{aviso}</Mensagem>}
+      {aviso && <AvisoSucesso>{aviso}</AvisoSucesso>}
       {naoEditavel && (
         <Mensagem tipo="aviso">
           Boletim &ldquo;{ROTULO_STATUS[b.status]}&rdquo; não pode ser editado. {b.status === 'publicado' ? 'Despublique-o antes.' : 'Devolva-o para ajustes antes.'}
@@ -59,7 +60,7 @@ export default async function VerBoletim({ params, searchParams }: { params: Pro
         titulo={b.titulo}
         subtitulo={`${b.tipo_nome} · referência ${dataBr(b.data_referencia)}${b.competencia ? ` · competência ${b.competencia}` : ''}`}
         trilha={[
-          ['Painel', '/acesso'],
+          ['Início', '/acesso'],
           ['Boletins', `/acesso/boletins?sala=${b.sala_id}`],
           ['Boletim', null],
         ]}

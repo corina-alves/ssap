@@ -76,6 +76,61 @@
 /* Módulo ainda não migrado do PHP: mesmo cartão, sem link. */
 .acesso-modulo--em-breve { cursor: default; }
 
+/* Visão geral da sala: módulos numa linha de botões (o menu lateral já os lista). */
+.acesso-modulos { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+.acesso-modulos .acesso-modulo {
+    flex-direction: row; align-items: center; gap: 8px; height: auto;
+    padding: 8px 16px; border-radius: 999px; box-shadow: none; font-size: .9rem;
+}
+.acesso-modulos .acesso-modulo i { font-size: 1.1rem; }
+
+/* Visão geral da sala: ferramentas em abas, cartões mais leves e descrição em até duas linhas. */
+.acesso-abas {
+    --bs-nav-link-color: var(--ac-cinza);
+    --bs-nav-link-hover-color: var(--ac-azul);
+    --bs-nav-tabs-border-color: var(--ac-borda);
+    --bs-nav-tabs-link-hover-border-color: var(--ac-borda) var(--ac-borda) var(--ac-borda);
+    --bs-nav-tabs-link-active-color: var(--ac-azul);
+    --bs-nav-tabs-link-active-border-color: var(--ac-borda) var(--ac-borda) #fff;
+    gap: 2px; margin-bottom: 16px;
+}
+.acesso-abas .nav-link { display: inline-flex; align-items: center; gap: 6px; font-size: .88rem; font-weight: 700; }
+.acesso-abas__total {
+    padding: 0 7px; border-radius: 999px; font-size: .72rem;
+    background: #eef2f6; color: var(--ac-cinza);
+}
+.acesso-abas .nav-link.active .acesso-abas__total { background: #e6f0f8; color: var(--ac-azul); }
+/* No celular as abas não cabem numa linha: viram botões, que quebram sem ficar tortos. */
+@media (max-width: 575.98px) {
+    .acesso-abas { border-bottom: 0; gap: 6px; }
+    .acesso-abas .nav-link { margin-bottom: 0; border: 1px solid var(--ac-borda); border-radius: 999px; padding: 6px 12px; }
+    .acesso-abas .nav-link.active { border-color: var(--ac-azul); background: #e6f0f8; }
+}
+.acesso-ferramentas .acesso-link-card { box-shadow: none; padding: 14px; gap: 12px; }
+.acesso-ferramentas .acesso-link-card > i { font-size: 1.35rem; }
+.acesso-ferramentas .acesso-link-card strong { font-size: .9rem; }
+.acesso-ferramentas .acesso-link-card small {
+    display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden;
+    font-size: .8rem;
+}
+
+/* Lista vazia com orientação (EstadoVazio). */
+.acesso-vazio { text-align: center; padding: 32px 16px; color: var(--ac-cinza); }
+.acesso-vazio__icone { display: block; font-size: 2rem; color: #a9b8c6; margin-bottom: 8px; }
+.acesso-vazio__titulo { font-weight: 700; color: var(--ac-tinta); margin-bottom: 4px; }
+.acesso-vazio__texto { font-size: .88rem; margin-bottom: 12px; }
+.acesso-vazio__titulo:last-child, .acesso-vazio__texto:last-child { margin-bottom: 0; }
+
+/* Aviso de sucesso que some sozinho (AvisoSucesso): canto inferior direito, ao lado do
+   botão de voltar ao topo, para não cobrir o botão principal da página (canto superior). */
+.acesso-aviso {
+    position: fixed; bottom: 22px; right: 78px; z-index: 1055;
+    width: min(420px, calc(100vw - 32px)); margin: 0;
+    box-shadow: 0 12px 32px rgba(18, 38, 58, .18);
+}
+@media (max-width: 575.98px) { .acesso-aviso { bottom: 76px; right: 16px; } }
+@media print { .acesso-aviso { display: none; } }
+
 /* Botões de contorno (Filtrar, Cancelar, Excluir): a regra acima pintava o fundo de
    azul e o texto, também azul, sumia. */
 .acesso-conteudo .botao-secundario { background: #fff; color: var(--ac-azul); border: 1px solid var(--ac-azul); }

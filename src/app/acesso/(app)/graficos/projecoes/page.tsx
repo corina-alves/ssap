@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { AvisoSucesso } from '@/components/acesso/aviso';
 import { notFound } from 'next/navigation';
 import { Cabecalho, Mensagem } from '@/components/acesso/pecas';
 import { ScriptsLegado } from '@/components/acesso/scripts-legado';
@@ -84,16 +85,16 @@ export default async function Projecoes({ searchParams }: { searchParams: Promis
   return (
     <>
       {gravada && (
-        <Mensagem tipo="sucesso">
+        <AvisoSucesso segundos={12}>
           Rodada gravada: {um(sp.simulacoes)} simulação(ões), {um(sp.valores)} valores mensais
           {varios(sp.aba).length > 0 && `, lidos das abas ${varios(sp.aba).map((x) => `"${x.slice(0, 60)}"`).join(', ')}`}.
-        </Mensagem>
+        </AvisoSucesso>
       )}
       <Cabecalho
         titulo="Projeções do volume útil × GDN"
         subtitulo={`Simulações do SSD Sabesp (QN × retirada na ESI) com o limite da Faixa ${CONFIG.faixa_gdn} e a marcação da retomada da GDN.`}
         trilha={[
-          ['Painel', '/acesso'],
+          ['Início', '/acesso'],
           ['Gráficos', `/acesso/graficos?sala=${sala.id}`],
           ['Projeções × GDN', null],
         ]}

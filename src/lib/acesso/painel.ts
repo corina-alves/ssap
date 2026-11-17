@@ -11,8 +11,11 @@ import { query } from '../db';
 
 /** `filhos`: subitens (submenu), mostrados quando a página atual está dentro do item. */
 export type ItemMenu = { rotulo: string; href: string; icone: string; caminho: string; filhos?: ItemMenu[] };
-export type SalaMenu = { id: number; slug: string; rotulo: string; cor: string | null; filhos: ItemMenu[] };
-export type Menu = { geral: ItemMenu[]; salas: SalaMenu[]; admin: ItemMenu[] };
+/** Bloco do menu lateral; `titulo` null = sem título (o Início). */
+export type SecaoMenu = { titulo: string | null; itens: ItemMenu[] };
+/** Salas visíveis: não entram no menu (viram filtro nas listas), só no selo da sala na barra superior. */
+export type SalaMenu = { id: number; slug: string; rotulo: string; cor: string | null };
+export type Menu = { secoes: SecaoMenu[]; salas: SalaMenu[] };
 
 export type SalaPainel = {
   id: number;
@@ -71,36 +74,55 @@ export async function salasPainel(a: Acl): Promise<SalaPainel[]> {
   }));
 }
 
+// Mesmos valores de SALA_BOLETIM e PERMISSAO_BOLETIM em lib/boletins-sala/boletim-integrado.ts
+// (repetidos aqui para o menu, que roda em toda página, não carregar aquele módulo).
+const SALA_BOLETIM_INTEGRADO = 'cetesb';
+const PERMISSAO_BOLETIM_INTEGRADO = 'criar_boletim';
+
+/**
+ * Salas visíveis onde o módulo está ligado e o usuário tem a permissão de ver
+ * (ordem do painel). Mesma regra de exigirSalaModulo: são as salas que as
+ * páginas de módulo (gráficos, previsões) aceitam em ?sala=.
+ */
+export async function salasDoModulo(a: Acl, modulo: keyof typeof MODULOS): Promise<SalaPainel[]> {
+  const def = MODULOS[modulo]!;
+  return (await salasPainel(a)).filter((s) => s.modulos.some((m) => m.slug === modulo) && a.pode(def.permissao, s.id));
+}
+
+/**
+ * Menu lateral por assunto: Início, Boletins, Monitoramento, Cadastros,
+ * Administração e Configurações. As salas não têm bloco próprio: cada lista
+ * (boletins, gráficos, previsões) tem o seletor de sala.
+ */
 export async function montarMenu(a: Acl): Promise<Menu> {
   const item = (rotulo: string, caminho: string, icone: string, href = caminho): ItemMenu => ({ rotulo, href, icone, caminho });
+  const visiveis = await salasPainel(a);
+  const temModulo = (modulo: string) => visiveis.some((s) => s.modulos.some((m) => m.slug === modulo) && a.pode(MODULOS[modulo]!.permissao, s.id));
+  const alfredo = visiveis.find((s) => s.slug === 'alfredo-pisani');
+  const cetesb = visiveis.find((s) => s.slug === SALA_BOLETIM_INTEGRADO);
 
-  const geral = [item('Painel', '/acesso', 'bi-speedometer2')];
-  // Situação dos rios por UGRHI (dados estaduais do SIBH): para quem vê alguma sala.
+  const boletins: ItemMenu[] = [];
+  if (temModulo('boletins')) boletins.push(item('Boletins', '/acesso/boletins', 'bi-journal-text'));
+  // Boletim mensal da Sala Alfredo Pisani (slides montados com as integrações + o que a equipe completa).
+  if (alfredo && a.pode('visualizar_boletins', alfredo.id)) boletins.push(item('Boletim mensal', '/acesso/boletim_mensal', 'bi-journal-richtext'));
+  if (temModulo('graficos')) boletins.push(item('Gráficos', '/acesso/graficos', 'bi-graph-up'));
+  if (temModulo('documentos')) boletins.push(item('Documentos', '/acesso/documentos', 'bi-folder2-open'));
+
+  const monitoramento: ItemMenu[] = [];
   if (a.podeEmAlguma('visualizar_dashboard')) {
-    geral.push({
+    // Situação dos rios por UGRHI (dados estaduais do SIBH): para quem vê alguma sala.
+    monitoramento.push({
       ...item('Defesa Civil', '/acesso/defesa_civil', 'bi-shield-exclamation'),
       filhos: [item('Painel de alerta', '/acesso/defesa_civil', 'bi-exclamation-triangle'), item('Gráficos de postos', '/acesso/defesa_civil/graficos', 'bi-graph-up')],
     });
+    // Resumo dos Sumários Executivos de Cheias (Tietê-Pinheiros e Ribeira), para o acompanhamento.
+    monitoramento.push(item('Painel de Monitoramento', '/acesso/painel_monitoramento', 'bi-activity'));
   }
-
-  // Resumo dos Sumários Executivos de Cheias (Tietê-Pinheiros e Ribeira), para o acompanhamento.
-  if (a.podeEmAlguma('visualizar_dashboard')) geral.push(item('Painel de Monitoramento', '/acesso/painel_monitoramento', 'bi-activity'));
-
-  // Climatologia da chuva por UGRHI (acervo histórico do SIBH, já processado no banco).
-  if (a.podeEmAlguma('visualizar_climatologia')) {
-    geral.push({
-      ...item('Climatologia de precipitação', '/acesso/climatologia', 'bi-cloud-rain-heavy'),
-      filhos: [item('Climatologia', '/acesso/climatologia', 'bi-cloud-rain-heavy'), item('Chuva do mês — UGRHIs e municípios', '/acesso/climatologia/mes', 'bi-table')],
-    });
-  }
-
-  const visiveis = await salasPainel(a);
   // Painel interativo dos sistemas produtores (SSD): visualizar_dashboard na Sala Alfredo Pisani.
-  const alfredo = visiveis.find((s) => s.slug === 'alfredo-pisani');
   if (alfredo && a.pode('visualizar_dashboard', alfredo.id)) {
-    geral.push(item('Painel de Segurança Hídrica', '/acesso/painel_interativo', 'bi-water'));
+    monitoramento.push(item('Painel de Segurança Hídrica', '/acesso/painel_interativo', 'bi-water'));
     // Acompanhamentos dos sistemas (os próximos, como a transposição, entram como filhos).
-    geral.push({
+    monitoramento.push({
       ...item('Acompanhamento', '/acesso/acompanhamento', 'bi-clipboard-data'),
       href: '/acesso/acompanhamento/volumes-espera',
       filhos: [
@@ -109,30 +131,43 @@ export async function montarMenu(a: Acl): Promise<Menu> {
       ],
     });
   }
-  // Boletim mensal da Sala Alfredo Pisani (slides montados com as integrações + o que a equipe completa).
-  if (alfredo && a.pode('visualizar_boletins', alfredo.id)) geral.push(item('Boletim mensal', '/acesso/boletim_mensal', 'bi-journal-richtext'));
+  // Climatologia da chuva por UGRHI (acervo histórico do SIBH, já processado no banco).
+  if (a.podeEmAlguma('visualizar_climatologia')) {
+    monitoramento.push({
+      ...item('Climatologia de precipitação', '/acesso/climatologia', 'bi-cloud-rain-heavy'),
+      filhos: [item('Climatologia', '/acesso/climatologia', 'bi-cloud-rain-heavy'), item('Chuva do mês — UGRHIs e municípios', '/acesso/climatologia/mes', 'bi-table')],
+    });
+  }
+  if (temModulo('previsoes')) monitoramento.push(item('Previsões', '/acesso/previsoes', 'bi-cloud-sun'));
 
-  const salas = visiveis.map((s) => {
-    const filhos = [item('Visão geral', '/acesso/salas/sala', 'bi-grid', `/acesso/salas/sala?s=${s.slug}`)];
-    for (const m of s.modulos) {
-      const def = MODULOS[m.slug];
-      if (!def?.caminho || !a.pode(def.permissao, s.id)) continue;
-      filhos.push(item(m.nome, def.caminho, m.icone ?? 'bi-circle', hrefModulo(def.caminho, s)));
-    }
-    return { id: s.id, slug: s.slug, rotulo: s.nome, cor: s.cor, filhos };
-  });
+  const cadastros: ItemMenu[] = [];
+  // Dados sem fonte automática do Boletim Exutórios (Sala CETESB).
+  if (cetesb && a.pode(PERMISSAO_BOLETIM_INTEGRADO, cetesb.id)) cadastros.push(item('Dados dos exutórios', '/acesso/boletim_integrado/exutorios', 'bi-pencil-square'));
+  if (a.pode('gerenciar_salas')) {
+    cadastros.push(item('Tipos de boletim', '/acesso/tipos-boletim', 'bi-journal-richtext'));
+    cadastros.push(item('Salas de Situação', '/acesso/salas', 'bi-buildings'));
+  }
 
   const admin: ItemMenu[] = [];
   if (a.pode('gerenciar_usuarios')) admin.push(item('Usuários', '/acesso/usuarios', 'bi-people'));
-  if (a.pode('gerenciar_salas')) {
-    admin.push(item('Salas de Situação', '/acesso/salas', 'bi-buildings'));
-    admin.push(item('Tipos de boletim', '/acesso/tipos-boletim', 'bi-journal-richtext'));
-  }
   if (a.pode('gerenciar_permissoes')) admin.push(item('Perfis e permissões', '/acesso/perfis', 'bi-shield-lock'));
   if (a.podeEmAlguma('visualizar_logs')) admin.push(item('Auditoria', '/acesso/auditoria', 'bi-clock-history'));
-  if (a.podeEmAlguma('visualizar_dashboard')) admin.push(item('Integrações', '/acesso/integracoes', 'bi-plug'));
 
-  return { geral, salas, admin };
+  const configuracoes: ItemMenu[] = [];
+  if (a.podeEmAlguma('visualizar_dashboard')) configuracoes.push(item('Integrações', '/acesso/integracoes', 'bi-plug'));
+
+  const secoes: SecaoMenu[] = [
+    { titulo: null, itens: [item('Início', '/acesso', 'bi-house')] },
+    { titulo: 'Boletins', itens: boletins },
+    { titulo: 'Monitoramento', itens: monitoramento },
+    { titulo: 'Cadastros', itens: cadastros },
+    { titulo: 'Administração', itens: admin },
+    { titulo: 'Configurações', itens: configuracoes },
+  ];
+  return {
+    secoes: secoes.filter((s) => s.itens.length > 0),
+    salas: visiveis.map((s) => ({ id: s.id, slug: s.slug, rotulo: s.nome, cor: s.cor })),
+  };
 }
 
 // ---------------------------------------------------------------------------

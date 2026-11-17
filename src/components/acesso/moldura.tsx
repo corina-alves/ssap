@@ -45,8 +45,9 @@ export function Moldura({
   const naVisaoGeral = caminho === '/acesso/salas/sala';
   const salaAtual = menu.salas.find((s) => (naVisaoGeral ? busca.get('s') === s.slug : busca.get('sala') === String(s.id))) ?? null;
   const dentro = (base: string) => caminho === base || caminho.startsWith(`${base}/`);
-  // "Salas de Situação" (administração) não acende na visão geral de uma sala.
-  const ativoAdmin = (i: ItemMenu) => dentro(i.caminho) && !(i.caminho === '/acesso/salas' && naVisaoGeral);
+  // Um item acende em todas as páginas abaixo dele (ex.: Boletins em /acesso/boletins/12);
+  // o Início só na própria página, e "Salas de Situação" (cadastro) não acende na visão geral de uma sala.
+  const ativo = (i: ItemMenu) => (i.caminho === '/acesso' ? caminho === '/acesso' : dentro(i.caminho) && !(i.caminho === '/acesso/salas' && naVisaoGeral));
 
   return (
     <div className="acesso-app">
@@ -120,56 +121,28 @@ export function Moldura({
             <button type="button" className="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#acessoMenu" aria-label="Fechar" />
           </div>
           <div className="acesso-menu__rolagem">
-            {menu.geral.map((i) =>
-              i.filhos ? (
-                // Item com submenu (ex.: Defesa Civil): abre os subitens quando a página está dentro dele.
-                <div key={i.href} className={`acesso-menu__sala${dentro(i.caminho) ? ' aberta' : ''}`}>
-                  <Item item={i} ativo={dentro(i.caminho)} />
-                  {dentro(i.caminho) && (
-                    <div className="acesso-menu__sub">
-                      {i.filhos.map((f) => (
-                        <Item key={f.href} item={f} ativo={caminho === f.caminho} />
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <Item key={i.href} item={i} ativo={caminho === i.caminho} />
-              ),
-            )}
-
-            {menu.salas.length > 0 && (
-              <>
-                <p className="acesso-menu__titulo">Salas de Situação</p>
-                {menu.salas.map((s) => {
-                  const aberta = salaAtual?.id === s.id;
-                  return (
-                    <div key={s.id} className={`acesso-menu__sala${aberta ? ' aberta' : ''}`} style={corSala(s.cor)}>
-                      <Link className={`acesso-menu__link acesso-menu__link--sala${aberta ? ' ativo' : ''}`} href={`/acesso/salas/sala?s=${s.slug}`}>
-                        <i className="bi bi-building" />
-                        <span>{s.rotulo}</span>
-                      </Link>
-                      {aberta && (
+            {menu.secoes.map((s) => (
+              <div key={s.titulo ?? 'inicio'} className="acesso-menu__secao">
+                {s.titulo && <p className="acesso-menu__titulo">{s.titulo}</p>}
+                {s.itens.map((i) =>
+                  i.filhos ? (
+                    // Item com submenu (ex.: Defesa Civil): abre os subitens quando a página está dentro dele.
+                    <div key={i.href} className={`acesso-menu__sala${dentro(i.caminho) ? ' aberta' : ''}`}>
+                      <Item item={i} ativo={dentro(i.caminho)} />
+                      {dentro(i.caminho) && (
                         <div className="acesso-menu__sub">
-                          {s.filhos.map((f) => (
-                            <Item key={f.href} item={f} ativo={dentro(f.caminho)} />
+                          {i.filhos.map((f) => (
+                            <Item key={f.href} item={f} ativo={caminho === f.caminho} />
                           ))}
                         </div>
                       )}
                     </div>
-                  );
-                })}
-              </>
-            )}
-
-            {menu.admin.length > 0 && (
-              <>
-                <p className="acesso-menu__titulo">Administração</p>
-                {menu.admin.map((i) => (
-                  <Item key={i.href} item={i} ativo={ativoAdmin(i)} />
-                ))}
-              </>
-            )}
+                  ) : (
+                    <Item key={i.href} item={i} ativo={ativo(i)} />
+                  ),
+                )}
+              </div>
+            ))}
           </div>
         </nav>
 

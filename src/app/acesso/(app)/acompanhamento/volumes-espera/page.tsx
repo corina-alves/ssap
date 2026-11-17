@@ -96,7 +96,7 @@ export default async function VolumesEspera({ searchParams }: { searchParams: Pr
         titulo={`Sistema ${def.nome} — volumes de espera e operacional`}
         subtitulo={`${def.periodos ? 'Os volumes de espera e operacionais variam conforme o período do ano.' : 'Volumes de espera e operacionais do mês atual.'}${leitura ? ` Volume atual: leitura do SSD de ${dataBr(leitura)}.` : ''}`}
         trilha={[
-          ['Painel', '/acesso'],
+          ['Início', '/acesso'],
           ['Acompanhamento', null],
           ['Volumes de espera e operacional', null],
         ]}

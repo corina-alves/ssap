@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { AvisoSucesso } from '@/components/acesso/aviso';
 import Form from 'next/form';
 import Link from 'next/link';
 import { Cabecalho, Mensagem } from '@/components/acesso/pecas';
@@ -43,12 +44,12 @@ export default async function DadosExutorios({ searchParams }: { searchParams: P
 
   return (
     <div className="bi-area form-exut">
-      {um(sp.ok) && <Mensagem tipo="sucesso">{um(sp.ok).slice(0, 200)}</Mensagem>}
+      {um(sp.ok) && <AvisoSucesso>{um(sp.ok).slice(0, 200)}</AvisoSucesso>}
       <Cabecalho
         titulo="Dados dos exutórios"
         subtitulo="O que o Boletim Exutórios não tem de fonte automática: Pirapora, Billings/Pedreira e carga orgânica."
         trilha={[
-          ['Painel', '/acesso'],
+          ['Início', '/acesso'],
           [sala.sigla || sala.nome, hrefSala],
           ['Boletim Exutórios', hrefBoletim],
           ['Dados dos exutórios', null],

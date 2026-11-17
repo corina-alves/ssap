@@ -24,7 +24,19 @@ export type OpcoesCache = {
   validadeMaxSeg?: number;
   /** Depois de uma falha, quanto tempo esperar antes de chamar a fonte de novo. */
   esperaFalhaSeg?: number;
+  /**
+   * Quanto esperar pela fonte quando já há um valor guardado (vencido, mas
+   * dentro de `validadeMaxSeg`). Passado esse tempo, devolve o guardado,
+   * marcado como desatualizado, e a consulta segue em segundo plano: quando a
+   * fonte responder, o valor novo fica no cache para os próximos pedidos.
+   * Sem ele, espera a fonte até o tempo limite dela. Só para telas que mostram
+   * o aviso de desatualizado com a data e a hora do dado.
+   */
+  esperaMaxSeg?: number;
 };
+
+/** Espera pela fonte nas telas públicas quando já há valor guardado (`esperaMaxSeg`). */
+export const ESPERA_TELA_SEG = 3;
 
 export const TTL = {
   /** 10 min — chuva em tempo real */
@@ -51,6 +63,8 @@ type Estado = {
   emAndamento: Map<string, Promise<Lembrado<unknown> | null>>;
   falhaRecente: Map<string, { em: number; erro: string }>;
   bytes?: number;
+  /** Valor guardado de cada chave em consulta, para quem não espera a fonte (`esperaMaxSeg`). */
+  reservas?: Map<string, Promise<Lembrado<unknown> | null>>;
 };
 // No globalThis: o módulo pode ser carregado mais de uma vez no mesmo processo
 // (recarga em desenvolvimento, pacotes separados por rota). Sem isso, cada cópia
@@ -63,6 +77,7 @@ const estado: Estado = ((globalThis as { __ssapCacheIntegracoes?: Estado }).__ss
   bytes: 0,
 });
 const { memoria, emAndamento, falhaRecente } = estado;
+const reservas = (estado.reservas ??= new Map());
 
 let diretorio: string | null = null;
 
@@ -152,10 +167,19 @@ export async function lembrar<T>(
   }
 
   const andamento = emAndamento.get(id);
-  if (andamento) return andamento as Promise<Lembrado<T> | null>;
+  if (andamento) {
+    return aguardar(andamento as Promise<Lembrado<T> | null>, reservas.get(id) as Promise<Lembrado<T> | null> | undefined, opcoes.esperaMaxSeg);
+  }
+
+  const max = (opcoes.validadeMaxSeg ?? 7 * 24 * 60 * 60) * 1000;
+  const lido: Promise<(Entrada<T> & { tam?: number }) | null> = m ? Promise.resolve(m as Entrada<T> & { tam?: number }) : lerArquivo<T>(servico, chave);
+  // o guardado, se ainda servir de reserva: é o que recebe quem não espera a fonte
+  const reserva = lido.then((s): Lembrado<T> | null =>
+    s && agora - s.obtidoEm < max ? { valor: s.valor, obtidoEm: new Date(s.obtidoEm), desatualizado: true } : null,
+  );
 
   const tarefa = (async (): Promise<Lembrado<T> | null> => {
-    const salvo = m ?? (await lerArquivo<T>(servico, chave));
+    const salvo = await lido;
     if (valido(salvo)) {
       guardarMemoria(id, salvo!, salvo!.tam ?? 0);
       return { valor: salvo!.valor as T, obtidoEm: new Date(salvo!.obtidoEm), desatualizado: false };
@@ -182,7 +206,6 @@ export async function lembrar<T>(
     }
 
     // Fonte falhou: usa o último valor guardado, se não for velho demais.
-    const max = (opcoes.validadeMaxSeg ?? 7 * 24 * 60 * 60) * 1000;
     if (salvo && agora - salvo.obtidoEm < max) {
       return { valor: salvo.valor as T, obtidoEm: new Date(salvo.obtidoEm), desatualizado: true };
     }
@@ -190,11 +213,33 @@ export async function lembrar<T>(
   })();
 
   emAndamento.set(id, tarefa);
-  try {
-    return await tarefa;
-  } finally {
+  reservas.set(id, reserva);
+  // Sai da lista quando a consulta termina, e não quando este pedido volta: com
+  // `esperaMaxSeg` ele pode voltar antes, com a reserva, e quem chegar depois
+  // continua aproveitando a mesma consulta.
+  const fim = () => {
+    if (emAndamento.get(id) !== tarefa) return;
     emAndamento.delete(id);
-  }
+    reservas.delete(id);
+  };
+  tarefa.then(fim, fim);
+  return aguardar(tarefa, reserva, opcoes.esperaMaxSeg);
+}
+
+/**
+ * Espera a consulta. Com `esperaMaxSeg`, passado esse tempo devolve a reserva
+ * (se houver; senão continua esperando) e deixa a consulta terminar sozinha.
+ */
+function aguardar<T>(
+  tarefa: Promise<Lembrado<T> | null>,
+  reserva: Promise<Lembrado<T> | null> | undefined,
+  esperaMaxSeg: number | undefined,
+): Promise<Lembrado<T> | null> {
+  if (!esperaMaxSeg || esperaMaxSeg <= 0 || !reserva) return tarefa;
+  return new Promise((ok, falha) => {
+    const relogio = setTimeout(() => void reserva.then((r) => r && ok(r)), esperaMaxSeg * 1000);
+    void tarefa.then(ok, falha).finally(() => clearTimeout(relogio));
+  });
 }
 
 /** Último erro registrado para a chave (para mensagens de diagnóstico). */

@@ -229,7 +229,7 @@ export default async function DefesaCivil({ searchParams }: { searchParams: Prom
         titulo="Defesa Civil — situação dos rios, córregos e piscinões"
         subtitulo={`Postos fluviométricos do SIBH com cotas de alerta, por regional da Defesa Civil e por UGRHI. Dados de ${hora(situacao.gerado_em)} (atualiza a cada 3 min).`}
         trilha={[
-          ['Painel', '/acesso'],
+          ['Início', '/acesso'],
           ['Defesa Civil', null],
         ]}
         acoes={

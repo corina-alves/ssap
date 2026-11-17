@@ -332,7 +332,7 @@ export function ConteudoPainel({ p, vista }: { p: PainelMonitoramento; vista: Vi
         titulo="Painel de Monitoramento Hidrológico e Operacional"
         subtitulo="Integração das informações hidrológicas e operacionais dos sistemas Tietê–Pinheiros e Ribeira de Iguape"
         trilha={[
-          ['Painel', '/acesso'],
+          ['Início', '/acesso'],
           ['Monitoramento', null],
         ]}
         acoes={

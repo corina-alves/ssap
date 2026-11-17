@@ -67,7 +67,7 @@ export default async function Climatologia({ searchParams }: { searchParams: Pro
         titulo="Climatologia de precipitação"
         subtitulo="Chuva observada por UGRHI, município e estação, comparada à média climatológica calculada com o acervo histórico de pluviômetros do SIBH/SP Águas."
         trilha={[
-          ['Painel', '/acesso'],
+          ['Início', '/acesso'],
           ['Climatologia de precipitação', null],
         ]}
       />

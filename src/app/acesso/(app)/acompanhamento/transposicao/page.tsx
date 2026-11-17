@@ -308,7 +308,7 @@ export default async function Transposicao({ searchParams }: { searchParams: Pro
         titulo="Transposição Paraíba do Sul → Cantareira"
         subtitulo="UHE Jaguari (Paraíba do Sul) → Atibainha (Cantareira). Leituras telemétricas do SAISP e vazão média diária da Sabesp (dados do SSD SP Águas)."
         trilha={[
-          ['Painel', '/acesso'],
+          ['Início', '/acesso'],
           ['Acompanhamento', null],
           ['Transposição', null],
         ]}

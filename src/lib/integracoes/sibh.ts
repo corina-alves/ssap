@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { lembrar, TTL } from './cache';
+import { ESPERA_TELA_SEG, lembrar, TTL } from './cache';
 import { comoDado, type Dado } from './comum';
 import { arred, buscarJson, numero } from './http';
 import { SIBH_API_V2 } from './sibh-medicoes';
@@ -38,7 +38,11 @@ const esquema = z.object({
   ),
 });
 
-/** Todos os postos com leitura na última hora (do cache de 10 min). */
+/**
+ * Todos os postos com leitura na última hora (do cache de 10 min). Só a página
+ * inicial usa: com o SIBH lento, ela mostra a última leitura guardada, com a
+ * hora, em vez de esperar até 15 s (`esperaMaxSeg`).
+ */
 export async function postosUltimaHora() {
   return lembrar('sibh', 'chuva_agora_1h', TTL.tempoReal, async () => {
     const r = esquema.safeParse(await buscarJson(URL_CHUVA_AGORA, { timeoutMs: 15_000 }));
@@ -58,7 +62,7 @@ export async function postosUltimaHora() {
       });
     }
     return postos.length ? postos : null;
-  });
+  }, { esperaMaxSeg: ESPERA_TELA_SEG });
 }
 
 export type ResumoChuvaAgora = {

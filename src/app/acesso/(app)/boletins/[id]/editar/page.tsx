@@ -30,7 +30,7 @@ export default async function EditarBoletim({ params }: { params: Promise<{ id: 
         titulo={`Editar: ${b.titulo}`}
         subtitulo={`${b.tipo_nome} · ${ROTULO_STATUS[b.status]} · v${b.versao_atual}`}
         trilha={[
-          ['Painel', '/acesso'],
+          ['Início', '/acesso'],
           ['Boletins', `/acesso/boletins?sala=${b.sala_id}`],
           ['Boletim', ver],
           ['Editar', null],

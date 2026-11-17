@@ -29,7 +29,7 @@ export default async function BoletimDiario() {
         titulo="Boletim Diário"
         subtitulo={`Sala de Situação Alfredo Pisani · ${dataBr(hoje)}`}
         trilha={[
-          ['Painel', '/acesso'],
+          ['Início', '/acesso'],
           [sala.sigla || sala.nome, hrefSala],
           ['Boletins', `/acesso/boletins?sala=${sala.id}`],
           ['Boletim Diário', null],

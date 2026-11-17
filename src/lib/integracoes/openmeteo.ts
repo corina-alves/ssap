@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { lembrar, TTL } from './cache';
+import { ESPERA_TELA_SEG, lembrar, TTL } from './cache';
 import { comoDado, type Dado } from './comum';
 import { arred, buscarJson } from './http';
 
@@ -108,13 +108,17 @@ async function previsaoPontos(pontos: { lat: number; lon: number }[], dias: numb
 
 const limitarDias = (d: number) => Math.max(1, Math.min(16, Math.trunc(d) || 1));
 
-/** Previsão para os sistemas produtores (chuva, probabilidade, temperaturas). */
+/**
+ * Previsão para os sistemas produtores (chuva, probabilidade, temperaturas).
+ * Só páginas públicas (início e previsão dos reservatórios): com a Open-Meteo
+ * lenta, mostram a última previsão guardada, com a hora (`esperaMaxSeg`).
+ */
 export async function previsaoSistemas(dias = 7): Promise<Dado<(PrevisaoDiaria & { sistema: string })[]>> {
   const n = limitarDias(dias);
   const l = await lembrar('previsao', `sistemas:${n}`, TTL.hora, async () => {
     const r = await previsaoPontos([...CENTROIDES_SISTEMAS], n, true);
     return r && r.map((p, i) => ({ ...p, sistema: CENTROIDES_SISTEMAS[i]!.sistema }));
-  });
+  }, { esperaMaxSeg: ESPERA_TELA_SEG });
   return comoDado(FONTE, l);
 }
 
@@ -213,7 +217,11 @@ export type DiaPrevisto = {
 
 export type PrevisaoMunicipio = { lat: number; lon: number; umidadeAtual: number | null; dias: DiaPrevisto[] };
 
-/** 7 dias: chuva, probabilidade, temperaturas, vento, condição + umidade atual. */
+/**
+ * 7 dias: chuva, probabilidade, temperaturas, vento, condição + umidade atual.
+ * Só páginas públicas (previsão e cartão da página inicial): com a Open-Meteo
+ * lenta, mostram a última previsão guardada, com a hora (`esperaMaxSeg`).
+ */
 export async function previsaoMunicipio(lat: number, lon: number): Promise<Dado<PrevisaoMunicipio>> {
   if (!Number.isFinite(lat) || !Number.isFinite(lon)) throw new Error('Coordenadas inválidas.');
   const la = arred(lat, 3);
@@ -256,6 +264,6 @@ export async function previsaoMunicipio(lat: number, lon: number): Promise<Dado<
         ventoKmh: r1(d.wind_speed_10m_max[i] ?? null),
       })),
     };
-  });
+  }, { esperaMaxSeg: ESPERA_TELA_SEG });
   return comoDado(FONTE, l);
 }

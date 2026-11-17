@@ -80,7 +80,7 @@ export default async function AfluenciaMlt({ searchParams }: { searchParams: Pro
         titulo={`Afluência × MLT — ${SISTEMAS[sistema]!.nome}`}
         subtitulo="Vazão natural mensal (m³/s) comparada à média de longo termo. Fonte: SSD SP-Águas."
         trilha={[
-          ['Painel', '/acesso'],
+          ['Início', '/acesso'],
           ['Gráficos', `/acesso/graficos?sala=${sala.id}`],
           ['Afluência × MLT', null],
         ]}

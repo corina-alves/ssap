@@ -74,7 +74,7 @@ export default async function MediasMensais({ searchParams }: { searchParams: Pr
         titulo={`Médias mensais — ${nome}`}
         subtitulo="Vazão natural mensal × média de longo termo (MLT) e chuva mensal × média climatológica. Fonte: SABESP — Mananciais."
         trilha={[
-          ['Painel', '/acesso'],
+          ['Início', '/acesso'],
           [sala.sigla || sala.nome, `/acesso/salas/sala?s=${sala.slug}`],
           ['Gráficos', `/acesso/graficos?sala=${sala.id}`],
           ['Médias mensais', null],

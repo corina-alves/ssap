@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import Form from 'next/form';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
+import { AvisoSucesso } from '@/components/acesso/aviso';
+import { Cabecalho, EstadoVazio } from '@/components/acesso/pecas';
 import { inteiro, Paginacao, texto } from '@/components/paginacao';
 import { acl } from '@/lib/auth/acl';
 import { categorias, listar, salasDocumentos, sugestoesTitulos } from '@/lib/documentos';
@@ -33,18 +35,22 @@ export default async function PaginaDocumentos({
 
   return (
     <>
-      <div className="cabecalho">
-        <div>
-          <h1>Documentos</h1>
-          <p className="suave">Notas técnicas, relatórios, apresentações e atas das salas.</p>
-        </div>
-        {podeEnviar && (
-          <Link href="/acesso/documentos/novo" className="botao">
-            Enviar documento
-          </Link>
-        )}
-      </div>
-      {sp.excluido && <div className="alerta alerta-ok">Documento excluído.</div>}
+      {sp.excluido && <AvisoSucesso>Documento excluído.</AvisoSucesso>}
+      <Cabecalho
+        titulo="Documentos"
+        subtitulo="Notas técnicas, relatórios, apresentações e atas das salas."
+        trilha={[
+          ['Início', '/acesso'],
+          ['Documentos', null],
+        ]}
+        acoes={
+          podeEnviar && (
+            <Link href="/acesso/documentos/novo" className="btn btn-primary">
+              <i className="bi bi-plus-lg me-1" /> Enviar documento
+            </Link>
+          )
+        }
+      />
       <section className="cartao">
         <Form action="" scroll={false} className="filtros">
           <BuscaAutocompletar sugestoes={await sugestoesTitulos(salas.map((s) => s.id))} name="busca" defaultValue={f.busca} placeholder="Buscar no título ou na descrição" rotulo="Buscar" />
@@ -71,7 +77,15 @@ export default async function PaginaDocumentos({
           </button>
         </Form>
         {itens.length === 0 ? (
-          <p className="suave">Nenhum documento encontrado.</p>
+          f.sala || f.categoria || f.busca ? (
+            <EstadoVazio icone="bi-funnel" titulo="Nenhum documento com esses filtros." acao={{ rotulo: 'Limpar filtros', href: '/acesso/documentos', icone: 'bi-x-lg', secundaria: true }} />
+          ) : (
+            <EstadoVazio
+              icone="bi-folder2-open"
+              titulo="Nenhum documento enviado ainda."
+              acao={podeEnviar ? { rotulo: 'Enviar o primeiro', href: '/acesso/documentos/novo' } : undefined}
+            />
+          )
         ) : (
           <div className="rolagem">
             <table className="tabela">
@@ -118,13 +132,15 @@ export default async function PaginaDocumentos({
             </table>
           </div>
         )}
-        <Paginacao
-          total={total}
-          pagina={pagina}
-          porPagina={POR_PAGINA}
-          base="/acesso/documentos"
-          params={{ busca: f.busca, sala: f.sala ? String(f.sala) : undefined, categoria: f.categoria ? String(f.categoria) : undefined }}
-        />
+        {total > 0 && (
+          <Paginacao
+            total={total}
+            pagina={pagina}
+            porPagina={POR_PAGINA}
+            base="/acesso/documentos"
+            params={{ busca: f.busca, sala: f.sala ? String(f.sala) : undefined, categoria: f.categoria ? String(f.categoria) : undefined }}
+          />
+        )}
       </section>
     </>
   );

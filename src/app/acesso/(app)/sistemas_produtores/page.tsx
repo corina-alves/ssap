@@ -42,7 +42,7 @@ export default async function SistemasProdutores({ searchParams }: { searchParam
         titulo="Sistemas produtores — volume, chuva e vazões"
         subtitulo={`Médias e totais mensais de ${periodo}. Fontes: SABESP e ANA (tabela de volumes) e SSD SP Águas (gráficos).`}
         trilha={[
-          ['Painel', '/acesso'],
+          ['Início', '/acesso'],
           [sala.sigla || sala.nome, `/acesso/salas/sala?s=${sala.slug}`],
           ['Sistemas produtores', null],
         ]}

@@ -1,11 +1,12 @@
 import type { Metadata } from 'next';
+import { AvisoSucesso } from '@/components/acesso/aviso';
 import Link from 'next/link';
 import { Indicadores } from '@/components/acesso/indicadores';
 import { Cabecalho, corSala, Mensagem } from '@/components/acesso/pecas';
 import { salasPainel } from '@/lib/acesso/painel';
 import { acl } from '@/lib/auth/acl';
 
-export const metadata: Metadata = { title: 'Painel' };
+export const metadata: Metadata = { title: 'Início' };
 
 export default async function Painel({ searchParams }: { searchParams: Promise<{ senha?: string }> }) {
   const a = await acl();
@@ -14,7 +15,7 @@ export default async function Painel({ searchParams }: { searchParams: Promise<{
 
   return (
     <>
-      {senha === 'alterada' && <Mensagem tipo="sucesso">Senha alterada.</Mensagem>}
+      {senha === 'alterada' && <AvisoSucesso>Senha alterada.</AvisoSucesso>}
       <Cabecalho
         titulo={`Olá, ${a.usuario.nome.split(' ')[0]}`}
         subtitulo={a.globais.size > 0 ? 'Visão geral de todas as Salas de Situação.' : 'Visão geral das suas Salas de Situação.'}

@@ -65,6 +65,71 @@ export function Mensagem({ tipo, children }: { tipo: keyof typeof ALERTA; childr
   );
 }
 
+/**
+ * Lista vazia com orientação: o que aconteceu e, se houver, o próximo passo
+ * (ex.: "Cadastrar o primeiro" ou "Limpar filtros").
+ */
+export function EstadoVazio({
+  titulo,
+  children,
+  icone = 'bi-inbox',
+  acao,
+}: {
+  titulo: string;
+  children?: ReactNode;
+  icone?: string;
+  acao?: { rotulo: string; href: string; icone?: string; secundaria?: boolean };
+}) {
+  return (
+    <div className="acesso-vazio">
+      <i className={`bi ${icone} acesso-vazio__icone`} aria-hidden="true" />
+      <p className="acesso-vazio__titulo">{titulo}</p>
+      {children && <p className="acesso-vazio__texto">{children}</p>}
+      {acao && (
+        <Link className={`btn btn-sm ${acao.secundaria ? 'btn-outline-secondary' : 'btn-primary'}`} href={acao.href}>
+          <i className={`bi ${acao.icone ?? 'bi-plus-lg'} me-1`} aria-hidden="true" />
+          {acao.rotulo}
+        </Link>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Troca de sala nas listas por sala (boletins, gráficos, previsões): botão com
+ * a sala atual e a lista das outras. Só aparece com mais de uma sala.
+ */
+export function SeletorSala({
+  salas,
+  atual,
+  href,
+}: {
+  salas: { id: number; nome: string; sigla: string | null }[];
+  atual: number;
+  href: (id: number) => string;
+}) {
+  if (salas.length < 2) return null;
+  const sala = salas.find((s) => s.id === atual);
+  return (
+    <div className="dropdown">
+      <button className="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+        <i className="bi bi-building me-1" aria-hidden="true" />
+        <span className="visually-hidden">Sala: </span>
+        {sala?.sigla || sala?.nome || 'Sala'}
+      </button>
+      <ul className="dropdown-menu dropdown-menu-end">
+        {salas.map((s) => (
+          <li key={s.id}>
+            <Link className={`dropdown-item${s.id === atual ? ' active' : ''}`} href={href(s.id)} aria-current={s.id === atual ? 'page' : undefined}>
+              {s.nome}
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 /** Telas sem sessão (login, senha): cartão centralizado (templates/auth_inicio.php). */
 export function MolduraAuth({ children }: { children: ReactNode }) {
   return (

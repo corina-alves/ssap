@@ -170,7 +170,7 @@ export default async function GraficosPostos({ searchParams }: { searchParams: P
         titulo="Gráficos de postos"
         subtitulo="Nível e vazão de qualquer posto fluviométrico do SIBH no período escolhido, com a última leitura comparada à média de um dia e a análise para o acompanhamento."
         trilha={[
-          ['Painel', '/acesso'],
+          ['Início', '/acesso'],
           ['Defesa Civil', '/acesso/defesa_civil'],
           ['Gráficos de postos', null],
         ]}

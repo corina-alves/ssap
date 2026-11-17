@@ -34,7 +34,7 @@ export default async function ChuvaDoMes({ searchParams }: { searchParams: Promi
         titulo="Chuva do mês — UGRHIs e municípios"
         subtitulo={`Acumulado do mês, chuva máxima e média histórica do mesmo mês (${INICIO_HISTORICO} até hoje) em todas as UGRHIs e municípios com pluviômetro.`}
         trilha={[
-          ['Painel', '/acesso'],
+          ['Início', '/acesso'],
           ['Climatologia de precipitação', '/acesso/climatologia'],
           ['Chuva do mês', null],
         ]}

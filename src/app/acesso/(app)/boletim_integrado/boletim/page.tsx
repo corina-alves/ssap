@@ -38,7 +38,7 @@ export default async function BoletimIntegrado({ searchParams }: { searchParams:
         titulo={`Boletim ${NOMES[tipo]}`}
         subtitulo={`Bacia Hidrográfica do Alto Tietê (CBH-AT) · ${comp}`}
         trilha={[
-          ['Painel', '/acesso'],
+          ['Início', '/acesso'],
           [sala.sigla || sala.nome, hrefSala],
           ['Boletins', `/acesso/boletins?sala=${sala.id}`],
           [`Boletim ${NOMES[tipo]}`, null],

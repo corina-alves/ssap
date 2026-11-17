@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { AvisoSucesso } from '@/components/acesso/aviso';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { listarModulos, obterSala } from '@/lib/admin/salas';
@@ -26,7 +27,7 @@ export default async function EditarSala({
         <Link href="/acesso/salas">Salas</Link> / Editar sala
       </p>
       <h1>{sala.nome}</h1>
-      {criada && <div className="alerta alerta-ok">Sala cadastrada.</div>}
+      {criada && <AvisoSucesso>Sala cadastrada.</AvisoSucesso>}
       <FormSala
         id={sala.id}
         inicial={{

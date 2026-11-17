@@ -59,7 +59,7 @@ export default async function CriarMlt({ searchParams }: { searchParams: Promise
         titulo="Criar gráfico com MLT"
         subtitulo="Sistemas produtores (SSD SP Águas) comparados à média de longo termo, por período chuvoso, seco, ano civil ou hidrológico."
         trilha={[
-          ['Painel', '/acesso'],
+          ['Início', '/acesso'],
           ['Gráficos', `/acesso/graficos?sala=${sala.id}`],
           ['Criar gráfico com MLT', null],
         ]}

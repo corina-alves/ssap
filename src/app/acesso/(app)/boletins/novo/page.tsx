@@ -40,7 +40,7 @@ export default async function NovoBoletim({ searchParams }: { searchParams: Prom
         titulo="Novo boletim"
         subtitulo={sala?.nome}
         trilha={[
-          ['Painel', '/acesso'],
+          ['Início', '/acesso'],
           ['Boletins', lista],
           ['Novo', null],
         ]}

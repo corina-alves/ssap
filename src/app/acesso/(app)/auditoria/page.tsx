@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Form from 'next/form';
 import { redirect } from 'next/navigation';
+import { Cabecalho, EstadoVazio } from '@/components/acesso/pecas';
 import { inteiro, Paginacao, texto } from '@/components/paginacao';
 import { listarAuditoria, opcoesFiltro, sugestoesUsuarios } from '@/lib/admin/auditoria';
 import { salas as listarSalas } from '@/lib/admin/usuarios';
@@ -43,10 +44,14 @@ export default async function PaginaAuditoria({
 
   return (
     <>
-      <h1>Auditoria</h1>
-      <p className="suave">
-        {escopo === null ? 'Todas as ações registradas no sistema.' : 'Ações registradas nas salas que você gerencia.'}
-      </p>
+      <Cabecalho
+        titulo="Auditoria"
+        subtitulo={escopo === null ? 'Todas as ações registradas no sistema.' : 'Ações registradas nas salas que você gerencia.'}
+        trilha={[
+          ['Início', '/acesso'],
+          ['Auditoria', null],
+        ]}
+      />
       <section className="cartao">
         <Form action="" scroll={false} className="filtros">
           <BuscaAutocompletar sugestoes={await sugestoesUsuarios(escopo)} name="usuario" defaultValue={f.usuario} placeholder="Usuário" rotulo="Usuário" />
@@ -82,7 +87,11 @@ export default async function PaginaAuditoria({
         </Form>
 
         {itens.length === 0 ? (
-          <p className="suave">Nenhum registro encontrado.</p>
+          Object.values(f).some(Boolean) ? (
+            <EstadoVazio icone="bi-funnel" titulo="Nenhum registro com esses filtros." acao={{ rotulo: 'Limpar filtros', href: '/acesso/auditoria', icone: 'bi-x-lg', secundaria: true }} />
+          ) : (
+            <EstadoVazio icone="bi-clock-history" titulo="Nenhuma ação registrada ainda." />
+          )
         ) : (
           <div className="rolagem">
             <table className="tabela">
@@ -121,13 +130,15 @@ export default async function PaginaAuditoria({
             </table>
           </div>
         )}
-        <Paginacao
-          total={total}
-          pagina={pagina}
-          porPagina={POR_PAGINA}
-          base="/acesso/auditoria"
-          params={{ ...f, sala: f.sala ? String(f.sala) : undefined }}
-        />
+        {total > 0 && (
+          <Paginacao
+            total={total}
+            pagina={pagina}
+            porPagina={POR_PAGINA}
+            base="/acesso/auditoria"
+            params={{ ...f, sala: f.sala ? String(f.sala) : undefined }}
+          />
+        )}
       </section>
     </>
   );

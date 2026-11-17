@@ -34,7 +34,7 @@ export default async function BoletimMensal({ searchParams }: { searchParams: Pr
         titulo={`Boletim mensal — ${mesExtenso(mes)}`}
         subtitulo="Slides montados com os dados das integrações; onde não há fonte automática, a equipe anexa as imagens e escreve os textos. O PDF sai com um slide por página."
         trilha={[
-          ['Painel', '/acesso'],
+          ['Início', '/acesso'],
           [sala.sigla || sala.nome, `/acesso/salas/sala?s=${sala.slug}`],
           ['Boletim mensal', null],
         ]}

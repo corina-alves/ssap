@@ -146,7 +146,7 @@ async function ChuvaAgora() {
   const c = r.dados;
   return (
     <div className="sibh-now-panel">
-      {cabeca('Monitoramento pluviométrico em tempo real', 'Última 1 hora · SIBH / SP-Águas', r.desatualizado ? 'Últimos dados obtidos' : 'Dados telemétricos')}
+      {cabeca('Monitoramento pluviométrico em tempo real', 'Última 1 hora · SIBH / SP-Águas', r.desatualizado ? `Dados de ${dataHora(r.obtidoEm)}` : 'Dados telemétricos')}
       <div className="sibh-now-body">
         <div className="sibh-metrics">
           {/* na cor da intensidade da maior chuva da hora (a mesma escala do TOP 5) */}

@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
-import { Cabecalho } from '@/components/acesso/pecas';
-import { salasPainel } from '@/lib/acesso/painel';
+import { Cabecalho, SeletorSala } from '@/components/acesso/pecas';
+import { salasDoModulo, salasPainel } from '@/lib/acesso/painel';
 import { acl } from '@/lib/auth/acl';
 
 export const metadata: Metadata = { title: 'Previsões' };
@@ -28,6 +28,9 @@ export default async function PaginaPrevisoes({ searchParams }: { searchParams: 
   const a = await acl();
   const salas = await salasPainel(a);
   const { sala: salaId } = await searchParams;
+  const comModulo = await salasDoModulo(a, 'previsoes');
+  // Sem sala na URL (menu "Previsões"): abre a primeira que o usuário vê com o módulo.
+  if (!salaId) redirect(comModulo[0] ? `/acesso/previsoes?sala=${comModulo[0].id}` : '/acesso/sem-acesso');
   const sala = salas.find((s) => String(s.id) === salaId);
   if (!sala) notFound();
   if (!a.pode('visualizar_previsoes', sala.id)) redirect('/acesso/sem-acesso');
@@ -39,10 +42,11 @@ export default async function PaginaPrevisoes({ searchParams }: { searchParams: 
         titulo="Previsões"
         subtitulo="Páginas de previsão do tempo e dos sistemas produtores."
         trilha={[
-          ['Painel', '/acesso'],
+          ['Início', '/acesso'],
           [sala.sigla || sala.nome, `/acesso/salas/sala?s=${sala.slug}`],
           ['Previsões', null],
         ]}
+        acoes={<SeletorSala salas={comModulo} atual={sala.id} href={(id) => `/acesso/previsoes?sala=${id}`} />}
       />
       <div className="row g-3">
         {LINKS.map((l) => (

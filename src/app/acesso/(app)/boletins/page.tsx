@@ -2,7 +2,8 @@ import type { Metadata } from 'next';
 import Form from 'next/form';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { Cabecalho, FerramentasBoletim, Mensagem, PaginacaoAcesso } from '@/components/acesso/pecas';
+import { AvisoSucesso } from '@/components/acesso/aviso';
+import { Cabecalho, EstadoVazio, FerramentasBoletim, PaginacaoAcesso, SeletorSala } from '@/components/acesso/pecas';
 import { inteiro, texto } from '@/components/paginacao';
 import { atalhosDaSala } from '@/lib/acesso/atalhos';
 import { acl } from '@/lib/auth/acl';
@@ -42,21 +43,24 @@ export default async function PaginaBoletins({ searchParams }: { searchParams: P
 
   return (
     <>
-      {aviso && <Mensagem tipo="sucesso">{aviso}</Mensagem>}
+      {aviso && <AvisoSucesso>{aviso}</AvisoSucesso>}
       <Cabecalho
         titulo="Boletins"
         subtitulo={sala.nome}
         trilha={[
-          ['Painel', '/acesso'],
+          ['Início', '/acesso'],
           [sala.sigla || sala.nome, `/acesso/salas/sala?s=${sala.slug}`],
           ['Boletins', null],
         ]}
         acoes={
-          a.pode('criar_boletim', sala.id) && (
-            <Link className="btn btn-primary" href={`${base}/novo?sala=${sala.id}`}>
-              <i className="bi bi-plus-lg me-1" /> Novo boletim
-            </Link>
-          )
+          <>
+            <SeletorSala salas={salas} atual={sala.id} href={(id) => `${base}?sala=${id}`} />
+            {a.pode('criar_boletim', sala.id) && (
+              <Link className="btn btn-primary" href={`${base}/novo?sala=${sala.id}`}>
+                <i className="bi bi-plus-lg me-1" /> Novo boletim
+              </Link>
+            )}
+          </>
         }
       />
       <FerramentasBoletim atalhos={atalhos} />
@@ -129,7 +133,15 @@ export default async function PaginaBoletins({ searchParams }: { searchParams: P
         </Form>
 
         {itens.length === 0 ? (
-          <p className="text-secondary mb-0">Nenhum boletim encontrado.</p>
+          f.tipo || f.autor || f.status || f.busca || f.de || f.ate ? (
+            <EstadoVazio icone="bi-funnel" titulo="Nenhum boletim com esses filtros." acao={{ rotulo: 'Limpar filtros', href: `${base}?sala=${sala.id}`, icone: 'bi-x-lg', secundaria: true }} />
+          ) : (
+            <EstadoVazio
+              icone="bi-journal-text"
+              titulo="Nenhum boletim cadastrado nesta sala."
+              acao={a.pode('criar_boletim', sala.id) ? { rotulo: 'Cadastrar o primeiro', href: `${base}/novo?sala=${sala.id}` } : undefined}
+            />
+          )
         ) : (
           <>
             <div className="table-responsive">

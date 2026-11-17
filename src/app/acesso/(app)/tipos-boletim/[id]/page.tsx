@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { AvisoSucesso } from '@/components/acesso/aviso';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { listarSalas } from '@/lib/admin/salas';
@@ -27,7 +28,7 @@ export default async function EditarTipo({
         <Link href="/acesso/tipos-boletim">Tipos de boletim</Link> / Editar tipo
       </p>
       <h1>{t.nome}</h1>
-      {criado && <div className="alerta alerta-ok">Tipo de boletim cadastrado.</div>}
+      {criado && <AvisoSucesso>Tipo de boletim cadastrado.</AvisoSucesso>}
       <FormTipo
         id={t.id}
         inicial={{
