@@ -12,7 +12,7 @@
  */
 
 /** Variáveis do SSD usadas nos diagramas. */
-export const VD = { chuva: 1, vazao: 3, descarregada: 5, natural: 6, captada: 8, volumePct: 10, volumeHm3: 11, nivel: 12, defluente: 13 } as const;
+export const VD = { chuva: 1, vazao: 3, afluente: 4, descarregada: 5, natural: 6, captada: 8, volumePct: 10, volumeHm3: 11, nivel: 12, defluente: 13 } as const;
 
 export type Ancora = 'start' | 'middle' | 'end';
 /** Valor do SSD (local:variável) desenhado em (x, y). */
@@ -32,7 +32,8 @@ export type Ligacao = {
   mapa?: { inicio?: [number, number]; fim?: [number, number]; via?: [number, number][] };
 };
 
-type Base = { nome: string; x: number; y: number; ll?: [number, number] };
+/** `municipio`: vai na dica (posto, pluviômetro). */
+type Base = { nome: string; x: number; y: number; ll?: [number, number]; municipio?: string };
 
 /**
  * Posto do SIBH: `id` é o station_prefix_id (o que a consulta de medições usa) e
@@ -40,17 +41,36 @@ type Base = { nome: string; x: number; y: number; ll?: [number, number] };
  * nível (e a vazão, quando o posto mede) vai em (dx, dy); sem eles, no lugar
  * do valor do SSD do nó.
  */
-export type PostoSibh = { id: number; radar: number; dx?: number; dy?: number; ancora?: Ancora };
+export type PostoSibh = { id: number; radar?: number; dx?: number; dy?: number; ancora?: Ancora };
+
+/**
+ * Estação telemétrica da ANA (RJ e MG, onde o SIBH não chega): código da
+ * estação; vazão (ou nível) em (dx, dy) e a chuva dela ao lado do símbolo.
+ */
+export type PostoAna = { codigo: string; dx?: number; dy?: number; ancora?: Ancora };
 
 export type No =
-  | (Base & { tipo: 'reservatorio'; space: number; num: number; prefixo?: string; rotulo?: 'acima' | 'abaixo' | 'direita' | 'esquerda' })
   | (Base & {
-      tipo: 'posto' | 'eeab' | 'eta' | 'estrutura' | 'uhe' | 'cidade';
+      tipo: 'reservatorio';
+      space: number;
+      num: number;
+      prefixo?: string;
+      rotulo?: 'acima' | 'abaixo' | 'direita' | 'esquerda';
+      /** sem a chuva ao lado do nome (fonte sem chuva por reservatório, como o ONS) */
+      semChuva?: boolean;
+      /** barragem à direita (rio correndo da esquerda para a direita) */
+      espelhar?: boolean;
+    })
+  | (Base & {
+      tipo: 'posto' | 'eeab' | 'eta' | 'estrutura' | 'uhe' | 'cidade' | 'pluviometro';
       prefixo?: string;
       valor?: Omit<Valor, 'x' | 'y'> & { dx: number; dy: number };
       /** posição do nome em relação ao símbolo */
       rotulo?: 'acima' | 'abaixo' | 'direita' | 'esquerda';
       sibh?: PostoSibh;
+      ana?: PostoAna;
+      /** pluviômetro do SIBH: station_prefix_id */
+      pluvio?: number;
     });
 
 /**
@@ -75,6 +95,16 @@ export type Diagrama = {
   /** chuva por radar nas bacias do sistema */
   radares?: Radar[];
   notas?: string[];
+  /** APIs dos valores e dos gráficos do posto (padrão: as do painel, com os valores do SSD) */
+  api?: { valores: string; posto: string };
+  /** de onde vêm os valores dos nós e das ligações (dica e legenda; padrão: SSD) */
+  fonte?: string;
+  /** nota da legenda no lugar da padrão (vazões médias diárias do SSD) */
+  nota?: string;
+  /** só o esquema, sem mapa de fundo (posições reais ainda não levantadas) */
+  semMapa?: boolean;
+  /** botões de zoom e arrastar para mover (diagrama grande demais para a tela) */
+  zoom?: boolean;
 };
 
 const { vazao, descarregada: desc, natural, captada } = VD;
@@ -394,16 +424,24 @@ export const DIAGRAMAS_UNIFILARES: Record<string, Diagrama> = {
 /** Postos de radar (station_prefix_id do SIBH) de todos os diagramas: os únicos que a API consulta. */
 export const IDS_RADAR: ReadonlySet<number> = new Set(Object.values(DIAGRAMAS_UNIFILARES).flatMap((d) => (d.radares ?? []).map((r) => r.id)));
 
+/** Nó de uma estação telemétrica da ANA. */
+export type NoAna = Exclude<No, { tipo: 'reservatorio' }> & { tipo: 'posto'; ana: PostoAna };
+export const ehPostoAna = (n: No): n is NoAna => n.tipo === 'posto' && !!n.ana;
+/** Nó de um pluviômetro do SIBH. */
+export type NoPluviometro = Exclude<No, { tipo: 'reservatorio' }> & { tipo: 'pluviometro'; pluvio: number };
+export const ehPluviometro = (n: No): n is NoPluviometro => n.tipo === 'pluviometro' && typeof n.pluvio === 'number';
+
 /** Nó de um posto do SIBH. */
 export type NoSibh = Exclude<No, { tipo: 'reservatorio' }> & { tipo: 'posto'; sibh: PostoSibh };
 export const ehPostoSibh = (n: No): n is NoSibh => n.tipo === 'posto' && !!n.sibh;
 
 /** Postos do SIBH de todos os diagramas, por station_prefix_id (os únicos que a API consulta), com o radar da bacia. */
-export const POSTOS_SIBH: ReadonlyMap<number, { no: NoSibh; radar: Radar | undefined }> = new Map(
-  Object.values(DIAGRAMAS_UNIFILARES).flatMap((d) =>
-    d.nos.filter(ehPostoSibh).map((n) => [n.sibh.id, { no: n, radar: d.radares?.find((r) => r.id === n.sibh.radar) }] as const),
-  ),
-);
+export const POSTOS_SIBH: ReadonlyMap<number, { no: NoSibh; radar: Radar | undefined }> = postosSibhDe(Object.values(DIAGRAMAS_UNIFILARES));
+
+/** Postos do SIBH de uma lista de diagramas, por station_prefix_id, com o radar da bacia (quando há). */
+export function postosSibhDe(diagramas: Diagrama[]): Map<number, { no: NoSibh; radar: Radar | undefined }> {
+  return new Map(diagramas.flatMap((d) => d.nos.filter(ehPostoSibh).map((n) => [n.sibh.id, { no: n, radar: d.radares?.find((r) => r.id === n.sibh.radar) }] as const)));
+}
 
 /** Pares local:variável que um diagrama precisa (valores das ligações, dos nós e dos reservatórios). */
 export function paresDoDiagrama(d: Diagrama): string[] {

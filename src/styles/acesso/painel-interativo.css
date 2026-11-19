@@ -519,3 +519,24 @@
 @media (max-width: 520px) {
   .pc-cartoes { grid-template-columns: 1fr; }
 }
+
+/* Diagrama com zoom (bacia do Paraíba do Sul, unifilar.tsx: ZoomPan): o desenho ocupa a largura
+   toda e cresce com o zoom; a caixa rola (e arrasta, com o mouse). */
+.un-zoom { display: flex; flex-direction: column; gap: 6px; }
+.un-zoom-botoes { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; color: #9fb5cb; font-size: .8rem; }
+.un-zoom-botoes button {
+  display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, .16); background: rgba(255, 255, 255, .04); color: #d6e4f0;
+  font: inherit; font-size: .8rem; font-weight: 700; cursor: pointer;
+}
+.un-zoom-botoes button:hover:not(:disabled) { background: rgba(255, 255, 255, .09); }
+.un-zoom-botoes button:disabled { opacity: .45; cursor: default; }
+.un-zoom-botoes span { min-width: 3.2em; text-align: center; font-weight: 700; color: #d6e4f0; }
+.un-zoom-area { overflow: auto; max-height: 78vh; touch-action: pan-x pan-y; }
+.un-zoom-area.is-ampliado { cursor: grab; }
+.un-zoom-area.is-ampliado:active { cursor: grabbing; }
+.un-svg.un-svg--zoom { max-width: none; max-height: none; }
+/* o diagrama da bacia é largo: a coluna dos volumes vai para baixo dele, em grade */
+.pi-paraiba-diagrama .un-corpo { grid-template-columns: 1fr; }
+.pi-paraiba-diagrama .un-volumes { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 6px 14px; }
+.pi-paraiba-diagrama .un-volumes h4, .pi-paraiba-diagrama .un-volumes p { grid-column: 1 / -1; }

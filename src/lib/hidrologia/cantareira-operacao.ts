@@ -1,4 +1,5 @@
-import { DIAGRAMAS_UNIFILARES, ehPostoSibh, POSTOS_SIBH } from '@/conteudo/diagramas-unifilares';
+import { DIAGRAMA_PARAIBA } from '@/conteudo/diagrama-paraiba';
+import { DIAGRAMAS_UNIFILARES, ehPostoSibh, postosSibhDe } from '@/conteudo/diagramas-unifilares';
 import { hojeSp, somarDias } from '../integracoes/comum';
 import { instante, medicoes, type Medicao } from '../integracoes/sibh-medicoes';
 import type { Ponto } from '../integracoes/ssd';
@@ -87,6 +88,10 @@ export const POSTOS_CONTROLE: { chave: ChavePosto; nome: string; rio: string; pr
 ];
 
 const cantareira = DIAGRAMAS_UNIFILARES.cantareira!;
+/** Diagramas com postos do SIBH: os dos sistemas produtores e o da bacia do Paraíba do Sul. */
+const DIAGRAMAS_COM_POSTOS = [...Object.values(DIAGRAMAS_UNIFILARES), DIAGRAMA_PARAIBA];
+/** Os únicos postos do SIBH que as leituras e os gráficos consultam. */
+const POSTOS = postosSibhDe(DIAGRAMAS_COM_POSTOS);
 /** Todos os postos de radar e do SIBH do diagrama do Cantareira: as consultas do dia são as mesmas do diagrama. */
 const RADARES_CANTAREIRA = (cantareira.radares ?? []).map((r) => r.id).sort((a, b) => a - b);
 const POSTOS_CANTAREIRA = cantareira.nos.filter(ehPostoSibh).map((n) => n.sibh.id);
@@ -223,7 +228,7 @@ export type ValorPosto = { valor: number; data: string; hora?: string };
  * 3 h; dia que já acabou, a média do dia.
  */
 export async function leiturasPostos(ids: number[], data: string): Promise<Record<string, ValorPosto | null>> {
-  const ord = [...new Set(ids)].filter((id) => POSTOS_SIBH.has(id)).sort((a, b) => a - b);
+  const ord = [...new Set(ids)].filter((id) => POSTOS.has(id)).sort((a, b) => a - b);
   if (!ord.length) return {};
   const hoje = data === hojeSp();
   const agora = Date.now();
@@ -503,18 +508,19 @@ export type PostosControle = Awaited<ReturnType<typeof postosControle>>;
  * da bacia dele no mesmo período.
  */
 export async function graficosPosto(id: number, data: string) {
-  const p = POSTOS_SIBH.get(id);
+  const p = POSTOS.get(id);
   if (!p) return null;
   // as consultas de radar e de leituras atuais são as do diagrama do posto (mesmas chaves de cache)
-  const diag = Object.values(DIAGRAMAS_UNIFILARES).find((x) => x.nos.some((n) => ehPostoSibh(n) && n.sibh.id === id))!;
+  const diag = DIAGRAMAS_COM_POSTOS.find((x) => x.nos.some((n) => ehPostoSibh(n) && n.sibh.id === id))!;
   const radares = (diag.radares ?? []).map((r) => r.id).sort((a, b) => a - b);
   const radaresIgual = radares.join(',') === RADARES_CANTAREIRA.join(',') ? RADARES_CANTAREIRA : radares;
   const ehHoje = data === hojeSp();
   const [fechadas, hoje, radarFechado, radarHoje, agora] = await Promise.all([
     horasFechadas(id, data),
     horasDoDia(id, data),
-    radarDiasFechados(data, radaresIgual),
-    radarDoDia(data, radaresIgual),
+    // diagrama sem radar (Paraíba do Sul): sem a consulta, e o gráfico de chuva não aparece
+    radaresIgual.length ? radarDiasFechados(data, radaresIgual) : Promise.resolve(null),
+    radaresIgual.length ? radarDoDia(data, radaresIgual) : Promise.resolve(null),
     ehHoje ? leiturasPostos(diag.nos.filter(ehPostoSibh).map((n) => n.sibh.id), data).catch(() => ({}) as Record<string, ValorPosto | null>) : Promise.resolve({} as Record<string, ValorPosto | null>),
   ]);
   const nivelAgora = agora[`sibh-nivel:${id}`];

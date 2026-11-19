@@ -41,6 +41,22 @@ export async function exigirApi(salaSlug: string, permissao: string): Promise<{ 
   return { a, sala };
 }
 
+/**
+ * Rotas JSON liberadas para mais de uma sala: a permissão em qualquer uma delas
+ * basta (a primeira da lista em que o usuário tem a permissão vem em `sala`).
+ */
+export async function exigirApiEmAlguma(salasSlugs: string[], permissao: string): Promise<{ a: Acl; sala: SalaBasica } | NextResponse> {
+  const u = await usuarioAtual();
+  if (!u || u.deveTrocarSenha) return json('Sessão expirada. Entre novamente no sistema.', 401);
+  const a = await acl();
+  for (const slug of salasSlugs) {
+    const sala = await salaPorSlug(slug);
+    if (sala && a.pode(permissao, sala.id)) return { a, sala };
+  }
+  await auditar({ modulo: 'seguranca', acao: 'acesso_negado', descricao: `Sem permissão (${permissao} em ${salasSlugs.join(' ou ')})`, usuario: u });
+  return json('Sem permissão.', 403);
+}
+
 // ---------------------------------------------------------------------------
 // Configurações guardadas no banco (tabela configuracoes)
 // ---------------------------------------------------------------------------

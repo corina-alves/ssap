@@ -1,9 +1,9 @@
 'use client';
 
 import { memo, useMemo } from 'react';
-import { ehPostoSibh, VD, type Ancora, type Diagrama, type Ligacao, type No, type NoSibh, type Valor } from '@/conteudo/diagramas-unifilares';
+import { ehPostoAna, ehPostoSibh, VD, type Ancora, type Diagrama, type Ligacao, type No, type Valor } from '@/conteudo/diagramas-unifilares';
 import { afastar, arrumarCartoes, caixaComNome, caixaRadar, type Escala, type ItemCartao, type NaLinha, type PlanoMapa, type Pt } from './posicoes-mapa';
-import { COR, Ponto, PontoRadar, Reservatorio } from './simbolos-unifilar';
+import { chavePosto, COR, Ponto, PontoRadar, Reservatorio, type NoPostoClicavel } from './simbolos-unifilar';
 import { duracaoFluxo, texto, valorDe, type Modo, type ValoresSsd } from './valores-ssd';
 
 /**
@@ -219,8 +219,8 @@ const Conteudo = memo(function Conteudo({
   modo: Modo;
   destaque?: number | null;
   aoEscolher?: (space: number) => void;
-  postoAtivo?: number | null;
-  aoPosto?: (n: NoSibh) => void;
+  postoAtivo?: string | null;
+  aoPosto?: (n: NoPostoClicavel) => void;
 }) {
   const { lugares, guias, textos } = useMemo(() => montar(d, esc, s, valores, data, modo), [d, esc, s, valores, data, modo]);
   // vazão de um ponto (EEAB, UHE): a dele ou a da ligação que começa ou termina nele no esquema (gira o rotor)
@@ -267,8 +267,9 @@ const Conteudo = memo(function Conteudo({
                 data={data}
                 modo={modo}
                 vazao={aqui.tipo === 'eeab' || aqui.tipo === 'uhe' ? vazaoNo(n as typeof aqui) : null}
-                ativo={ehPostoSibh(n) && n.sibh.id === postoAtivo}
-                aoPosto={aoPosto && ehPostoSibh(n) ? () => aoPosto(n) : undefined}
+                ativo={(ehPostoSibh(n) || ehPostoAna(n)) && chavePosto(n) === postoAtivo}
+                aoPosto={aoPosto && (ehPostoSibh(n) || ehPostoAna(n)) ? () => aoPosto(n) : undefined}
+                fonte={d.fonte}
               />
             )}
           </g>
@@ -311,8 +312,8 @@ export function DesenhoNoMapa({
   modo: Modo;
   destaque?: number | null;
   aoEscolher?: (space: number) => void;
-  postoAtivo?: number | null;
-  aoPosto?: (n: NoSibh) => void;
+  postoAtivo?: string | null;
+  aoPosto?: (n: NoPostoClicavel) => void;
 }) {
   const esc = useMemo(() => plano.naEscala(f), [plano, f]);
   return (

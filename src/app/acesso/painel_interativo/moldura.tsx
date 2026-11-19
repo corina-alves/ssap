@@ -1,10 +1,12 @@
 import Form from 'next/form';
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 import { Suspense, type ReactNode } from 'react';
 import { dataDaUrl } from '@/components/hidrologia/filtro-data';
 import { BotaoTopo } from '@/components/site/botao-topo';
 import { acl, exigirSala } from '@/lib/auth/acl';
 import { dataBr, dataHora } from '@/lib/formato';
+import { acessoParaiba } from '@/lib/hidrologia/paraiba-do-sul';
 import { PERMISSAO_PAINEL, SALA_PAINEL, SISTEMAS as LOCAIS } from '@/lib/hidrologia/painel-interativo';
 import { hojeSp } from '@/lib/integracoes/comum';
 import { SISTEMAS } from '@/lib/integracoes/sabesp';
@@ -39,6 +41,19 @@ export async function abrirPainel(searchParams: Busca) {
   return { usuario: a.usuario, busca, data: dataDaUrl(busca.data), hoje: hojeSp() };
 }
 
+/**
+ * Login e permissão da página Paraíba do Sul, a única do painel que a Sala Vale
+ * do Paraíba também vê. `acesso`: 'completo' (Alfredo Pisani, todo o painel) ou
+ * 'paraiba' (só esta página).
+ */
+export async function abrirPainelParaiba(searchParams: Busca) {
+  const a = await acl();
+  const acesso = await acessoParaiba(a);
+  if (!acesso) redirect('/acesso/sem-acesso');
+  const busca = await searchParams;
+  return { usuario: a.usuario, busca, data: dataDaUrl(busca.data), hoje: hojeSp(), acesso };
+}
+
 /** Endereço de uma página do painel, mantendo a data (quando não é hoje). */
 export function endereco(caminho: string, data: string, hoje: string, extra: Record<string, string> = {}) {
   const q = new URLSearchParams(extra);
@@ -63,9 +78,12 @@ export function MolduraPainel({
   data,
   hoje,
   manter = [],
+  somente,
   children,
 }: {
   pagina: (typeof PAGINAS)[number]['chave'];
+  /** só esta página nas abas (quem vê só a página Paraíba do Sul) */
+  somente?: (typeof PAGINAS)[number]['chave'];
   usuario: { nome: string; email: string };
   data: string;
   hoje: string;
@@ -83,7 +101,11 @@ export function MolduraPainel({
           <img src="/legado/logo/spaguas_white.png" alt="SP Águas" />
           <div>
             <h1>Painel de Segurança Hídrica</h1>
-            <span>Situação hídrica e análise dos sistemas produtores da RMSP - Sala de Situação Alfredo Pisani</span>
+            <span>
+              {somente === 'paraiba-do-sul'
+                ? 'Bacia do Rio Paraíba do Sul: reservatórios, transposição e postos'
+                : 'Situação hídrica e análise dos sistemas produtores da RMSP - Sala de Situação Alfredo Pisani'}
+            </span>
           </div>
         </div>
         <Form action="" scroll={false} className="pnl-busca" key={data}>
@@ -126,7 +148,7 @@ export function MolduraPainel({
       </header>
 
       <nav className="pi-abas" aria-label="Páginas do painel interativo">
-        {PAGINAS.map((p) => (
+        {PAGINAS.filter((p) => !somente || p.chave === somente).map((p) => (
           <Link
             key={p.chave}
             href={endereco(p.caminho, data, hoje)}

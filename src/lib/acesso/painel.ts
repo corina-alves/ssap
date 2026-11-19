@@ -99,6 +99,7 @@ export async function montarMenu(a: Acl): Promise<Menu> {
   const visiveis = await salasPainel(a);
   const temModulo = (modulo: string) => visiveis.some((s) => s.modulos.some((m) => m.slug === modulo) && a.pode(MODULOS[modulo]!.permissao, s.id));
   const alfredo = visiveis.find((s) => s.slug === 'alfredo-pisani');
+  const valeParaiba = visiveis.find((s) => s.slug === 'vale-paraiba');
   const cetesb = visiveis.find((s) => s.slug === SALA_BOLETIM_INTEGRADO);
 
   const boletins: ItemMenu[] = [];
@@ -131,6 +132,10 @@ export async function montarMenu(a: Acl): Promise<Menu> {
         item('Resumo dos sistemas', '/acesso/acompanhamento/resumo-sistemas', 'bi-card-list'),
       ],
     });
+  }
+  // Sala Vale do Paraíba sem o painel inteiro: só a página da bacia do Paraíba do Sul (diagrama, cards, tabelas e gráficos).
+  else if (valeParaiba && a.pode('visualizar_dashboard', valeParaiba.id)) {
+    monitoramento.push(item('Bacia do Paraíba do Sul', '/acesso/painel_interativo/paraiba-do-sul', 'bi-water'));
   }
   // Climatologia da chuva por UGRHI (acervo histórico do SIBH, já processado no banco).
   if (a.podeEmAlguma('visualizar_climatologia')) {

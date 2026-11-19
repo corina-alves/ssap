@@ -17,6 +17,7 @@ export type Modo = 'vazao' | 'volume' | 'nivel' | 'chuva';
 const FORMATO: Record<number, [number, string]> = {
   [VD.chuva]: [1, 'mm'],
   [VD.vazao]: [2, 'm³/s'],
+  [VD.afluente]: [2, 'm³/s'],
   [VD.descarregada]: [2, 'm³/s'],
   [VD.natural]: [2, 'm³/s'],
   [VD.captada]: [2, 'm³/s'],
@@ -60,6 +61,18 @@ export const chaveVazao = (id: number) => `sibh-vazao:${id}`;
 export function textoSibh(valores: ValoresSsd, id: number, qual: 'nivel' | 'vazao'): string {
   const x = valores[qual === 'nivel' ? chaveNivel(id) : chaveVazao(id)];
   return x ? `${numero(x.valor, 2)} ${qual === 'nivel' ? 'm' : 'm³/s'}` : '—';
+}
+
+/** Chaves de uma estação telemétrica da ANA (diagrama do Paraíba do Sul). */
+export const chaveAna = (qual: 'vazao' | 'nivel', codigo: string) => `ana-${qual}:${codigo}`;
+/** Chave da chuva de um posto (pluviômetro do SIBH ou estação da ANA) em 24 h, 72 h ou no mês. */
+export const chaveChuva = (periodo: '24' | '72' | 'mes', fonte: 'sibh' | 'ana', id: number | string) => `chuva${periodo === 'mes' ? 'mes' : periodo}:${fonte}:${id}`;
+
+/** "12,3 mm", "48,59 m³/s" ou "2,03 m" (ou "—") de uma chave qualquer; com "*" quando o dado é de dia anterior ao pedido. */
+export function textoChave(valores: ValoresSsd, chave: string, unidade: 'mm' | 'm³/s' | 'm', data?: string): string {
+  const x = valores[chave];
+  if (!x) return '—';
+  return `${numero(x.valor, unidade === 'mm' ? 1 : 2)} ${unidade}${data && x.data < data ? '*' : ''}`;
 }
 
 /** Valor numérico de um campo do SSD (null sem dado). */

@@ -114,7 +114,7 @@ test('diagrama do Cantareira: os 9 postos novos, os 3 de controle e o radar de c
   }
   for (const n of d.nos.filter(ehPostoSibh)) {
     assert.ok(n.ll, `${n.nome} com coordenada`);
-    assert.ok(IDS_RADAR.has(n.sibh.radar), `radar de ${n.nome} é do diagrama`);
+    assert.ok(n.sibh.radar !== undefined && IDS_RADAR.has(n.sibh.radar), `radar de ${n.nome} é do diagrama`);
   }
   for (const r of RESERVATORIOS_PCJ) assert.ok(IDS_RADAR.has(r.radar));
 });

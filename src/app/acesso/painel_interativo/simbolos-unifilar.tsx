@@ -1,8 +1,8 @@
 'use client';
 
 import { useId, type CSSProperties } from 'react';
-import { ehPostoSibh, VD, type Ancora, type Ligacao, type No, type NoSibh, type Radar, type Valor } from '@/conteudo/diagramas-unifilares';
-import { chaveNivel, chaveRadar, chaveVazao, COR_FAIXA, texto, textoMes, textoRadar, textoSibh, type Modo, type ValoresSsd } from './valores-ssd';
+import { ehPluviometro, ehPostoAna, ehPostoSibh, VD, type Ancora, type Ligacao, type No, type NoAna, type NoSibh, type Radar, type Valor } from '@/conteudo/diagramas-unifilares';
+import { chaveAna, chaveChuva, chaveNivel, chaveRadar, chaveVazao, COR_FAIXA, texto, textoChave, textoMes, textoRadar, textoSibh, type Modo, type ValoresSsd } from './valores-ssd';
 
 /**
  * Símbolos e textos dos diagramas unifilares, os mesmos no esquema ("Sem mapa",
@@ -23,6 +23,9 @@ export const COR = {
   chuva: '#b9ff4f',
   // vazão descarregada (o que a represa solta no rio), em destaque
   descarregada: '#ffb020',
+  // variação do volume útil no dia (com a seta, não só a cor)
+  sobe: '#5ee39a',
+  desce: '#ff8a80',
 };
 
 // ---------------------------------------------------------------- símbolos
@@ -120,6 +123,11 @@ export function Reservatorio({
   aoEscolher?: (space: number) => void;
 }) {
   const pct = valores[`${n.space}:${VD.volumePct}`]?.valor ?? null;
+  const diaDado = valores[`${n.space}:${VD.volumePct}`]?.data ?? null;
+  const dif = valores[`${n.space}:${VD.volumePct}:dia`]?.valor ?? null;
+  const temVazoes = `${n.space}:${VD.afluente}` in valores || `${n.space}:${VD.defluente}` in valores;
+  // barragem à direita (rio correndo para a direita): o desenho espelha, os textos não
+  const cxVol = n.espelhar ? -10 : 10;
   const nivelAgua = pct === null ? 0 : Math.max(0, Math.min(1, pct / 100));
   const yAgua = 20 - 40 * nivelAgua; // superfície da água (fundo da bacia em y = 20)
   const chovendo = (valores[`${n.space}:${VD.chuva}`]?.valor ?? 0) > 0;
@@ -131,6 +139,18 @@ export function Reservatorio({
   const anc: Ancora = lado === 'esquerda' ? 'end' : 'start';
   const circ = lado === 'esquerda' ? 14 : -18;
   const extra = modo === 'volume' ? texto(valores, n.space, VD.volumeHm3, data) : modo === 'nivel' ? texto(valores, n.space, VD.nivel, data) : null;
+  // variação do volume útil no dia: embaixo da bacia (acima dela quando o nome fica embaixo)
+  const yDif = lado === 'abaixo' ? -34 : extra ? 58 : 38;
+  const fmtDif = (v: number) => `${v > 0 ? '+' : v < 0 ? '−' : ''}${Math.abs(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const dica = [
+    `${n.nome} — volume útil ${texto(valores, n.space, VD.volumePct, data)}`,
+    texto(valores, n.space, VD.volumeHm3, data),
+    `nível ${texto(valores, n.space, VD.nivel, data)}`,
+    ...(n.semChuva ? [] : [`chuva ${texto(valores, n.space, VD.chuva, data)}`]),
+    ...(temVazoes ? [`afluência ${texto(valores, n.space, VD.afluente, data)}`, `defluência ${texto(valores, n.space, VD.defluente, data)}`] : []),
+    ...(dif !== null ? [`variação no dia ${fmtDif(dif)} p.p.`] : []),
+  ].join(' · ') + (diaDado ? `
+Dado de ${dataBr(diaDado)}` : '');
   const chuva = texto(valores, n.space, VD.chuva, data);
   // chuva ao lado do nome (largura do nome estimada pelo número de letras)
   const larguraNome = Math.max(n.nome.length * 9.6, (n.prefixo ?? 'Represa').length * 6.2);
@@ -145,7 +165,8 @@ export function Reservatorio({
       tabIndex={aoEscolher ? 0 : undefined}
       onKeyDown={aoEscolher ? (e) => (e.key === 'Enter' || e.key === ' ') && aoEscolher(n.space) : undefined}
     >
-      <title>{`${n.nome} — volume útil ${texto(valores, n.space, VD.volumePct, data)} · ${texto(valores, n.space, VD.volumeHm3, data)} · nível ${texto(valores, n.space, VD.nivel, data)} · chuva ${chuva}`}</title>
+      <title>{dica}</title>
+      <g transform={n.espelhar ? 'scale(-1 1)' : undefined}>
       {/* água até o volume útil; y e height também no style, para a transição (represa enchendo) */}
       <clipPath id={id}>
         <rect className="un-agua-nivel" x={-60} y={yAgua} width={150} height={20 - yAgua} style={{ y: yAgua, height: 20 - yAgua } as CSSProperties} />
@@ -160,7 +181,8 @@ export function Reservatorio({
       <g clipPath={`url(#${id}-b)`}>
         <line className="un-agua-nivel" x1={-60} x2={90} y1={0} y2={0} style={{ transform: `translateY(${yAgua}px)` }} stroke="#bfe9ff" strokeWidth={1.2} opacity={pct === null ? 0 : 0.8} />
       </g>
-      <text x={10} y={6} textAnchor="middle" fill="#fff" fontSize={17} fontWeight={800} className="un-sombra">
+      </g>
+      <text x={cxVol} y={6} textAnchor="middle" fill="#fff" fontSize={17} fontWeight={800} className="un-sombra">
         {texto(valores, n.space, VD.volumePct, data)}
       </text>
       {/* nome */}
@@ -176,15 +198,22 @@ export function Reservatorio({
         {n.nome}
       </text>
       {/* chuva (destacada no modo chuva) */}
-      <g opacity={modo === 'chuva' || modo === 'vazao' ? 1 : 0.55}>
-        <Nuvem x={cx} y={by - 16} cor={modo === 'chuva' ? COR.chuva : COR.fraco} chovendo={chovendo} />
-        <text x={cx + 25} y={by + 1} fill={modo === 'chuva' ? COR.chuva : COR.valor} fontSize={modo === 'chuva' ? 17 : 14} fontWeight={800}>
-          {chuva}
-        </text>
-      </g>
+      {!n.semChuva && (
+        <g opacity={modo === 'chuva' || modo === 'vazao' ? 1 : 0.55}>
+          <Nuvem x={cx} y={by - 16} cor={modo === 'chuva' ? COR.chuva : COR.fraco} chovendo={chovendo} />
+          <text x={cx + 25} y={by + 1} fill={modo === 'chuva' ? COR.chuva : COR.valor} fontSize={modo === 'chuva' ? 17 : 14} fontWeight={800}>
+            {chuva}
+          </text>
+        </g>
+      )}
       {extra && (
-        <text x={10} y={40} textAnchor="middle" fill={COR.chuva} fontSize={15} fontWeight={800} className="un-sombra">
+        <text x={cxVol} y={40} textAnchor="middle" fill={COR.chuva} fontSize={15} fontWeight={800} className="un-sombra">
           {extra}
+        </text>
+      )}
+      {dif !== null && (
+        <text x={cxVol} y={yDif} textAnchor="middle" fill={dif > 0 ? COR.sobe : dif < 0 ? COR.desce : COR.fraco} fontSize={12} fontWeight={800} className="un-sombra">
+          {`${dif > 0 ? '▲' : dif < 0 ? '▼' : '▬'} ${fmtDif(dif)} p.p.`}
         </text>
       )}
     </g>
@@ -221,6 +250,14 @@ export function Simbolo({ n, ativo }: { n: Exclude<No, { tipo: 'reservatorio' }>
         <g>
           <circle r={16} {...s} />
           <path d="M2-9l-7 10h6l-3 8 8-11h-6z" fill={COR.chuva} className={ativo ? 'un-pulso' : undefined} />
+        </g>
+      );
+    case 'pluviometro':
+      // funil do pluviômetro sobre o cilindro, no verde da chuva
+      return (
+        <g>
+          <circle r={11} fill={COR.fundoSimbolo} stroke={COR.chuva} strokeWidth={1.6} />
+          <path d="M-6-6h12l-4 5v8h-4v-8z" fill="none" stroke={COR.chuva} strokeWidth={1.5} strokeLinejoin="round" />
         </g>
       );
     case 'cidade':
@@ -289,6 +326,28 @@ function valorSibh(n: NoSibh, valores: ValoresSsd, modo: Modo): { texto: string;
   return { texto: textoSibh(valores, id, qual), hora: x ? (x.hora ?? 'média do dia') : null };
 }
 
+/** Posto que abre gráficos ao ser clicado: do SIBH ou uma estação da ANA. */
+export type NoPostoClicavel = NoSibh | NoAna;
+
+/** Identificador do posto clicável (o de gráficos abertos): "sibh:<id>" ou "ana:<código>". */
+export const chavePosto = (n: NoPostoClicavel) => (ehPostoSibh(n) ? `sibh:${n.sibh.id}` : `ana:${n.ana.codigo}`);
+
+/** "às 13h50" (leitura de hoje) ou "média do dia" (dia que já acabou); vazio sem leitura. */
+const quando = (x: { hora?: string } | null | undefined) => (!x ? '' : x.hora ? ` às ${x.hora.replace(':', 'h')}` : ' (média do dia)');
+
+/**
+ * O que uma estação da ANA mostra no modo: vazão (sem vazão, o nível), nível
+ * ou a chuva de 24 h; e a hora da leitura para a dica.
+ */
+function valorAna(n: NoAna, valores: ValoresSsd, modo: Modo): { texto: string; cor: string } | null {
+  const c = n.ana.codigo;
+  const q = valores[chaveAna('vazao', c)];
+  if (modo === 'chuva') return { texto: textoChave(valores, chaveChuva('24', 'ana', c), 'mm'), cor: COR.chuva };
+  if (modo === 'nivel' || (modo === 'vazao' && !q)) return { texto: textoChave(valores, chaveAna('nivel', c), 'm'), cor: modo === 'nivel' ? COR.chuva : COR.valor };
+  if (modo === 'vazao') return { texto: textoChave(valores, chaveAna('vazao', c), 'm³/s'), cor: COR.valor };
+  return null;
+}
+
 export function Ponto({
   n,
   valores,
@@ -297,6 +356,7 @@ export function Ponto({
   vazao,
   ativo = false,
   aoPosto,
+  fonte = 'SSD',
 }: {
   n: Exclude<No, { tipo: 'reservatorio' }>;
   valores: ValoresSsd;
@@ -304,7 +364,9 @@ export function Ponto({
   modo: Modo;
   vazao: number | null;
   ativo?: boolean;
-  aoPosto?: (n: NoSibh) => void;
+  aoPosto?: (n: NoPostoClicavel) => void;
+  /** de onde vem o valor do nó (n.valor), para a dica */
+  fonte?: string;
 }) {
   const lado = n.rotulo ?? 'acima';
   const raio = n.tipo === 'eta' || n.tipo === 'cidade' ? 24 : n.tipo === 'eeab' || n.tipo === 'uhe' ? 18 : 12;
@@ -318,22 +380,35 @@ export function Ponto({
           : { x: -raio - 6, y1: -2, y2: 14, anc: 'end' as Ancora };
   const titulo = [n.prefixo, n.nome].filter(Boolean).join(' ');
   const sibh = ehPostoSibh(n) ? n : null;
-  // vazão do SSD (média do dia) no modo de vazão; o SIBH no lugar dela no de nível, ou no lugar próprio do posto sem SSD
+  const ana = ehPostoAna(n) ? n : null;
+  const pluvio = ehPluviometro(n) ? n : null;
+  // vazão do nó (média do dia) no modo de vazão; o SIBH no lugar dela no de nível, ou no lugar próprio do posto sem valor
   const doSsd = n.valor && modo === 'vazao';
   const lido = sibh && !doSsd ? valorSibh(sibh, valores, modo) : null;
   const ondeSibh = n.valor ?? { dx: sibh?.sibh.dx ?? 0, dy: sibh?.sibh.dy ?? -50, ancora: sibh?.sibh.ancora };
+  const lidoAna = ana ? valorAna(ana, valores, modo) : null;
+  const chuva = (fonteChuva: 'sibh' | 'ana', id: number | string) =>
+    `Chuva: 24 h ${textoChave(valores, chaveChuva('24', fonteChuva, id), 'mm')} · 72 h ${textoChave(valores, chaveChuva('72', fonteChuva, id), 'mm')} · no mês ${textoChave(valores, chaveChuva('mes', fonteChuva, id), 'mm')}${quando(valores[chaveChuva('24', fonteChuva, id)])}`;
   const dica = [
-    n.valor ? `${titulo}: ${texto(valores, n.valor.space, n.valor.v, data)} (média do dia, SSD)` : titulo,
+    n.valor ? `${titulo}: ${texto(valores, n.valor.space, n.valor.v, data)} (média do dia, ${fonte})` : titulo,
+    ...(n.municipio ? [`Município: ${n.municipio}`] : []),
     ...(sibh
       ? [
-          `SIBH: nível ${textoSibh(valores, sibh.sibh.id, 'nivel')} · vazão ${textoSibh(valores, sibh.sibh.id, 'vazao')}${
-            valores[chaveNivel(sibh.sibh.id)]?.hora ? ` às ${valores[chaveNivel(sibh.sibh.id)]!.hora!.replace(':', 'h')}` : valores[chaveNivel(sibh.sibh.id)] ? ' (média do dia)' : ''
-          }`,
+          `SIBH: nível ${textoSibh(valores, sibh.sibh.id, 'nivel')} · vazão ${textoSibh(valores, sibh.sibh.id, 'vazao')}${quando(valores[chaveNivel(sibh.sibh.id)])}`,
           'Clique para ver os gráficos de vazão e chuva',
         ]
       : []),
+    ...(ana
+      ? [
+          `ANA (telemetria): vazão ${textoChave(valores, chaveAna('vazao', ana.ana.codigo), 'm³/s')} · nível ${textoChave(valores, chaveAna('nivel', ana.ana.codigo), 'm')}${quando(valores[chaveAna('nivel', ana.ana.codigo)] ?? valores[chaveAna('vazao', ana.ana.codigo)])}`,
+          chuva('ana', ana.ana.codigo),
+          'Clique para ver os gráficos de vazão, nível e chuva',
+        ]
+      : []),
+    ...(pluvio ? [`SIBH (pluviômetro ${n.prefixo ?? pluvio.pluvio})`, chuva('sibh', pluvio.pluvio)] : []),
   ].join('\n');
-  const abrir = sibh && aoPosto ? () => aoPosto(sibh) : undefined;
+  const clicavel = sibh ?? ana;
+  const abrir = clicavel && aoPosto ? () => aoPosto(clicavel) : undefined;
   return (
     <g
       transform={`translate(${n.x} ${n.y})`}
@@ -371,6 +446,17 @@ export function Ponto({
       {lido && (
         <text x={ondeSibh.dx} y={ondeSibh.dy} textAnchor={ondeSibh.ancora ?? 'middle'} fill={modo === 'nivel' ? COR.chuva : COR.valor} fontSize={15} fontWeight={800}>
           {lido.texto}
+        </text>
+      )}
+      {lidoAna && (
+        <text x={ana!.ana.dx ?? 0} y={ana!.ana.dy ?? -50} textAnchor={ana!.ana.ancora ?? 'middle'} fill={lidoAna.cor} fontSize={15} fontWeight={800}>
+          {lidoAna.texto}
+        </text>
+      )}
+      {/* pluviômetro: chuva de 24 h embaixo do nome (destacada no modo chuva) */}
+      {pluvio && (
+        <text x={pos.x} y={(n.prefixo ? pos.y2 : pos.y1 + 8) + (modo === 'chuva' ? 19 : 17)} textAnchor={pos.anc} fill={COR.chuva} fontSize={modo === 'chuva' ? 16 : 14} fontWeight={800}>
+          {textoChave(valores, chaveChuva('24', 'sibh', pluvio.pluvio), 'mm')}
         </text>
       )}
     </g>
