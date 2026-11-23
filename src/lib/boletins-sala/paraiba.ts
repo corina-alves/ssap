@@ -94,7 +94,7 @@ export const RESOLUCAO_1382 = {
 
 // Volume útil (hm³) dos quatro reservatórios de regularização, para o reservatório
 // equivalente (média do volume útil ponderada). Não constam da resolução: referência ANA/ONS.
-const VOLUME_UTIL_HM3: Record<string, number> = { PARAIBUNA: 2636, 'SANTA BRANCA': 308, JAGUARI: 793, FUNIL: 606 };
+export const VOLUME_UTIL_HM3: Record<string, number> = { PARAIBUNA: 2636, 'SANTA BRANCA': 308, JAGUARI: 793, FUNIL: 606 };
 
 /**
  * Quantos mínimos da tabela de estágios o volume útil já rompeu: 0 = no mínimo

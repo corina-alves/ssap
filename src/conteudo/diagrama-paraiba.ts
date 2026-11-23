@@ -6,8 +6,8 @@ import { VD, type Diagrama } from './diagramas-unifilares';
  *
  * Os reservatórios e usinas vêm do ONS (dados abertos, base diária — os mesmos
  * números do SAR da ANA e do boletim "Acompanhamento do Sistema Hidráulico
- * Paraíba do Sul"); a transposição Jaguari ⇄ Atibainha, do SSD (os locais 44 e
- * 41, os do diagrama do Cantareira); os postos de SP, do SIBH; os do RJ e de MG,
+ * Paraíba do Sul"); a transposição Jaguari → Atibainha, do SSD (o local 44, o do
+ * diagrama do Cantareira; não há retorno); os postos de SP, do SIBH; os do RJ e de MG,
  * da telemetria da ANA.
  *
  * Os reservatórios do ONS não são locais do SSD: cada um ganha um número de
@@ -63,7 +63,7 @@ export const TRANSFERENCIAS_ONS = [
 ] as const;
 
 /** Locais do SSD no diagrama: a transposição (os mesmos do diagrama do Cantareira). */
-export const LOCAIS_SSD_PARAIBA = [44, 41] as const;
+export const LOCAIS_SSD_PARAIBA = [44] as const;
 
 const { defluente: deflu, vazao } = VD;
 
@@ -87,9 +87,8 @@ export const DIAGRAMA_PARAIBA: Diagrama = {
     { tipo: 'rio', pontos: [[572, 330], [1480, 330]], setas: [0.2, 0.41, 0.63, 0.97], valor: { space: 9002, v: deflu, x: 625, y: 318 } },
     { tipo: 'rio', pontos: [[900, 190], [900, 330]], valor: { space: 9003, v: deflu, x: 912, y: 272, ancora: 'start' }, rotulo: { texto: 'Rio Jaguari', x: 912, y: 290, ancora: 'start' } },
     { tipo: 'rio', pontos: [[1632, 330], [1720, 330]], valor: { space: 9004, v: deflu, x: 1676, y: 318 } },
-    // ---- transposição Jaguari ⇄ Atibainha (SSD)
-    { tipo: 'tunel', mapa: { via: [[-23.2336, -46.1807]] }, pontos: [[826, 154], [690, 154], [690, 164], [642, 164]], valor: { space: 44, v: vazao, x: 760, y: 144 } },
-    { tipo: 'tunel', mapa: { via: [[-23.2336, -46.1807]] }, pontos: [[642, 178], [700, 178], [700, 186], [826, 186]], valor: { space: 41, v: vazao, x: 760, y: 208 } },
+    // ---- transposição Jaguari → Atibainha (SSD; sem retorno)
+    { tipo: 'tunel', mapa: { via: [[-23.2336, -46.1807]] }, pontos: [[826, 170], [642, 170]], valor: { space: 44, v: vazao, x: 734, y: 160 } },
     // ---- Complexo de Lajes: bombeamento de Santa Cecília até o Guandu
     { tipo: 'tunel', pontos: [[1800, 306], [1800, 232]], valor: { space: 9101, v: vazao, x: 1812, y: 276, ancora: 'start', rotulo: 'bombeada' } },
     { tipo: 'tunel', pontos: [[1726, 210], [1660, 210]], valor: { space: 9102, v: vazao, x: 1693, y: 244, rotulo: 'bombeada' } },

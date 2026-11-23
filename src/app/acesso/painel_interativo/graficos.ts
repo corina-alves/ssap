@@ -454,3 +454,103 @@ export function opcaoChuvaDias(dias: { data: string; chuva: number | null }[]): 
     ],
   };
 }
+
+// ---------------------------------------------------------------- volumes do Paraíba do Sul (paraiba-do-sul/volumes.tsx)
+
+/**
+ * Cores dos reservatórios nos gráficos de volume, na ordem fixa do grupo (cada
+ * reservatório tem sempre a mesma): passos para fundo escuro da paleta
+ * categórica, validados com o validador de paleta no fundo do painel (#11294b)
+ * e no branco da exportação (faixa de luminosidade, croma, daltonismo e
+ * contraste ≥ 3:1).
+ */
+export const COR_SERIE = ['#3987e5', '#d95926', '#199e70', '#c98500', '#d55181', '#9085e9'] as const;
+/** Anos anteriores, do mais recente ao mais antigo: um tom só, cada vez mais perto do fundo (rampa validada). */
+const COR_ANOS = ['#c3d2e1', '#9db2c7', '#7890a8', '#5d7690'];
+const MES_CURTO = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+/** Dias do ano (MM-DD), com o 29/02 (de um ano bissexto qualquer). */
+export const DIAS_ANO = dias('2024-01-01', '2024-12-31').map((d) => d.slice(5));
+export const bissexto = (ano: number) => (ano % 4 === 0 && ano % 100 !== 0) || ano % 400 === 0;
+
+const eixoPct = eixoValor('%', { min: 0, max: (x: { max: number }) => Math.max(100, Math.ceil(x.max / 10) * 10) });
+
+/** Volume útil (%) de cada reservatório no período, um por linha; `destaque`: mais grossa e por cima (o equivalente). */
+export function opcaoVolumesReservatorios(dias: string[], series: { nome: string; valores: (number | null)[]; cor: string; destaque?: boolean }[]): EChartsOption {
+  return {
+    tooltip: {
+      trigger: 'axis',
+      formatter: (ps) => {
+        const l = lista(ps);
+        const d = dias[l[0]?.dataIndex ?? 0];
+        return `<b>${d ? dataBr(d) : ''}</b><br>${l.map((p) => `${p.marker}${p.seriesName}: ${fmt(p.value as number | null, 1, '%')}`).join('<br>')}`;
+      },
+    },
+    legend: legenda,
+    grid: { left: 52, right: 24, top: 58, bottom: 56 },
+    xAxis: eixoTempo(dias.map(diaMes)),
+    yAxis: eixoPct,
+    dataZoom: zoom,
+    series: series.map((s) => ({
+      name: s.nome,
+      type: 'line' as const,
+      showSymbol: false,
+      z: s.destaque ? 3 : 2,
+      lineStyle: { width: s.destaque ? 3.5 : 2, color: s.cor },
+      itemStyle: { color: s.cor },
+      data: s.valores,
+    })),
+  };
+}
+
+/**
+ * Volume útil (%) do ano atual × anos anteriores, alinhados por dia e mês: o ano
+ * atual em destaque (com o valor no fim da linha), os anteriores numa rampa de
+ * um tom só. `limite`: linha de referência (o do equivalente na Resolução 1.382).
+ */
+export function opcaoVolumeAnos(anos: { ano: number; valores: (number | null)[] }[], limite: { y: number; texto: string } | null): EChartsOption {
+  const ordem = [...anos].sort((a, b) => b.ano - a.ano);
+  return {
+    tooltip: {
+      trigger: 'axis',
+      formatter: (ps) => {
+        const d = DIAS_ANO[lista(ps)[0]?.dataIndex ?? 0] ?? '';
+        // no 29/02, só os anos bissextos (nos outros, o valor ali só liga 28/02 a 01/03)
+        const l = lista(ps).filter((p) => p.value !== null && p.value !== undefined && (d !== '02-29' || bissexto(Number(p.seriesName))));
+        return `<b>${d.slice(3)}/${d.slice(0, 2)}</b><br>${l.map((p) => `${p.marker}${p.seriesName}: ${fmt(p.value as number, 1, '%')}`).join('<br>')}`;
+      },
+    },
+    legend: legenda,
+    grid: { left: 52, right: 96, top: 58, bottom: 56 },
+    xAxis: {
+      ...eixoTempo(DIAS_ANO),
+      axisLabel: { color: TEMA.fraco, interval: (i: number) => DIAS_ANO[i]!.endsWith('-01'), formatter: (d: string) => MES_CURTO[Number(d.slice(0, 2)) - 1]! },
+      axisTick: { interval: (i: number) => DIAS_ANO[i]!.endsWith('-01') },
+    },
+    yAxis: eixoPct,
+    dataZoom: zoom,
+    series: ordem.map((a, i) => {
+      const atual = i === 0;
+      const cor = atual ? COR.atual : COR_ANOS[Math.min(i - 1, COR_ANOS.length - 1)]!;
+      // até o último dia com dado: o valor do fim da linha fica no lugar certo
+      const fim = a.valores.findLastIndex((x) => x !== null) + 1;
+      return {
+        name: String(a.ano),
+        type: 'line' as const,
+        showSymbol: false,
+        z: atual ? 3 : 2,
+        lineStyle: { width: atual ? 3.5 : 1.8, color: cor },
+        itemStyle: { color: cor },
+        data: a.valores.slice(0, fim),
+        // o ano no fim de cada linha (no atual, com o valor); nomes que se encostam vão para cima ou para baixo
+        endLabel: {
+          show: true,
+          color: atual ? TEMA.texto : TEMA.fraco,
+          fontWeight: atual ? ('bold' as const) : ('normal' as const),
+          formatter: (p: { value: unknown }) => (atual ? `${a.ano}: ${fmt(p.value as number, 1, '%')}` : String(a.ano)),
+        },
+        labelLayout: { moveOverlap: 'shiftY' as const },
+        markLine: atual && limite ? { silent: true, symbol: 'none', data: [referencia(limite.y, limite.texto, COR_REFERENCIA, 'dashed', 'insideStartTop')] } : undefined,
+      };
+    }),
+  };
+}

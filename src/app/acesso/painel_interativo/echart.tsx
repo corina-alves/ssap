@@ -15,7 +15,8 @@ export const TEMA = {
  * fundo escuro) vira a de papel. Texto e grade escurecem; as séries claras
  * demais no branco (azul-claro, âmbar, lilás, verde, salmão) passam para tons
  * validados no branco (faixa de luminosidade, daltonismo e contraste ≥ 3:1).
- * As cores dos reservatórios do Cantareira já passam no branco e ficam.
+ * As cores dos reservatórios do Cantareira e as do Paraíba do Sul (COR_SERIE)
+ * já passam no branco e ficam.
  */
 const PAPEL: Record<string, string> = {
   // texto, eixos e grade
@@ -33,6 +34,11 @@ const PAPEL: Record<string, string> = {
   '#ff6b6b': '#d63c3c', // redução
   '#f4b400': '#d19a00', // faixa E1
   '#e66767': '#e34948', // mínima diária
+  // anos anteriores (volumes do Paraíba do Sul): a rampa invertida, o mais antigo mais perto do branco
+  '#c3d2e1': '#3d4f61',
+  '#9db2c7': '#5f7388',
+  '#7890a8': '#8396aa',
+  '#5d7690': '#a3b2c2',
 };
 const BRANCO = '#ffffff';
 

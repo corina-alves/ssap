@@ -1,6 +1,7 @@
 import { BACIA_ONS, DIAGRAMA_PARAIBA, LOCAIS_ONS, LOCAIS_SSD_PARAIBA, TRANSFERENCIAS_ONS } from '@/conteudo/diagrama-paraiba';
 import { ehPluviometro, ehPostoAna, ehPostoSibh, VD } from '@/conteudo/diagramas-unifilares';
 import type { Acl } from '../auth/acl';
+import { RESOLUCAO_1382, VOLUME_UTIL_HM3 } from '../boletins-sala/paraiba';
 import { query } from '../db';
 import { resumoEstacao } from '../integracoes/ana-telemetria';
 import { hojeSp, somarDias } from '../integracoes/comum';
@@ -78,6 +79,60 @@ export function valoresOns(dados: AnoOns, data: string): Valores {
     saida[`${t.space}:${VD.vazao}`] = r && r.v.transferida !== null ? { valor: r.v.transferida, data: r.dia } : null;
   }
   return saida;
+}
+
+/** Reservatórios com volume útil no ONS (sem as usinas a fio d'água), na ordem do diagrama. */
+export const LOCAIS_VOLUME = LOCAIS_ONS.filter((l) => l.tipo !== 'fio');
+
+/** Anos anteriores no gráfico do ano atual × anos anteriores. */
+export const ANOS_ANTERIORES = 4;
+
+// Reservatório equivalente (Resolução 1.382): os quatro de regularização, com os pesos do Boletim Vale do Paraíba (nomes do SAR).
+const EQUIVALENTE: Record<string, string> = { PBPARA: 'PARAIBUNA', PBSTAB: 'SANTA BRANCA', PBJAGU: 'JAGUARI', PBFUNI: 'FUNIL' };
+
+/** Séries dos gráficos de volume: um valor por dia de `de` a `ate`. */
+export type VolumesParaiba = {
+  de: string;
+  /** último dia com algum volume (até a data pedida; o ONS publica com um dia de atraso) */
+  ate: string;
+  reservatorios: { ons: string; nome: string; equivalente: boolean }[];
+  /** volume útil (%) de cada dia, por reservatório (id do ONS); null = sem dado */
+  volumes: Record<string, (number | null)[]>;
+  /** reservatório equivalente (%): média do volume útil dos quatro ponderada pela capacidade, só nos dias com os quatro */
+  equivalente: (number | null)[];
+  /** Resolução 1.382, art. 1º, III e IV, c: acima deste volume do equivalente, admite-se aumentar as vazões */
+  limiteEquivalente: number;
+};
+
+/** Séries diárias de volume útil a partir dos dados do ONS (sem fazer consulta: serve para testes). */
+export function seriesVolumes(dados: AnoOns, de: string, ate: string): VolumesParaiba {
+  let fim = ate;
+  while (fim > de && !LOCAIS_VOLUME.some((l) => dados[l.ons]?.[fim]?.volumePct != null)) fim = somarDias(fim, -1);
+  const dias: string[] = [];
+  for (let d = de; d <= fim; d = somarDias(d, 1)) dias.push(d);
+  const pct = (ons: string, d: string) => {
+    const x = dados[ons]?.[d]?.volumePct;
+    return x == null ? null : arred(x, 2);
+  };
+  const volumes = Object.fromEntries(LOCAIS_VOLUME.map((l) => [l.ons, dias.map((d) => pct(l.ons, d))]));
+  const pesos = Object.entries(EQUIVALENTE).map(([ons, sar]) => [volumes[ons]!, VOLUME_UTIL_HM3[sar]!] as const);
+  const total = pesos.reduce((t, [, p]) => t + p, 0);
+  const equivalente = dias.map((_, i) => (pesos.every(([v]) => v[i] != null) ? arred(pesos.reduce((t, [v, p]) => t + v[i]! * p, 0) / total, 2) : null));
+  return {
+    de,
+    ate: fim,
+    reservatorios: LOCAIS_VOLUME.map((l) => ({ ons: l.ons, nome: l.nome, equivalente: l.ons in EQUIVALENTE })),
+    volumes,
+    equivalente,
+    limiteEquivalente: RESOLUCAO_1382.equivalenteLimite,
+  };
+}
+
+/** Volume útil diário de 1º/01 de ANOS_ANTERIORES anos atrás até a data (CSVs anuais do ONS, no cache). */
+export async function volumesParaiba(data: string): Promise<(VolumesParaiba & { desatualizado: boolean }) | null> {
+  const de = `${Number(data.slice(0, 4)) - ANOS_ANTERIORES}-01-01`;
+  const p = await periodoBacia(BACIA_ONS, de, data);
+  return p ? { ...seriesVolumes(p.valor, de, data), desatualizado: p.desatualizado } : null;
 }
 
 /** Primeira parte (rápida): ONS e a transposição do SSD na data. */

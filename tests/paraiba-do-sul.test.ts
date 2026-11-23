@@ -2,8 +2,8 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { DIAGRAMA_PARAIBA, LOCAIS_ONS, LOCAIS_SSD_PARAIBA, TRANSFERENCIAS_ONS } from '../src/conteudo/diagrama-paraiba';
-import { ehPluviometro, ehPostoAna, ehPostoSibh, VD } from '../src/conteudo/diagramas-unifilares';
-import { valoresOns } from '../src/lib/hidrologia/paraiba-do-sul';
+import { DIAGRAMAS_UNIFILARES, ehPluviometro, ehPostoAna, ehPostoSibh, VD } from '../src/conteudo/diagramas-unifilares';
+import { LOCAIS_VOLUME, seriesVolumes, valoresOns } from '../src/lib/hidrologia/paraiba-do-sul';
 import { lerXmlAna, porDia } from '../src/lib/integracoes/ana-telemetria';
 import { lerCsvOns, ultimoDia } from '../src/lib/integracoes/ons';
 import { normalizar, planoNoMapa } from '../src/app/acesso/painel_interativo/posicoes-mapa';
@@ -118,9 +118,13 @@ test('diagrama: postos sem repetição e tudo dentro do desenho', () => {
   for (const l of DIAGRAMA_PARAIBA.ligacoes) for (const [x, y] of l.pontos) assert.ok(x >= 0 && x <= largura && y >= 0 && y <= altura, `ponto ${x},${y} dentro`);
 });
 
-test('transposição sem dado aparece parada (não bombeando); rio sem dado continua correndo', () => {
-  const [ida, volta] = DIAGRAMA_PARAIBA.ligacoes.filter((l) => l.valor?.space === 44 || l.valor?.space === 41);
-  assert.equal(semVazao(volta!, null), true, 'Atibainha → Jaguari sem dado');
+test('transposição: só Jaguari → Atibainha (sem retorno); sem dado aparece parada, rio sem dado continua correndo', () => {
+  for (const d of [DIAGRAMA_PARAIBA, DIAGRAMAS_UNIFILARES.cantareira!]) {
+    const tuneis = d.ligacoes.filter((l) => l.valor?.space === 44 || l.valor?.space === 41);
+    assert.deepEqual(tuneis.map((l) => l.valor!.space), [44], `${d.chave}: uma seta só`);
+  }
+  const ida = DIAGRAMA_PARAIBA.ligacoes.find((l) => l.valor?.space === 44);
+  assert.equal(semVazao(ida!, null), true, 'Jaguari → Atibainha sem dado');
   assert.equal(semVazao(ida!, 0), true, 'Jaguari → Atibainha em zero');
   assert.equal(semVazao(ida!, 7.8), false, 'Jaguari → Atibainha bombeando');
   assert.equal(semVazao({ tipo: 'rio', valor: { space: 9001, v: VD.defluente } }, null), false);
@@ -163,4 +167,20 @@ test('mapa: contorno da bacia (ANA), só a linha, com as represas do Paraíba de
   for (const nome of ['Paraibuna', 'Santa Branca', 'Jaguari', 'Funil', 'Santa Cecília']) assert.ok(dentro(no(nome)), `${nome} na bacia`);
   // a água bombeada em Santa Cecília vai para a bacia do Guandu; o Atibainha é do PCJ
   for (const nome of ['Lajes', 'Atibainha']) assert.ok(!dentro(no(nome)), `${nome} fora da bacia`);
+});
+
+test("gráficos de volume: um valor por dia até o último com dado, sem as usinas a fio d'água, e o equivalente da Resolução 1.382", () => {
+  // o recorte tem só 29 e 30/09: pedindo até 05/10, a série vai até 30/09
+  const v = seriesVolumes(ONS, '2026-09-29', '2026-10-05');
+  assert.equal(v.ate, '2026-09-30');
+  assert.deepEqual(Object.keys(v.volumes), LOCAIS_VOLUME.map((l) => l.ons));
+  assert.ok(!('PBUSSI' in v.volumes), "Simplício (fio d'água) fora");
+  for (const s of [...Object.values(v.volumes), v.equivalente]) assert.equal(s.length, 2);
+  assert.equal(v.volumes.PBPARA![1], ONS.PBPARA!['2026-09-30']!.volumePct);
+  assert.deepEqual(v.reservatorios.filter((r) => r.equivalente).map((r) => r.nome), ['Paraibuna', 'Santa Branca', 'Jaguari', 'Funil']);
+  // boletim da ANA nº 06: equivalente de 48,95% em 30/09 (o ONS revisou os volumes depois: diferença de décimos)
+  assert.ok(Math.abs(v.equivalente[1]! - 48.95) < 1, `equivalente ${v.equivalente[1]}`);
+  // sem um dos quatro no dia, o equivalente fica sem valor (não sai uma média de três)
+  const semFunil = seriesVolumes({ ...ONS, PBFUNI: {} }, '2026-09-29', '2026-09-30');
+  assert.deepEqual(semFunil.equivalente, [null, null]);
 });

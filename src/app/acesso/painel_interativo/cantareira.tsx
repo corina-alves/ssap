@@ -83,7 +83,7 @@ function CartoesOperacao({ op, data }: { op: OperacaoCantareira | undefined; dat
         <em>SSD: EEAB Santa Inês, média de cada dia.</em>
       </Cartao>
 
-      <Cartao titulo={`Despachado para o PCJ em ${mes}`} valor={fmt(de?.mes?.hm3, 2, ' hm³')}>
+      <Cartao titulo={`Descarregado para o PCJ em ${mes}`} valor={fmt(de?.mes?.hm3, 2, ' hm³')}>
         {de?.mes ? (
           <>
             <span>

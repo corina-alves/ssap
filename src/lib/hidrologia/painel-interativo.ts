@@ -126,10 +126,8 @@ export const DETALHES: Record<string, { diagrama: string; reservatorios: Local[]
     ],
     // UHE Jaguari (bacia do Paraíba do Sul): não entra no Sistema Equivalente
     aParte: [{ chave: 'uhe-jaguari', nome: 'UHE Jaguari', space: 34 }],
-    transferencias: [
-      { chave: 'jaguari-atibainha', nome: 'UHE Jaguari → Atibainha', space: 44 },
-      { chave: 'atibainha-jaguari', nome: 'Atibainha → UHE Jaguari', space: 41 },
-    ],
+    // só a ida: de Atibainha para o Jaguari não há retorno
+    transferencias: [{ chave: 'jaguari-atibainha', nome: 'UHE Jaguari → Atibainha', space: 44 }],
   },
 };
 

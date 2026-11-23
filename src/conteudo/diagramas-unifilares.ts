@@ -215,10 +215,9 @@ const cantareira: Diagrama = {
     { tipo: 'tunel', pontos: [[644, 740], [500, 740]], valor: { space: 40, v: vazao, x: 572, y: 728 } },
     { tipo: 'rio', pontos: [[900, 790], [452, 790], [452, 762]], setas: [0.4], valor: { space: 11, v: natural, x: 800, y: 778 }, rotulo: { texto: 'Rib. Santa Inês', x: 800, y: 810 } },
     { tipo: 'aducao', pontos: [[342, 740], [162, 740]], valor: { space: 52, v: captada, x: 252, y: 710, rotulo: 'Captação' } },
-    // Paraíba do Sul: UHE Jaguari ⇄ Atibainha
+    // Paraíba do Sul: UHE Jaguari → Atibainha (sem retorno: de Atibainha para o Jaguari a água não volta)
     { tipo: 'rio', pontos: [[1290, 730], [1202, 730]], rotulo: { texto: 'Rio Jaguari (PS)', x: 1250, y: 752 } },
-    { tipo: 'tunel', mapa: { via: [[-23.2336, -46.1807]] }, pontos: [[1130, 660], [1130, 520], [1030, 452]], valor: { space: 44, v: vazao, x: 1142, y: 590, ancora: 'start', rotulo: 'PS → Atibainha' } },
-    { tipo: 'tunel', mapa: { via: [[-23.2336, -46.1807]] }, pontos: [[1010, 452], [1100, 520], [1100, 660]], valor: { space: 41, v: vazao, x: 1088, y: 610, ancora: 'end', rotulo: 'Atibainha → PS' } },
+    { tipo: 'tunel', mapa: { via: [[-23.2336, -46.1807]] }, pontos: [[1122, 660], [1122, 520], [1022, 452]], valor: { space: 44, v: vazao, x: 1134, y: 590, ancora: 'start', rotulo: 'PS → Atibainha' } },
   ],
   nos: [
     { tipo: 'reservatorio', nome: 'Jaguari/Jacareí', space: 20, ll: [-22.9223, -46.4223], num: 1, x: 982, y: 80 },

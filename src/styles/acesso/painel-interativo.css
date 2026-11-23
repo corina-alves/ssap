@@ -536,3 +536,12 @@
 .un-zoom-area.is-ampliado { cursor: grab; }
 .un-zoom-area.is-ampliado:active { cursor: grabbing; }
 .un-svg.un-svg--zoom { max-width: none; max-height: none; }
+
+/* Gráficos de volume do Paraíba do Sul (paraiba-do-sul/volumes.tsx): grupo e período à direita do título; reservatório numa lista. */
+.pi-pnl .pv { margin-top: 14px; }
+.pv-controles { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.pv-local { display: inline-flex; align-items: center; gap: 6px; color: var(--pi-fraco, #9fb5cb); font-size: .78rem; font-weight: 700; }
+.pv-local select {
+  background: var(--pi-card2, rgba(255, 255, 255, .08)); color: #fff; border: 1px solid var(--pi-borda, rgba(255, 255, 255, .1)); border-radius: 8px;
+  padding: 3px 8px; font: inherit; font-size: .8rem; color-scheme: dark;
+}

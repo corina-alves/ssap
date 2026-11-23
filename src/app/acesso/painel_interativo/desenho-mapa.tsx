@@ -103,8 +103,6 @@ const ESTILO: Record<Ligacao['tipo'], { cor: string; largura: number; traco?: st
 // setas nos rios: a primeira e a distância entre elas (px)
 const SETA_INICIO = 60;
 const SETA_PASSO = 160;
-// ida e volta pelo mesmo caminho: cada sentido a essa distância (px) do traçado, à direita dele
-const FAIXA_PX = 5;
 
 /** A linha sem pontos a menos de 1,5 px do anterior (no zoom afastado, o traçado tem muito mais pontos que pixels). */
 function enxugar(ps: Pt[]): Pt[] {
@@ -141,36 +139,10 @@ function setasEm(ps: Pt[], distancias: number[]): { p: Pt; ang: number }[] {
 
 const comprimento = (ps: Pt[]) => ps.slice(1).reduce((s, p, i) => s + Math.hypot(p[0] - ps[i]![0], p[1] - ps[i]![1]), 0);
 
-/** A linha deslocada `d` px para a direita do sentido dela (nos vértices, pela média das normais). */
-function deslocar(ps: Pt[], d: number): Pt[] {
-  const normais = ps.slice(1).map((p, i): Pt => {
-    const a = ps[i]!;
-    const c = Math.hypot(p[0] - a[0], p[1] - a[1]) || 1;
-    return [-(p[1] - a[1]) / c, (p[0] - a[0]) / c];
-  });
-  if (!normais.length) return ps;
-  return ps.map((p, i) => {
-    const [a, b] = [normais[Math.max(0, i - 1)]!, normais[Math.min(normais.length - 1, i)]!];
-    const m: Pt = [a[0] + b[0], a[1] + b[1]];
-    const c = Math.hypot(m[0], m[1]) || 1;
-    return [p[0] + (d * m[0]) / c, p[1] + (d * m[1]) / c];
-  });
-}
-
-const juntos = (a: Pt | undefined, b: Pt | undefined) => !!a && !!b && Math.hypot(a[0] - b[0], a[1] - b[1]) < 3;
-
-/**
- * Ligações que fazem o mesmo caminho que outra no sentido contrário (a transposição
- * Jaguari ⇄ Atibainha): no mapa elas ficariam uma sobre a outra, com as setas de uma
- * escondendo as da outra; cada uma vai na sua faixa.
- */
-const idaEVolta = (linhas: Pt[][]) => linhas.map((a, k) => a.length > 1 && linhas.some((b, j) => j !== k && juntos(a[0], b.at(-1)) && juntos(a.at(-1), b[0])));
-
 function Linhas({ d, esc, valores }: { d: Diagrama; esc: Escala; valores: ValoresSsd }) {
   const desenho = useMemo(() => {
-    const faixa = idaEVolta(esc.linhas);
     return esc.linhas.map((ps0, k) => {
-      const ps = faixa[k] ? deslocar(enxugar(ps0), FAIXA_PX) : enxugar(ps0);
+      const ps = enxugar(ps0);
       const tipo = d.ligacoes[k]!.tipo;
       const c = comprimento(ps);
       const ds = tipo === 'rio' ? Array.from({ length: Math.max(c > 50 ? 1 : 0, Math.floor((c - SETA_INICIO) / SETA_PASSO) + 1) }, (_, j) => Math.min(c / 2, SETA_INICIO) + j * SETA_PASSO) : c > 30 ? [c / 2, c - 6] : [c];
