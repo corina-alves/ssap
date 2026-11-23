@@ -6,6 +6,10 @@ import { ehPluviometro, ehPostoAna, ehPostoSibh, VD } from '../src/conteudo/diag
 import { valoresOns } from '../src/lib/hidrologia/paraiba-do-sul';
 import { lerXmlAna, porDia } from '../src/lib/integracoes/ana-telemetria';
 import { lerCsvOns, ultimoDia } from '../src/lib/integracoes/ons';
+import { normalizar, planoNoMapa } from '../src/app/acesso/painel_interativo/posicoes-mapa';
+import hidrografia from '../src/conteudo/hidrografia-paraiba.json';
+import contorno from '../src/conteudo/contorno-bacia-paraiba.json';
+import { semVazao } from '../src/app/acesso/painel_interativo/valores-ssd';
 
 // Recorte real do CSV do ONS (DADOS_HIDROLOGICOS_RES_2026.csv): bacia do Paraíba do Sul em 29 e 30/09/2026
 // e uma linha de outra bacia (que precisa ficar de fora).
@@ -112,4 +116,51 @@ test('diagrama: postos sem repetição e tudo dentro do desenho', () => {
   const { largura, altura } = DIAGRAMA_PARAIBA;
   for (const n of DIAGRAMA_PARAIBA.nos) assert.ok(n.x >= 0 && n.x <= largura && n.y >= 0 && n.y <= altura, `${n.nome} dentro`);
   for (const l of DIAGRAMA_PARAIBA.ligacoes) for (const [x, y] of l.pontos) assert.ok(x >= 0 && x <= largura && y >= 0 && y <= altura, `ponto ${x},${y} dentro`);
+});
+
+test('transposição sem dado aparece parada (não bombeando); rio sem dado continua correndo', () => {
+  const [ida, volta] = DIAGRAMA_PARAIBA.ligacoes.filter((l) => l.valor?.space === 44 || l.valor?.space === 41);
+  assert.equal(semVazao(volta!, null), true, 'Atibainha → Jaguari sem dado');
+  assert.equal(semVazao(ida!, 0), true, 'Jaguari → Atibainha em zero');
+  assert.equal(semVazao(ida!, 7.8), false, 'Jaguari → Atibainha bombeando');
+  assert.equal(semVazao({ tipo: 'rio', valor: { space: 9001, v: VD.defluente } }, null), false);
+  assert.equal(semVazao({ tipo: 'rio' }, null), false);
+});
+
+test('mapa: todo nó com coordenada na bacia e todo rio do diagrama pelo traçado da hidrografia', () => {
+  for (const n of DIAGRAMA_PARAIBA.nos) {
+    const [lat, lon] = n.ll ?? [NaN, NaN];
+    assert.ok(lat > -23.8 && lat < -20.8 && lon > -46.6 && lon < -40.9, `${n.nome}: coordenada na bacia`);
+  }
+  const h = hidrografia.sistemas['paraiba-do-sul'];
+  // rio com o nome do rótulo (é por ele que a ponta solta segue) e num traçado só (o desenho vai de um ponto a outro por ele)
+  const nomes = new Set(h.rios.map((r) => normalizar(r.n)));
+  for (const l of DIAGRAMA_PARAIBA.ligacoes) if (l.rotulo) assert.ok(nomes.has(normalizar(l.rotulo.texto)), `hidrografia com o ${l.rotulo.texto}`);
+  for (const r of h.rios) assert.equal(r.c.length, 1, `${r.n} num traçado só`);
+  // no mapa, só túnel e bombeamento em linha reta: cada ligação de rio segue a hidrografia (mais de 2 pontos)
+  const e = planoNoMapa(DIAGRAMA_PARAIBA, h.rios as never, h.aguas as never).naEscala(2 ** 9);
+  DIAGRAMA_PARAIBA.ligacoes.forEach((l, k) => {
+    if (l.tipo === 'rio') assert.ok(e.linhas[k]!.length > 2, `ligação ${k} (${l.rotulo?.texto ?? l.valor?.space ?? ''}) pelo rio`);
+  });
+});
+
+test('mapa: contorno da bacia (ANA), só a linha, com as represas do Paraíba dentro e Lajes, Guandu e Atibainha fora', () => {
+  assert.equal(DIAGRAMA_PARAIBA.mapa?.contorno, 'paraiba');
+  const anel = contorno.geometry.coordinates[0] as [number, number][];
+  assert.equal(contorno.geometry.coordinates.length, 1, 'um anel, sem buraco');
+  assert.deepEqual(anel[0], anel.at(-1), 'anel fechado');
+  assert.ok(anel.length > 1000 && anel.length < 10000, 'simplificado, sem perder a forma');
+  // ponto no polígono (raio para a direita)
+  const dentro = ([lat, lon]: [number, number]) => {
+    let d = false;
+    for (let i = 0, j = anel.length - 1; i < anel.length; j = i++) {
+      const [xi, yi] = anel[i]!, [xj, yj] = anel[j]!;
+      if (yi > lat !== yj > lat && lon < ((xj - xi) * (lat - yi)) / (yj - yi) + xi) d = !d;
+    }
+    return d;
+  };
+  const no = (nome: string) => DIAGRAMA_PARAIBA.nos.find((n) => n.nome === nome)!.ll!;
+  for (const nome of ['Paraibuna', 'Santa Branca', 'Jaguari', 'Funil', 'Santa Cecília']) assert.ok(dentro(no(nome)), `${nome} na bacia`);
+  // a água bombeada em Santa Cecília vai para a bacia do Guandu; o Atibainha é do PCJ
+  for (const nome of ['Lajes', 'Atibainha']) assert.ok(!dentro(no(nome)), `${nome} fora da bacia`);
 });

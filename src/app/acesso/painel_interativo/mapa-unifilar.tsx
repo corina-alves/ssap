@@ -11,25 +11,45 @@ import { normalizar, planoNoMapa, type PlanoMapa, type Pt } from './posicoes-map
 /**
  * Diagrama unifilar sobre o mapa, no lugar real: os nós nas coordenadas deles
  * e os rios pelo traçado da hidrografia (posicoes-mapa.ts), com zoom e
- * arrastar. Embaixo, a área do sistema e a hidrografia principal dele (rios
- * com nome e represas; hidrografia-sistemas.json, carregada junto com o mapa:
- * serve também para traçar os rios). O desenho em si vem de `children`
+ * arrastar. Embaixo, a área do sistema (na bacia do Paraíba do Sul, só a linha
+ * da divisa, contorno-bacia-paraiba.json) e a hidrografia principal dele (rios
+ * com nome e represas; hidrografia-sistemas.json ou, na bacia do Paraíba do
+ * Sul, hidrografia-paraiba.json, carregada junto com o mapa: serve também para
+ * traçar os rios). O desenho em si vem de `children`
  * (desenho-mapa.tsx), com o plano, o zoom (f = 2^zoom) e onde o mundo está na tela (t).
  */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type Leaflet = any;
 
-/** Por sistema (chave do diagrama): rios (trechos [lon, lat] e ponto do nome) e represas (anéis [lon, lat]). */
-type Hidrografia = { sistemas: Record<string, { rios: { n: string; c: [number, number][][]; r: [number, number] }[]; aguas: { n: string; c: [number, number][][] }[] }> };
+/** Por sistema (chave do diagrama): rios (trechos [lon, lat] e ponto do nome) e represas (anéis [lon, lat]); `atribuicao`: crédito no mapa. */
+type Hidrografia = {
+  atribuicao?: string;
+  sistemas: Record<string, { rios: { n: string; c: [number, number][][]; r: [number, number] }[]; aguas: { n: string; c: [number, number][][] }[] }>;
+};
+
+/** Arquivo da hidrografia (Diagrama.mapa.hidrografia), carregado só quando o mapa abre. */
+const carregarHidrografia = (arquivo: 'paraiba' | 'sistemas') => (arquivo === 'paraiba' ? import('@/conteudo/hidrografia-paraiba.json') : import('@/conteudo/hidrografia-sistemas.json'));
+
+/** Divisa da bacia (Diagrama.mapa.contorno), carregada só quando o mapa abre: uma Feature com o anel [lon, lat]. */
+const carregarContorno = () => import('@/conteudo/contorno-bacia-paraiba.json');
 
 const COR_RIO = '#1fa8ff';
 const COR_AGUA = '#1fb2ff';
+const COR_DIVISA = '#e0959c';
 
 const ZOOM = { min: 8, max: 17, inicialMin: 9, inicialMax: 14 };
+/** Zoom mínimo e faixa do zoom inicial do diagrama (Diagrama.mapa.zoom; padrão: os de um sistema produtor). */
+const zoomDe = (d: Diagrama) => ({ min: d.mapa?.zoom?.min ?? ZOOM.min, inicialMin: d.mapa?.zoom?.inicial[0] ?? ZOOM.inicialMin, inicialMax: d.mapa?.zoom?.inicial[1] ?? ZOOM.inicialMax });
 
-/** Escala dos símbolos (px por unidade do esquema): um pouco menor que a do esquema, para caberem no mapa. */
-const escala = (d: Diagrama, w: number, h: number) => Math.max(0.45, Math.min(0.8, 0.8 * Math.min(w / d.largura, h / d.altura)));
+/**
+ * Escala dos símbolos (px por unidade do esquema): um pouco menor que a do esquema, para caberem no mapa.
+ * Vale a largura dos esquemas dos sistemas (LARGURA_REF): um esquema mais largo (a bacia do Paraíba do Sul)
+ * não deixa os símbolos e os textos menores no mapa.
+ */
+const LARGURA_REF = 1300;
+const escala = (d: Diagrama, w: number, h: number) =>
+  Math.max(0.45, Math.min(0.8, 0.8 * Math.max(1, d.largura / LARGURA_REF) * Math.min(w / d.largura, h / d.altura)));
 
 /** O que o desenho precisa: o plano, o zoom (f = 2^zoom), onde o mundo está na tela (t) e a escala dos símbolos (s). */
 export type VistaMapa = { plano: PlanoMapa; f: number; t: Pt; s: number };
@@ -77,7 +97,8 @@ export function MapaUnifilar({ d, base, hidro, children }: { d: Diagrama; base: 
     const folga = 2 * 95 * escala(d, t.x, t.y);
     const util = (v: number) => (v > 2 * folga ? v - folga : v);
     const z = Math.log2(Math.min(util(t.x) / Math.max(x1 - x0, 1e-9), util(t.y) / Math.max(y1 - y0, 1e-9)));
-    m.setView(m.unproject([(x0 + x1) / 2, (y0 + y1) / 2], 0), Math.max(ZOOM.inicialMin, Math.min(ZOOM.inicialMax, Math.floor(z * 4) / 4)), { animate: false });
+    const { inicialMin, inicialMax } = zoomDe(d);
+    m.setView(m.unproject([(x0 + x1) / 2, (y0 + y1) / 2], 0), Math.max(inicialMin, Math.min(inicialMax, Math.floor(z * 4) / 4)), { animate: false });
     atualizar.current();
   };
 
@@ -90,7 +111,7 @@ export function MapaUnifilar({ d, base, hidro, children }: { d: Diagrama; base: 
       if (!vivo || !L || !caixa.current) return;
       Lf.current = L;
       // vista provisória (o Leaflet não calcula posições sem centro e zoom); a de verdade vem do enquadrar
-      const m = L.map(caixa.current, { zoomSnap: 0.25, zoomDelta: 0.5, scrollWheelZoom: false, minZoom: ZOOM.min, maxZoom: ZOOM.max }).setView([-23.5, -46.6], 10);
+      const m = L.map(caixa.current, { zoomSnap: 0.25, zoomDelta: 0.5, scrollWheelZoom: false, minZoom: zoomDe(d).min, maxZoom: ZOOM.max }).setView([-23.5, -46.6], 10);
       mapa.current = m;
       // rolagem do mouse só depois de clicar no mapa (para não prender a rolagem da página), como no mapa do SIM
       m.on('focus', () => m.scrollWheelZoom.enable());
@@ -144,11 +165,6 @@ export function MapaUnifilar({ d, base, hidro, children }: { d: Diagrama; base: 
       observador.observe(caixa.current);
       setPronto(true);
     });
-    // sem a hidrografia, os rios do diagrama vão em linha reta entre os pontos
-    import('@/conteudo/hidrografia-sistemas.json').then(
-      (mod) => vivo && setHidrografia((mod.default ?? mod) as unknown as Hidrografia),
-      () => vivo && setHidrografia({ sistemas: {} }),
-    );
     return () => {
       vivo = false;
       cancelAnimationFrame(quadro);
@@ -159,17 +175,54 @@ export function MapaUnifilar({ d, base, hidro, children }: { d: Diagrama; base: 
     };
   }, []);
 
-  // área do sistema
+  // hidrografia do diagrama (sem ela, os rios do diagrama vão em linha reta entre os pontos)
+  const arquivoHidro = d.mapa?.hidrografia ?? 'sistemas';
+  useEffect(() => {
+    let vivo = true;
+    carregarHidrografia(arquivoHidro).then(
+      (mod) => vivo && setHidrografia((mod.default ?? mod) as unknown as Hidrografia),
+      () => vivo && setHidrografia({ sistemas: {} }),
+    );
+    return () => {
+      vivo = false;
+    };
+  }, [arquivoHidro]);
+
+  // zoom mínimo do diagrama (ao trocar de diagrama no mesmo mapa)
+  useEffect(() => {
+    if (pronto) mapa.current?.setMinZoom(zoomDe(d).min);
+  }, [d, pronto]);
+
+  // área do sistema; na bacia, só a linha da divisa (tracejada, com um fio escuro por baixo para aparecer em qualquer fundo)
+  const contorno = d.mapa?.contorno;
   useEffect(() => {
     const m = mapa.current;
     if (!m || !pronto) return;
     area.current.clearLayers();
+    const L = Lf.current;
+    if (contorno) {
+      let vivo = true;
+      carregarContorno().then(
+        (mod) => {
+          if (!vivo) return;
+          const f = (mod.default ?? mod) as unknown as { properties: { atribuicao?: string } };
+          L.geoJSON(f, { pane: 'un-area', interactive: false, style: { color: '#10141a', weight: 4, opacity: 0.35, fill: false } }).addTo(area.current);
+          L.geoJSON(f, {
+            pane: 'un-area',
+            interactive: false,
+            attribution: f.properties.atribuicao,
+            style: { color: COR_DIVISA, weight: 2, opacity: 0.95, dashArray: '10 5', fill: false },
+          }).addTo(area.current);
+        },
+        () => {},
+      );
+      return () => {
+        vivo = false;
+      };
+    }
     const f = areas.features.find((x) => x.properties.sistema === sistema);
-    if (f)
-      Lf.current
-        .geoJSON(f, { pane: 'un-area', interactive: false, style: { color: '#9c7478', weight: 1, opacity: 0.6, fillColor: '#7a5458', fillOpacity: 0.3 } })
-        .addTo(area.current);
-  }, [sistema, pronto]);
+    if (f) L.geoJSON(f, { pane: 'un-area', interactive: false, style: { color: '#9c7478', weight: 1, opacity: 0.6, fillColor: '#7a5458', fillOpacity: 0.3 } }).addTo(area.current);
+  }, [sistema, contorno, pronto]);
 
   // vista inicial (de novo ao trocar de sistema)
   useEffect(() => {
@@ -192,7 +245,7 @@ export function MapaUnifilar({ d, base, hidro, children }: { d: Diagrama; base: 
     const L = Lf.current;
     const h = hidrografia?.sistemas[d.chave];
     if (!m || !pronto || !hidro || !h) return;
-    const grupo = L.featureGroup([], { attribution: 'Hidrografia: IBGE (BC250) e © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' });
+    const grupo = L.featureGroup([], { attribution: hidrografia.atribuicao ?? 'Hidrografia: IBGE (BC250) e © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' });
     const { rios: telaRios, aguas: telaAguas } = telasHidro.current!;
     const latLon = (c: [number, number][]) => c.map(([lon, lat]) => [lat, lon]);
     // nomes que o diagrama já escreve junto da linha dele ("Rio Cotia → Rio Tietê": os dois)

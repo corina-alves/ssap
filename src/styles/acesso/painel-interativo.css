@@ -536,7 +536,3 @@
 .un-zoom-area.is-ampliado { cursor: grab; }
 .un-zoom-area.is-ampliado:active { cursor: grabbing; }
 .un-svg.un-svg--zoom { max-width: none; max-height: none; }
-/* o diagrama da bacia é largo: a coluna dos volumes vai para baixo dele, em grade */
-.pi-paraiba-diagrama .un-corpo { grid-template-columns: 1fr; }
-.pi-paraiba-diagrama .un-volumes { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 6px 14px; }
-.pi-paraiba-diagrama .un-volumes h4, .pi-paraiba-diagrama .un-volumes p { grid-column: 1 / -1; }

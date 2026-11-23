@@ -78,6 +78,13 @@ export function textoChave(valores: ValoresSsd, chave: string, unidade: 'mm' | '
 /** Valor numérico de um campo do SSD (null sem dado). */
 export const valorDe = (valores: ValoresSsd, c?: { space: number; v: number }) => (c ? (valores[`${c.space}:${c.v}`]?.valor ?? null) : null);
 
+/**
+ * Ligação sem água correndo: vazão zero ou, em túnel e adutora com valor no diagrama, sem
+ * dado (a transposição Atibainha → Jaguari, que não opera, não pode parecer bombeando).
+ * Rio sem dado continua correndo.
+ */
+export const semVazao = (l: { tipo: string; valor?: { space: number; v: number } }, q: number | null) => (q === null ? l.tipo !== 'rio' && !!l.valor : q <= 0);
+
 /** Duração de um ciclo da água correndo: mais rápida quanto maior a vazão (escala log; sem dado, velocidade média). */
 export const duracaoFluxo = (passo: number, q: number | null) => passo / (q === null ? 20 : 12 + 22 * Math.log10(1 + q));
 

@@ -103,6 +103,13 @@ export type Diagrama = {
   nota?: string;
   /** só o esquema, sem mapa de fundo (posições reais ainda não levantadas) */
   semMapa?: boolean;
+  /**
+   * Sobre o mapa: zoom mínimo e faixa do zoom da vista inicial (padrão: os de um
+   * sistema produtor; uma bacia inteira pede bem menos zoom) e a hidrografia
+   * (padrão: a dos sistemas, hidrografia-sistemas.json; 'paraiba': hidrografia-paraiba.json);
+   * `contorno`: a divisa da bacia, só a linha, no lugar da área do sistema ('paraiba': contorno-bacia-paraiba.json).
+   */
+  mapa?: { zoom?: { min: number; inicial: [number, number] }; hidrografia?: 'paraiba'; contorno?: 'paraiba' };
   /** botões de zoom e arrastar para mover (diagrama grande demais para a tela) */
   zoom?: boolean;
 };

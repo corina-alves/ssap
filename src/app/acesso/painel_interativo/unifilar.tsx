@@ -6,7 +6,7 @@ import { BASES, type NomeBase } from './bases-mapa';
 import { DesenhoNoMapa } from './desenho-mapa';
 import { MapaUnifilar } from './mapa-unifilar';
 import { chavePosto, COR, ESTILO_LINHA, Ponto, PontoRadar, Reservatorio, Rotulo, setas, SimboloRadar, TextoValor, type NoPostoClicavel } from './simbolos-unifilar';
-import { COR_FAIXA, duracaoFluxo, texto, valorDe, type Modo, type ValoresSsd } from './valores-ssd';
+import { COR_FAIXA, duracaoFluxo, semVazao, texto, valorDe, type Modo, type ValoresSsd } from './valores-ssd';
 
 /**
  * Diagrama unifilar de um sistema produtor no tema escuro do painel: rios e
@@ -70,7 +70,7 @@ export function DesenhoUnifilar({
         {d.ligacoes.map((l, i) => {
           const e = ESTILO_LINHA[l.tipo];
           const q = valorDe(valores, l.valor);
-          const parado = q !== null && q <= 0;
+          const parado = semVazao(l, q);
           const pontos = l.pontos.map((p) => p.join(',')).join(' ');
           return (
             <g key={i} className={parado ? 'un-parado' : undefined}>
@@ -277,7 +277,7 @@ function Legenda({ nota, comMapa, tem, variacao }: { nota: string; comMapa: bool
         <svg width="34" height="10" aria-hidden className="un-parado">
           <line x1="1" y1="5" x2="33" y2="5" stroke={COR.rio} strokeWidth="3" strokeDasharray="9 6" />
         </svg>
-        Sem vazão no dia (parado)
+        Sem vazão no dia ou túnel sem dado (parado)
       </span>
       {tem.posto && (
         <span>
@@ -529,7 +529,7 @@ export function DiagramaUnifilar({
               </button>
             ))}
             {base && (
-              <button type="button" className={`un-hidro${hidro ? ' is-ativo' : ''}`} aria-pressed={hidro} onClick={() => setHidro((h) => !h)} title="Rios principais e represas do sistema (IBGE e OpenStreetMap)">
+              <button type="button" className={`un-hidro${hidro ? ' is-ativo' : ''}`} aria-pressed={hidro} onClick={() => setHidro((h) => !h)} title={d.mapa?.hidrografia ? 'Rios principais e represas da bacia (IBGE)' : 'Rios principais e represas do sistema (IBGE e OpenStreetMap)'}>
                 <i className="bi bi-water" aria-hidden /> Hidrografia
               </button>
             )}
