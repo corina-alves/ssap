@@ -455,6 +455,55 @@ export function opcaoChuvaDias(dias: { data: string; chuva: number | null }[]): 
   };
 }
 
+// ---------------------------------------------------------------- reservatório clicado num diagrama (grafico-reservatorio.tsx)
+
+type DiaRes = { data: string; volumePct: number | null; volumeHm3: number | null; nivel: number | null; afluente: number | null; defluente: number | null };
+
+const linhaDias = (nome: string, cor: string, valores: (number | null)[]) => ({
+  name: nome,
+  type: 'line' as const,
+  showSymbol: true,
+  symbolSize: 6,
+  connectNulls: false,
+  lineStyle: { width: 2, color: cor },
+  itemStyle: { color: cor },
+  data: valores,
+});
+
+/** Volume útil (%) de cada dia de um reservatório; hm³ e nível na dica. */
+export function opcaoVolumeDias(dias: DiaRes[]): EChartsOption {
+  return {
+    tooltip: {
+      trigger: 'axis',
+      formatter: (ps) => {
+        const d = dias[lista(ps)[0]?.dataIndex ?? 0];
+        if (!d) return '';
+        const hm3 = d.volumeHm3 === null ? '' : ` (${fmt(d.volumeHm3, 2, ' hm³')})`;
+        return `<b>${dataBr(d.data)}</b><br>Volume útil: ${fmt(d.volumePct, 2, '%')}${hm3}<br>Nível: ${fmt(d.nivel, 2, ' m')}`;
+      },
+    },
+    legend: legenda,
+    grid: { left: 52, right: 16, top: 52, bottom: 50 },
+    xAxis: eixoTempo(dias.map((d) => diaMes(d.data))),
+    yAxis: eixoValor('%', { scale: true, splitNumber: 4 }),
+    dataZoom: zoom,
+    series: [linhaDias('Volume útil', COR_RESERVATORIO.jaguari, dias.map((d) => d.volumePct))],
+  };
+}
+
+/** Vazões afluente e defluente de cada dia de um reservatório. */
+export function opcaoVazoesDias(dias: DiaRes[]): EChartsOption {
+  return {
+    tooltip: { trigger: 'axis', valueFormatter: (x) => fmt(x as number, 2, ' m³/s') },
+    legend: legenda,
+    grid: { left: 52, right: 16, top: 52, bottom: 50 },
+    xAxis: eixoTempo(dias.map((d) => diaMes(d.data))),
+    yAxis: eixoValor('m³/s', { scale: true, splitNumber: 4 }),
+    dataZoom: zoom,
+    series: [linhaDias('Afluente', COR.natural, dias.map((d) => d.afluente)), linhaDias('Defluente', COR.defluente, dias.map((d) => d.defluente))],
+  };
+}
+
 // ---------------------------------------------------------------- volumes do Paraíba do Sul (paraiba-do-sul/volumes.tsx)
 
 /**

@@ -5,7 +5,7 @@ import { ehPluviometro, ehPostoAna, ehPostoSibh, paresDoDiagrama, VD, type Diagr
 import { BASES, type NomeBase } from './bases-mapa';
 import { DesenhoNoMapa } from './desenho-mapa';
 import { MapaUnifilar } from './mapa-unifilar';
-import { chavePosto, COR, ESTILO_LINHA, Ponto, PontoRadar, Reservatorio, Rotulo, setas, SimboloRadar, TextoValor, type NoPostoClicavel } from './simbolos-unifilar';
+import { chavePosto, COR, ehClicavel, ESTILO_LINHA, Ponto, PontoRadar, Reservatorio, Rotulo, setas, SimboloRadar, TextoValor, type NoPostoClicavel } from './simbolos-unifilar';
 import { COR_FAIXA, duracaoFluxo, semVazao, texto, valorDe, type Modo, type ValoresSsd } from './valores-ssd';
 
 /**
@@ -117,7 +117,7 @@ export function DesenhoUnifilar({
             data={data}
             modo={modo}
             vazao={n.tipo === 'eeab' || n.tipo === 'uhe' ? vazaoNo(n) : null}
-            ativo={(ehPostoSibh(n) || ehPostoAna(n)) && chavePosto(n) === postoAtivo}
+            ativo={ehClicavel(n) && chavePosto(n) === postoAtivo}
             aoPosto={aoPosto}
             fonte={d.fonte}
           />

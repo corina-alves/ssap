@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, type ReactNode } from 'react';
 import type { GraficosPosto as DadosSibh } from '@/lib/hidrologia/cantareira-operacao';
 import { EChart } from './echart';
 import { dataBr, fmt, opcaoChuvaDias, opcaoPostoDias } from './graficos';
@@ -23,7 +23,6 @@ export type DadosPosto = DadosSibh & { fonte?: string; chuvaDoPosto?: boolean };
  */
 export function GraficosPosto({ url, titulo, tick, aoFechar }: { url: string; titulo: string; tick: number; aoFechar: () => void }) {
   const g = useJson<DadosPosto>(`${url}&t=${tick}`);
-  const fechar = useRef<HTMLButtonElement>(null);
   const d = g.dados;
   const fonte = d?.fonte ?? 'SIBH';
   const temVazao = !!d?.dias.some((x) => x.vazao !== null);
@@ -35,26 +34,8 @@ export function GraficosPosto({ url, titulo, tick, aoFechar }: { url: string; ti
   const chuva = !d ? 'radar' : d.radar ? 'radar' : d.chuvaDoPosto ? 'posto' : null;
   const tituloChuva = chuva === 'posto' ? 'Chuva no pluviômetro da estação' : `Chuva por radar — ${d?.radar?.nome ?? 'bacia do posto'}`;
 
-  // foco no botão de fechar (sem rolar a página) e Esc fecha; uma vez só (aoFechar muda a cada renderização da tela)
-  const aoFecharAtual = useRef(aoFechar);
-  aoFecharAtual.current = aoFechar;
-  useEffect(() => {
-    fechar.current?.focus({ preventScroll: true });
-    const tecla = (e: KeyboardEvent) => e.key === 'Escape' && aoFecharAtual.current();
-    document.addEventListener('keydown', tecla);
-    return () => document.removeEventListener('keydown', tecla);
-  }, []);
-
   return (
-    <section className="un-sobre" role="dialog" aria-label={`Gráficos do posto ${titulo}`}>
-      <header className="un-sobre-topo">
-        <h4>
-          <i className="bi bi-graph-up" aria-hidden /> Posto {titulo}
-        </h4>
-        <button type="button" ref={fechar} onClick={aoFechar} aria-label="Fechar os gráficos do posto" title="Fechar (Esc)">
-          <i className="bi bi-x-lg" aria-hidden />
-        </button>
-      </header>
+    <PainelSobre titulo={`Posto ${titulo}`} rotulo={`Gráficos do posto ${titulo}`} aoFechar={aoFechar}>
       <Estado carregando={g.carregando} erro={g.erro}>
         {d?.semDados && <p className="pi-erro">{fonte === 'SIBH' ? 'O SIBH' : `A fonte (${fonte})`} não respondeu e não há cópia guardada deste posto.</p>}
         {d && (
@@ -87,6 +68,38 @@ export function GraficosPosto({ url, titulo, tick, aoFechar }: { url: string; ti
           {primeiroRadar && primeiroRadar > (d?.dias[0]?.data ?? '') && ` O radar só tem leituras no SIBH a partir de ${dataBr(primeiroRadar)}.`}
         </p>
       </Estado>
+    </PainelSobre>
+  );
+}
+
+/**
+ * Painel sobre o desenho (prop `sobre` do DiagramaUnifilar) com o título e o X:
+ * o foco vai para o X (sem rolar a página) e Esc fecha. Serve aos gráficos de
+ * posto, reservatório e pluviômetro.
+ */
+export function PainelSobre({ titulo, rotulo, icone = 'bi-graph-up', aoFechar, children }: { titulo: string; rotulo: string; icone?: string; aoFechar: () => void; children: ReactNode }) {
+  const fechar = useRef<HTMLButtonElement>(null);
+  // uma vez só: aoFechar muda a cada renderização da tela
+  const aoFecharAtual = useRef(aoFechar);
+  aoFecharAtual.current = aoFechar;
+  useEffect(() => {
+    fechar.current?.focus({ preventScroll: true });
+    const tecla = (e: KeyboardEvent) => e.key === 'Escape' && aoFecharAtual.current();
+    document.addEventListener('keydown', tecla);
+    return () => document.removeEventListener('keydown', tecla);
+  }, []);
+
+  return (
+    <section className="un-sobre" role="dialog" aria-label={rotulo}>
+      <header className="un-sobre-topo">
+        <h4>
+          <i className={`bi ${icone}`} aria-hidden /> {titulo}
+        </h4>
+        <button type="button" ref={fechar} onClick={aoFechar} aria-label={`Fechar: ${rotulo}`} title="Fechar (Esc)">
+          <i className="bi bi-x-lg" aria-hidden />
+        </button>
+      </header>
+      {children}
     </section>
   );
 }

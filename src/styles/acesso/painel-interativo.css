@@ -410,18 +410,20 @@
 .un-sobre {
   position: absolute; top: 10px; right: 10px; z-index: 1100;
   width: min(540px, calc(100% - 20px)); max-height: calc(100% - 20px); overflow: auto;
-  display: flex; flex-direction: column; gap: 4px; padding: 10px 12px;
-  background: rgba(9, 25, 47, .96); color: #eaf2fa; border: 1px solid rgba(255, 255, 255, .2); border-radius: 12px;
+  display: flex; flex-direction: column; gap: 4px; padding: 14px;
+  /* o mesmo cartão de "Volumes dos reservatórios" (.un-volumes), destacado do mapa pela sombra */
+  background: var(--un-fundo); color: #eaf2fa; border: 1px solid var(--un-borda); border-radius: 14px;
   box-shadow: 0 12px 32px rgba(0, 0, 0, .5);
 }
-.un-sobre-topo { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
-.un-sobre-topo h4 { margin: 0; font-size: .95rem; color: #fff; display: flex; align-items: center; gap: 6px; }
+.un-sobre-topo { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 2px; }
+.un-sobre-topo h4 { margin: 0; font-size: .9rem; color: #fff; display: flex; align-items: center; gap: 6px; }
 .un-sobre-topo h4 i { color: #4fc3f7; }
 .un-sobre-topo button { background: transparent; color: #fff; border: 1px solid rgba(255, 255, 255, .25); border-radius: 8px; padding: 2px 9px; font: inherit; cursor: pointer; }
-.un-sobre-topo button:hover, .un-sobre-topo button:focus-visible { background: rgba(255, 255, 255, .1); }
-.un-sobre h5 { margin: 6px 0 0; font-size: .78rem; font-weight: 700; color: #9fb5cb; }
-.un-sobre-agora { margin: 2px 0 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; font-size: .8rem; color: #9fb5cb; }
-.un-sobre-agora b { color: #fff; font-size: 1.02rem; font-weight: 800; }
+.un-sobre-topo button:hover, .un-sobre-topo button:focus-visible { background: rgba(255, 255, 255, .07); }
+.un-sobre h5 { margin: 8px 0 0; font-size: .78rem; font-weight: 700; color: #8fa6bd; }
+.un-sobre-agora { margin: 2px 0 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; font-size: .8rem; color: #8fa6bd; }
+.un-sobre-agora b { color: #fff; font-size: 1.02rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+.un-sobre .pi-nota { color: #8fa6bd; font-size: .74rem; }
 @media (max-width: 760px) {
   .un-sobre { position: static; width: auto; max-height: none; margin-top: 8px; }
 }

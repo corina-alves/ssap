@@ -7,8 +7,8 @@ import { resumoEstacao } from '../integracoes/ana-telemetria';
 import { hojeSp, somarDias } from '../integracoes/comum';
 import { arred } from '../integracoes/http';
 import { periodoBacia, ultimoDia, type AnoOns } from '../integracoes/ons';
-import { chuvaAcumuladaPostos } from '../integracoes/sibh-medicoes';
-import { inicioDiaSp, leiturasPostos } from './cantareira-operacao';
+import { chuvaAcumuladaPostos, medicoes } from '../integracoes/sibh-medicoes';
+import { chuvaPorDia, inicioDiaSp, leiturasPostos } from './cantareira-operacao';
 import { chuvaRadarDia, PERMISSAO_PAINEL, SALA_PAINEL, valoresDiagrama } from './painel-interativo';
 
 /**
@@ -214,3 +214,84 @@ export async function valoresPostos(data: string, p: { sibh: number[]; ana: stri
   }
   return saida;
 }
+
+// ------------------------------------------------------- gráficos ao clicar
+
+/** Dias do gráfico ao clicar num nó: os 30 até a data (inclusive). */
+const trintaDiasAte = (data: string) => Array.from({ length: 30 }, (_, k) => somarDias(data, k - 29));
+
+/**
+ * Gráficos de um reservatório (ou elevatória) do ONS clicado no diagrama: volume
+ * útil (% e hm³), nível e vazões afluente e defluente de cada dia nos 30 dias
+ * até a data. Os mesmos dados diários do desenho (CSV anual do ONS, no cache).
+ */
+export async function graficosReservatorio(space: number, data: string) {
+  const local = LOCAIS_ONS.find((l) => l.space === space && l.tipo !== 'fio');
+  if (!local) return null;
+  const periodo = trintaDiasAte(data);
+  const p = await periodoBacia(BACIA_ONS, periodo[0]!, data).catch(() => null);
+  const dias = p?.valor[local.ons] ?? {};
+  const r2 = (v: number | null | undefined) => (v == null ? null : arred(v, 2));
+  return {
+    data,
+    space,
+    nome: local.nome,
+    tipo: local.tipo,
+    rio: local.rio,
+    capacidade: local.capacidade ?? null,
+    semDados: !p,
+    desatualizado: p?.desatualizado ?? false,
+    dias: periodo.map((d) => {
+      const x = dias[d];
+      const pct = r2(x?.volumePct);
+      return {
+        data: d,
+        volumePct: pct,
+        volumeHm3: pct !== null && local.capacidade ? arred((pct * local.capacidade) / 100, 2) : null,
+        nivel: r2(x?.nivel),
+        afluente: r2(x?.afluente),
+        defluente: r2(x?.defluente),
+      };
+    }),
+  };
+}
+export type GraficosReservatorio = NonNullable<Awaited<ReturnType<typeof graficosReservatorio>>>;
+
+/**
+ * Gráfico de um pluviômetro do SIBH clicado no diagrama: chuva de cada dia nos
+ * 30 dias até a data e a acumulada. Os 29 dias fechados vêm numa consulta só,
+ * hora a hora, guardada por 2 h (30 dias depois que o período fica velho); o dia
+ * da data, da mesma consulta do desenho (todos os pluviômetros juntos).
+ */
+export async function graficosPluviometro(id: number, data: string) {
+  const no = DIAGRAMA_PARAIBA.nos.filter(ehPluviometro).find((n) => n.pluvio === id);
+  if (!no) return null;
+  const periodo = trintaDiasAte(data);
+  const fim = inicioDiaSp(data);
+  const recente = Date.now() < fim + 26 * 3_600_000;
+  const chave = `pluvio-29d:${id}:${data}`;
+  const [fechados, doDia] = await Promise.all([
+    medicoes('painel-paraiba', { [chave]: { ids: [id], ini: fim - 29 * 86_400_000, fim, grupo: 'hour', ttlSeg: recente ? 2 * 3600 : 30 * 86_400, timeoutMs: 90_000 } })
+      .then((r) => r[chave] ?? null)
+      .catch(() => null),
+    chuvaRadarDia([...PLUVIOMETROS], data).catch(() => ({}) as Record<string, ValorDiagrama>),
+  ]);
+  const porDia = chuvaPorDia(fechados)[String(id)] ?? {};
+  const hoje = doDia[`radar:${id}`] ?? null;
+  return {
+    data,
+    id,
+    prefixo: no.prefixo ?? '',
+    nome: no.nome,
+    municipio: no.municipio ?? null,
+    semDados: fechados === null && !hoje,
+    /** hora da última leitura somada no dia da data (só hoje) */
+    hora: hoje?.hora ?? null,
+    // dia sem nenhuma leitura fica vazio (o SIBH manda as horas sem chuva com 0)
+    dias: periodo.map((d) => {
+      const mm = d === data ? hoje?.valor : fechados === null ? undefined : (porDia[d] ?? undefined);
+      return { data: d, chuva: mm === undefined ? null : arred(mm, 1) };
+    }),
+  };
+}
+export type GraficosPluviometro = NonNullable<Awaited<ReturnType<typeof graficosPluviometro>>>;

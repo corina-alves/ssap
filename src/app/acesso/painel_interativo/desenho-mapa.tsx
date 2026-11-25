@@ -1,9 +1,9 @@
 'use client';
 
 import { memo, useMemo } from 'react';
-import { ehPostoAna, ehPostoSibh, VD, type Ancora, type Diagrama, type Ligacao, type No, type Valor } from '@/conteudo/diagramas-unifilares';
+import { VD, type Ancora, type Diagrama, type Ligacao, type No, type Valor } from '@/conteudo/diagramas-unifilares';
 import { afastar, arrumarCartoes, caixaComNome, caixaRadar, type Escala, type ItemCartao, type NaLinha, type PlanoMapa, type Pt } from './posicoes-mapa';
-import { chavePosto, COR, Ponto, PontoRadar, Reservatorio, type NoPostoClicavel } from './simbolos-unifilar';
+import { chavePosto, COR, ehClicavel, Ponto, PontoRadar, Reservatorio, type NoPostoClicavel } from './simbolos-unifilar';
 import { duracaoFluxo, semVazao, texto, valorDe, type Modo, type ValoresSsd } from './valores-ssd';
 
 /**
@@ -265,8 +265,8 @@ const Conteudo = memo(function Conteudo({
                 data={data}
                 modo={modo}
                 vazao={aqui.tipo === 'eeab' || aqui.tipo === 'uhe' ? vazaoNo(n as typeof aqui) : null}
-                ativo={(ehPostoSibh(n) || ehPostoAna(n)) && chavePosto(n) === postoAtivo}
-                aoPosto={aoPosto && (ehPostoSibh(n) || ehPostoAna(n)) ? () => aoPosto(n) : undefined}
+                ativo={ehClicavel(n) && chavePosto(n) === postoAtivo}
+                aoPosto={aoPosto && ehClicavel(n) ? () => aoPosto(n) : undefined}
                 fonte={d.fonte}
               />
             )}

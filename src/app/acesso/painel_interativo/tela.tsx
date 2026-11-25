@@ -6,6 +6,7 @@ import type { OperacaoCantareira } from '@/lib/hidrologia/cantareira-operacao';
 import type { CartaoSistema, Indicadores, ValorTransferencia } from '@/lib/hidrologia/painel-interativo';
 import { CartaoDescarregada, PainelCantareira, urlOperacao } from './cantareira';
 import { GraficosPosto } from './grafico-posto';
+import { GraficosReservatorioSsd } from './grafico-reservatorio';
 import { MapaSim } from './mapa-sim';
 import { useAtualizacao } from './usar-atualizacao';
 import { Estado, useJson } from './usar-json';
@@ -103,6 +104,7 @@ export function TelaPainel({ data, hoje, sistemaInicial, vistaInicial }: { data:
   const [vista, setVista] = useState<Vista>(vistaInicial);
   const [local, setLocal] = useState<number | null>(null); // reservatório escolhido no detalhamento
   const [posto, setPosto] = useState<NoSibh | null>(null); // posto do SIBH clicado no diagrama (gráficos abaixo dele)
+  const [resAberto, setResAberto] = useState<number | null>(null); // reservatório clicado no diagrama (cartão de gráficos sobre o desenho)
   const [periodo, setPeriodo] = useState<number | 'livre'>(30);
   const [livre, setLivre] = useState({ de: '', ate: '' });
   const inicio = useRef<HTMLDivElement>(null);
@@ -186,15 +188,29 @@ export function TelaPainel({ data, hoje, sistemaInicial, vistaInicial }: { data:
     setSistema(chave);
     setLocal(null);
     setPosto(null);
+    setResAberto(null);
   };
-  // clicar de novo no mesmo posto fecha os gráficos
-  const escolherPosto = (n: NoSibh) => setPosto((p) => (p?.sibh.id === n.sibh.id ? null : n));
+  // clicar de novo no mesmo posto fecha os gráficos; o posto toma o lugar do cartão do reservatório
+  const escolherPosto = (n: NoSibh) => {
+    setResAberto(null);
+    setPosto((p) => (p?.sibh.id === n.sibh.id ? null : n));
+  };
   const escolherLocal = (sp: number) => setLocal(local === sp ? null : sp);
+  // reservatório clicado no diagrama: escolhe o reservatório (como nos cartões) e abre os gráficos dele
+  // sobre o desenho; clicar de novo nele (com o cartão aberto) fecha e desfaz a escolha
+  const escolherNoDiagrama = (sp: number) => {
+    const abrir = resAberto !== sp || posto !== null;
+    setPosto(null);
+    setResAberto(abrir ? sp : null);
+    setLocal(abrir ? sp : null);
+  };
+  const resDiagrama = unifilar?.nos.find((n) => n.tipo === 'reservatorio' && n.space === resAberto);
   // da galeria de diagramas (SIM) para o sistema, já com o reservatório clicado; volta ao topo da análise
   const abrirSistema = (chave: string, space?: number) => {
     setSistema(chave);
     setLocal(space ?? null);
     setPosto(null);
+    setResAberto(null);
     inicio.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
   const sim = sistemas.find((x) => x.chave === 'sim');
@@ -317,7 +333,7 @@ export function TelaPainel({ data, hoje, sistemaInicial, vistaInicial }: { data:
               data={data}
               tick={tick}
               destaque={local}
-              aoEscolher={escolherLocal}
+              aoEscolher={escolherNoDiagrama}
               postoAtivo={posto ? chavePosto(posto) : null}
               aoPosto={(n) => ehPostoSibh(n) && escolherPosto(n)}
               sobre={
@@ -328,6 +344,16 @@ export function TelaPainel({ data, hoje, sistemaInicial, vistaInicial }: { data:
                     titulo={[posto.prefixo, posto.nome].filter(Boolean).join(' · ')}
                     tick={tick}
                     aoFechar={() => setPosto(null)}
+                  />
+                ) : resDiagrama?.tipo === 'reservatorio' ? (
+                  <GraficosReservatorioSsd
+                    key={resDiagrama.space}
+                    space={resDiagrama.space}
+                    titulo={[resDiagrama.prefixo, resDiagrama.nome].filter(Boolean).join(' · ')}
+                    data={data}
+                    tick={tick}
+                    semChuva={resDiagrama.semChuva}
+                    aoFechar={() => setResAberto(null)}
                   />
                 ) : null
               }

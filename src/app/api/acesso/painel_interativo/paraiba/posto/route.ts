@@ -3,7 +3,7 @@ import { DIAGRAMA_PARAIBA } from '@/conteudo/diagrama-paraiba';
 import { ehPostoAna, ehPostoSibh } from '@/conteudo/diagramas-unifilares';
 import { exigirApiEmAlguma } from '@/lib/acesso/api';
 import { graficosPosto } from '@/lib/hidrologia/cantareira-operacao';
-import { SALA_VALE_PARAIBA } from '@/lib/hidrologia/paraiba-do-sul';
+import { graficosPluviometro, graficosReservatorio, SALA_VALE_PARAIBA } from '@/lib/hidrologia/paraiba-do-sul';
 import { dataValida, PERMISSAO_PAINEL, SALA_PAINEL } from '@/lib/hidrologia/painel-interativo';
 import { FONTE as FONTE_ANA, trintaDias } from '@/lib/integracoes/ana-telemetria';
 import { hojeSp } from '@/lib/integracoes/comum';
@@ -16,6 +16,8 @@ export const maxDuration = 120;
  * Paraíba do Sul (só desses): vazão e nível médios por dia nos 30 dias até a
  * data e a chuva (ANA: do pluviômetro da estação; SIBH: sem radar na bacia).
  * Mesmo formato dos gráficos de posto dos outros diagramas.
+ * Também ?reservatorio=<local> (reservatório ou elevatória do ONS: volume, nível e
+ * vazões de cada dia) e ?pluvio=<station_prefix_id> (pluviômetro do SIBH: chuva de cada dia).
  */
 export async function GET(req: NextRequest) {
   const acesso = await exigirApiEmAlguma([SALA_PAINEL, SALA_VALE_PARAIBA], PERMISSAO_PAINEL);
@@ -23,7 +25,16 @@ export async function GET(req: NextRequest) {
   const p = req.nextUrl.searchParams;
   const pedida = p.get('data');
   const data = dataValida(pedida) && pedida <= hojeSp() ? pedida : hojeSp();
+  const cache = { headers: { 'Cache-Control': 'private, max-age=60' } };
   try {
+    if (p.has('reservatorio')) {
+      const g = await graficosReservatorio(Number(p.get('reservatorio')), data);
+      return g ? NextResponse.json(g, cache) : NextResponse.json({ erro: 'Reservatório fora do diagrama.' }, { status: 404 });
+    }
+    if (p.has('pluvio')) {
+      const g = await graficosPluviometro(Number(p.get('pluvio')), data);
+      return g ? NextResponse.json(g, cache) : NextResponse.json({ erro: 'Pluviômetro fora do diagrama.' }, { status: 404 });
+    }
     const codigo = p.get('ana');
     if (codigo !== null) {
       const no = DIAGRAMA_PARAIBA.nos.filter(ehPostoAna).find((n) => n.ana.codigo === codigo);

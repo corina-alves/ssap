@@ -1,7 +1,7 @@
 'use client';
 
 import { useId, type CSSProperties } from 'react';
-import { ehPluviometro, ehPostoAna, ehPostoSibh, VD, type Ancora, type Ligacao, type No, type NoAna, type NoSibh, type Radar, type Valor } from '@/conteudo/diagramas-unifilares';
+import { ehPluviometro, ehPostoAna, ehPostoSibh, VD, type Ancora, type Ligacao, type No, type NoAna, type NoPluviometro, type NoSibh, type Radar, type Valor } from '@/conteudo/diagramas-unifilares';
 import { chaveAna, chaveChuva, chaveNivel, chaveRadar, chaveVazao, COR_FAIXA, texto, textoChave, textoMes, textoRadar, textoSibh, type Modo, type ValoresSsd } from './valores-ssd';
 
 /**
@@ -326,11 +326,12 @@ function valorSibh(n: NoSibh, valores: ValoresSsd, modo: Modo): { texto: string;
   return { texto: textoSibh(valores, id, qual), hora: x ? (x.hora ?? 'média do dia') : null };
 }
 
-/** Posto que abre gráficos ao ser clicado: do SIBH ou uma estação da ANA. */
-export type NoPostoClicavel = NoSibh | NoAna;
+/** Posto que abre gráficos ao ser clicado: do SIBH, uma estação da ANA ou um pluviômetro do SIBH. */
+export type NoPostoClicavel = NoSibh | NoAna | NoPluviometro;
+export const ehClicavel = (n: No): n is NoPostoClicavel => ehPostoSibh(n) || ehPostoAna(n) || ehPluviometro(n);
 
-/** Identificador do posto clicável (o de gráficos abertos): "sibh:<id>" ou "ana:<código>". */
-export const chavePosto = (n: NoPostoClicavel) => (ehPostoSibh(n) ? `sibh:${n.sibh.id}` : `ana:${n.ana.codigo}`);
+/** Identificador do posto clicável (o de gráficos abertos): "sibh:<id>", "ana:<código>" ou "pluvio:<id>". */
+export const chavePosto = (n: NoPostoClicavel) => (ehPostoSibh(n) ? `sibh:${n.sibh.id}` : ehPostoAna(n) ? `ana:${n.ana.codigo}` : `pluvio:${n.pluvio}`);
 
 /** "às 13h50" (leitura de hoje) ou "média do dia" (dia que já acabou); vazio sem leitura. */
 const quando = (x: { hora?: string } | null | undefined) => (!x ? '' : x.hora ? ` às ${x.hora.replace(':', 'h')}` : ' (média do dia)');
@@ -405,9 +406,9 @@ export function Ponto({
           'Clique para ver os gráficos de vazão, nível e chuva',
         ]
       : []),
-    ...(pluvio ? [`SIBH (pluviômetro ${n.prefixo ?? pluvio.pluvio})`, chuva('sibh', pluvio.pluvio)] : []),
+    ...(pluvio ? [`SIBH (pluviômetro ${n.prefixo ?? pluvio.pluvio})`, chuva('sibh', pluvio.pluvio), ...(aoPosto ? ['Clique para ver o gráfico de chuva'] : [])] : []),
   ].join('\n');
-  const clicavel = sibh ?? ana;
+  const clicavel = sibh ?? ana ?? pluvio;
   const abrir = clicavel && aoPosto ? () => aoPosto(clicavel) : undefined;
   return (
     <g
@@ -416,7 +417,7 @@ export function Ponto({
       onClick={abrir}
       role={abrir ? 'button' : undefined}
       tabIndex={abrir ? 0 : undefined}
-      aria-label={abrir ? `${titulo}: gráficos de vazão e chuva` : undefined}
+      aria-label={abrir ? `${titulo}: ${pluvio ? 'gráfico de chuva' : 'gráficos de vazão e chuva'}` : undefined}
       onKeyDown={
         abrir
           ? (e) => {
