@@ -14,6 +14,11 @@ const nextConfig: NextConfig = {
   // Só no `next dev`: o Docker publica o site em 127.0.0.1:3000, e o Next bloqueia
   // os recursos de desenvolvimento (scripts, recarga) para qualquer host além de localhost.
   allowedDevOrigins: ['127.0.0.1'],
+  // Só no contêiner de desenvolvimento (compose.dev.yaml define WATCHPACK_POLLING): a pasta
+  // montada do Windows não avisa mudanças de arquivo, e o Turbopack (padrão do `next dev`)
+  // não lê o WATCHPACK_POLLING, que só vale para o webpack. Sem isto, o código alterado não
+  // aparecia no contêiner. Fora dele (npm run dev no Windows) não há polling.
+  ...(process.env.WATCHPACK_POLLING === 'true' ? { watchOptions: { pollIntervalMs: 1000 } } : {}),
   // pg e argon2 (módulo nativo) rodam só no Node, fora do bundle.
   serverExternalPackages: ['pg', '@node-rs/argon2'],
   experimental: {
