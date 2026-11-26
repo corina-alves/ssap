@@ -74,7 +74,7 @@ const espera = (ms: number) => new Promise((ok) => setTimeout(ok, ms));
 async function buscar(cod: string, de: string, ate: string): Promise<LeituraAna[]> {
   const url = `${BASE}?codEstacao=${encodeURIComponent(cod)}&dataInicio=${br(de)}&dataFim=${br(ate)}`;
   for (let tentativa = 0; ; tentativa++) {
-    const l = lerXmlAna(await naVez(() => buscarTexto(url, { timeoutMs: 20_000 })));
+    const l = lerXmlAna(await naVez(() => buscarTexto(url, { timeoutMs: 40_000 })));
     if (l.length || tentativa >= 1) return l;
     await espera(800);
   }
@@ -147,6 +147,32 @@ export async function resumoEstacao(cod: string, data: string, agoraMs = Date.no
   };
 }
 
+/** Dias de cada bloco da consulta longa (`diasEmBlocos`). */
+const DIAS_BLOCO = 7;
+/** Segunda-feira de referência: os blocos começam nela e a cada 7 dias (chaves de cache iguais de um dia para o outro). */
+const ANCORA_BLOCO = '2026-01-05';
+const diasEntre = (a: string, b: string) => Math.round((Date.parse(`${b}T12:00:00Z`) - Date.parse(`${a}T12:00:00Z`)) / 86_400_000);
+
+/**
+ * Médias e somas por dia de `de` a `ate`, em blocos de uma semana (de segunda a
+ * domingo). Um pedido de 30 dias ao ServiceANA às vezes passa dos 20 s e falha
+ * inteiro; em blocos, cada pedido é pequeno, as semanas que já acabaram ficam no
+ * cache de vez e, se um bloco falhar, os outros dias aparecem mesmo assim.
+ * null só se todos os blocos falharem.
+ */
+export async function diasEmBlocos(cod: string, de: string, ate: string): Promise<{ valor: DiaAna[] } | null> {
+  const blocos: [string, string][] = [];
+  let ini = somarDias(ANCORA_BLOCO, Math.floor(diasEntre(ANCORA_BLOCO, de) / DIAS_BLOCO) * DIAS_BLOCO);
+  while (ini <= ate) {
+    const fim = somarDias(ini, DIAS_BLOCO - 1);
+    blocos.push([ini, fim < ate ? fim : ate]);
+    ini = somarDias(ini, DIAS_BLOCO);
+  }
+  const r = await Promise.all(blocos.map(([a, b]) => diasAna(cod, a, b).catch(() => null)));
+  if (r.every((x) => x === null)) return null;
+  return { valor: r.flatMap((x) => x?.valor ?? []).filter((d) => d.data >= de && d.data <= ate) };
+}
+
 /**
  * Os 30 dias até `data` (vazão e nível médios, chuva do dia) para os gráficos do
  * posto; hoje entra com as leituras até agora.
@@ -155,7 +181,7 @@ export async function trintaDias(cod: string, data: string): Promise<{ dias: Dia
   const hoje = hojeSp();
   const de = somarDias(data, -29);
   const ehHoje = data === hoje;
-  const [f, r] = await Promise.all([diasAna(cod, de, ehHoje ? somarDias(data, -1) : data), ehHoje ? recentes(cod, hoje) : Promise.resolve(null)]);
+  const [f, r] = await Promise.all([diasEmBlocos(cod, de, ehHoje ? somarDias(data, -1) : data), ehHoje ? recentes(cod, hoje) : Promise.resolve(null)]);
   const ls = r?.valor ?? [];
   const deHoje = ehHoje ? porDia(ls.filter((l) => l.t.startsWith(hoje))) : [];
   const todos = [...(f?.valor ?? []), ...deHoje];

@@ -469,6 +469,28 @@ function ZoomPan({ children }: { children: ReactNode }) {
 }
 
 /** Diagrama com os valores do SSD na data, os botões de modo, as barras de volume e a legenda. */
+/**
+ * Tela cheia do diagrama (API Fullscreen do navegador), para apresentação: o
+ * bloco todo (botões, mapa ou esquema, volumes e legenda) ocupa a tela; Esc ou o
+ * mesmo botão volta ao normal. `pode`: o navegador permite (depois de montar).
+ */
+function useTelaCheia() {
+  const ref = useRef<HTMLDivElement>(null);
+  const [cheia, setCheia] = useState(false);
+  const [pode, setPode] = useState(false);
+  useEffect(() => {
+    setPode(!!document.fullscreenEnabled);
+    const mudou = () => setCheia(!!ref.current && document.fullscreenElement === ref.current);
+    document.addEventListener('fullscreenchange', mudou);
+    return () => document.removeEventListener('fullscreenchange', mudou);
+  }, []);
+  const alternar = () => {
+    if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+    else ref.current?.requestFullscreen().catch(() => {});
+  };
+  return { ref, cheia, pode, alternar };
+}
+
 export function DiagramaUnifilar({
   d,
   data,
@@ -502,6 +524,7 @@ export function DiagramaUnifilar({
   const tem = useMemo(() => simbolosDe(d), [d]);
   const variacao = Object.entries(st.valores).some(([k, v]) => v && k.endsWith(':dia'));
   const ondePostos = tem.ana ? (tem.sibh ? 'postos no SIBH e na ANA' : 'postos na ANA') : 'radar e postos no SIBH';
+  const tela = useTelaCheia();
   const desenho = (
     <DesenhoUnifilar
       d={d}
@@ -517,9 +540,20 @@ export function DiagramaUnifilar({
   );
 
   return (
-    <div className="un">
+    <div className={`un${tela.cheia ? ' is-tela-cheia' : ''}`} ref={tela.ref}>
       <div className="un-topo">
         <BotoesModo modo={modo} aoMudar={setModo} />
+        {tela.pode && (
+          <button
+            type="button"
+            className={`un-tela-cheia${tela.cheia ? ' is-ativo' : ''}`}
+            aria-pressed={tela.cheia}
+            onClick={tela.alternar}
+            title={tela.cheia ? 'Voltar ao tamanho normal (Esc)' : 'Mostrar o diagrama na tela inteira (para apresentação)'}
+          >
+            <i className={`bi ${tela.cheia ? 'bi-fullscreen-exit' : 'bi-arrows-fullscreen'}`} aria-hidden /> {tela.cheia ? 'Sair da tela cheia' : 'Tela cheia'}
+          </button>
+        )}
         {!d.semMapa && (
           <div className="mu-grupo un-bases" role="group" aria-label="Mapa de fundo">
             <span>Mapa de fundo</span>

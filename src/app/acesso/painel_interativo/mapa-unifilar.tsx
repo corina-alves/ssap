@@ -44,12 +44,12 @@ const zoomDe = (d: Diagrama) => ({ min: d.mapa?.zoom?.min ?? ZOOM.min, inicialMi
 
 /**
  * Escala dos símbolos (px por unidade do esquema): um pouco menor que a do esquema, para caberem no mapa.
- * Vale a largura dos esquemas dos sistemas (LARGURA_REF): um esquema mais largo (a bacia do Paraíba do Sul)
- * não deixa os símbolos e os textos menores no mapa.
+ * Só a largura do mapa conta, medida na largura dos esquemas dos sistemas (LARGURA_REF): todos os
+ * diagramas (os sistemas e a bacia do Paraíba do Sul) ficam com símbolos e textos do mesmo tamanho.
+ * A altura não entra: o mapa dos sistemas, mais alto, bate no limite de 78vh e deixava tudo menor.
  */
 const LARGURA_REF = 1300;
-const escala = (d: Diagrama, w: number, h: number) =>
-  Math.max(0.45, Math.min(0.8, 0.8 * Math.max(1, d.largura / LARGURA_REF) * Math.min(w / d.largura, h / d.altura)));
+const escala = (w: number) => Math.max(0.45, Math.min(0.8, (0.8 * w) / LARGURA_REF));
 
 /** O que o desenho precisa: o plano, o zoom (f = 2^zoom), onde o mundo está na tela (t) e a escala dos símbolos (s). */
 export type VistaMapa = { plano: PlanoMapa; f: number; t: Pt; s: number };
@@ -80,7 +80,7 @@ export function MapaUnifilar({ d, base, hidro, children }: { d: Diagrama; base: 
     const a = alvoZoom.current;
     const z = a ? a.zoom : m.getZoom();
     const c = m.project(a ? a.centro : m.getCenter(), z);
-    setVista({ plano, f: 2 ** z, t: [t.x / 2 - c.x, t.y / 2 - c.y], s: escala(d, t.x, t.y) });
+    setVista({ plano, f: 2 ** z, t: [t.x / 2 - c.x, t.y / 2 - c.y], s: escala(t.x) });
   };
 
   /** Vista inicial: o desenho todo na caixa, com folga para os símbolos. */
@@ -94,7 +94,7 @@ export function MapaUnifilar({ d, base, hidro, children }: { d: Diagrama; base: 
     mexeu.current = false;
     const [x0, y0, x1, y1] = plano.caixa;
     // folga em volta do desenho para os símbolos e nomes dos pontos da borda
-    const folga = 2 * 95 * escala(d, t.x, t.y);
+    const folga = 2 * 95 * escala(t.x);
     const util = (v: number) => (v > 2 * folga ? v - folga : v);
     const z = Math.log2(Math.min(util(t.x) / Math.max(x1 - x0, 1e-9), util(t.y) / Math.max(y1 - y0, 1e-9)));
     const { inicialMin, inicialMax } = zoomDe(d);

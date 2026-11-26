@@ -199,6 +199,20 @@
 .um-guia circle { fill: #bfe9ff; stroke: #35414e; stroke-width: 2; }
 .un-bases { margin-left: auto; }
 .un-bases .un-hidro { margin-left: 8px; }
+/* tela cheia para apresentação (unifilar.tsx, useTelaCheia): o botão fica no fim da linha */
+.un-tela-cheia {
+  order: 1; display: inline-flex; align-items: center; gap: 7px; padding: 7px 15px; border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, .16); background: rgba(255, 255, 255, .04); color: #d6e4f0;
+  font: inherit; font-size: .85rem; font-weight: 700; cursor: pointer;
+}
+.un-tela-cheia:hover { background: rgba(255, 255, 255, .09); }
+.un-tela-cheia.is-ativo { background: #1e88ff; border-color: #1e88ff; color: #fff; }
+.un.is-tela-cheia { background: var(--pi-fundo, #0b1f3a); color: var(--pi-texto, #eaf2fa); padding: 14px 18px; overflow: auto; }
+.un.is-tela-cheia .un-corpo { grid-template-columns: minmax(0, 1fr) 270px; }
+/* o mapa e o esquema crescem até a altura da tela (menos a linha de botões e a legenda) */
+.un.is-tela-cheia .un-mapa { aspect-ratio: auto !important; height: calc(100vh - 150px); max-height: none; }
+.un.is-tela-cheia .un-svg { max-width: none; max-height: calc(100vh - 150px); }
+.un.is-tela-cheia .un-zoom-area { max-height: calc(100vh - 190px); }
 /* menor que a largura toda do cartão: o diagrama inteiro cabe na tela (centralizado no fundo) */
 .un-svg { display: block; width: 100%; max-width: 1120px; max-height: 70vh; height: auto; margin: 0 auto; font-family: inherit; }
 /* .un-linhas: o brilho é uma polyline larga e translúcida sob cada trecho (sem filter, que pesaria com a animação) */
