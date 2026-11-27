@@ -134,7 +134,7 @@ export type LinhaReservatorio = {
   dataAtual: string | null;
   /** operacional (%) do mês da leitura */
   limiteMes: number | null;
-  /** volume útil (%) no fim de cada mês (jan = 0), no ano e no anterior */
+  /** volume útil (%) no fim de cada mês da janela do gráfico (`meses`) e no mesmo mês um ano antes */
   mensal: { volume: (number | null)[]; volumeAnterior: (number | null)[] };
   erro?: string;
 };
@@ -142,16 +142,28 @@ export type LinhaReservatorio = {
 export type Totais = Record<Periodo, { espera: { hm3: Faixa; pct: Faixa }; operacional: { hm3: Faixa; pct: Faixa } }>;
 /** Espera e operacional do sistema num mês (hm³ e %). */
 export type TotaisMes = { esperaHm3: number; esperaPct: number; operacionalHm3: number; operacionalPct: number };
-/** Mês a mês do sistema (jan = 0): volume útil (%) no último dia com leitura do mês, no ano e no anterior, e operacional (%). */
+/**
+ * Mês a mês do sistema: volume útil (%) no último dia com leitura de cada mês da janela (`meses`)
+ * e no mesmo mês um ano antes; operacional (%) por mês do calendário (jan = 0).
+ */
 export type Mensal = { volume: (number | null)[]; volumeAnterior: (number | null)[]; operacional: (number | null)[] };
+/** Mês (1–12) de um ano. */
+export type MesAno = { ano: number; mes: number };
 
-/** Último valor de cada mês de um ano (jan = 0). */
-const fimDeMes = (ps: Ponto[], ano: number) => {
-  const r = Array<Ponto | null>(12).fill(null);
+/** Os 12 meses do gráfico, terminando no mês de hoje: em nov/2026, de dez/2025 a nov/2026 (sem mês em branco). */
+const janela = (hoje: string): MesAno[] => {
+  const fim = Number(hoje.slice(0, 4)) * 12 + Number(hoje.slice(5, 7)) - 1;
+  return Array.from({ length: 12 }, (_, i) => ({ ano: Math.floor((fim - 11 + i) / 12), mes: ((fim - 11 + i) % 12) + 1 }));
+};
+const aaaamm = (m: MesAno) => `${m.ano}-${String(m.mes).padStart(2, '0')}`;
+
+/** Último valor de cada mês da lista. */
+const fimDosMeses = (ps: Ponto[], meses: MesAno[]) => {
+  const indice = new Map(meses.map((m, i) => [aaaamm(m), i]));
+  const r = Array<Ponto | null>(meses.length).fill(null);
   for (const p of ps) {
-    if (Number(p.data.slice(0, 4)) !== ano) continue;
-    const m = Number(p.data.slice(5, 7)) - 1;
-    if (!r[m] || p.data > r[m]!.data) r[m] = p;
+    const i = indice.get(p.data.slice(0, 7));
+    if (i !== undefined && (!r[i] || p.data > r[i]!.data)) r[i] = p;
   }
   return r;
 };
@@ -159,8 +171,9 @@ const fimDeMes = (ps: Ponto[], ano: number) => {
 export async function volumesEspera(sistema: string, hoje: string) {
   const def = SISTEMAS[sistema]!;
   const planilha = await lerPlanilha(sistema);
-  const ano = Number(hoje.slice(0, 4));
-  const de = `${ano - 1}-01-01`;
+  const meses = janela(hoje);
+  const umAnoAntes = meses.map((m) => ({ ano: m.ano - 1, mes: m.mes }));
+  const de = `${aaaamm(umAnoAntes[0]!)}-01`;
 
   const dados = await Promise.all(
     def.reservatorios.map(async (r) => {
@@ -173,10 +186,10 @@ export async function volumesEspera(sistema: string, hoje: string) {
         const [pct, hm3] = await Promise.all([pontosDiarios(r.space, VAR.volumePct, de, hoje), pontosDiarios(r.space, VAR.volumeHm3, de, hoje)]);
         const ultimo = pct.filter((p) => p.valor > 0).sort((a, b) => a.data.localeCompare(b.data)).at(-1) ?? null;
         const doDia = ultimo ? hm3.find((p) => p.data === ultimo.data) : undefined;
-        const vol = (a: number) => fimDeMes(pct, a).map((p) => (p ? arred(p.valor) : null));
+        const vol = (ms: MesAno[]) => fimDosMeses(pct, ms).map((p) => (p ? arred(p.valor) : null));
         const linha: LinhaReservatorio = {
           nome: r.nome,
-          mensal: { volume: vol(ano), volumeAnterior: vol(ano - 1) },
+          mensal: { volume: vol(meses), volumeAnterior: vol(umAnoAntes) },
           utilHm3: ultimo && doDia ? arred(doDia.valor / (ultimo.valor / 100)) : null,
           operacional,
           periodo,
@@ -195,7 +208,7 @@ export async function volumesEspera(sistema: string, hoje: string) {
 
   // Totais e gráfico só com todos os reservatórios completos: um total parcial enganaria.
   const completos = linhas.every((l) => l.utilHm3 !== null && l.operacional.every((v) => v !== null));
-  if (!completos) return { linhas, totais: null, totaisMes: null, mensal: null, capacidadeHm3: null };
+  if (!completos) return { linhas, meses, totais: null, totaisMes: null, mensal: null, capacidadeHm3: null };
 
   const cap = linhas.reduce((t, l) => t + l.utilHm3!, 0);
   /** espera do sistema (hm³) em cada mês (jan = 0) */
@@ -207,13 +220,13 @@ export async function volumesEspera(sistema: string, hoje: string) {
   });
 
   // Volume do sistema no fim de cada mês: soma dos hm³ dos reservatórios ÷ capacidade (só meses com todos).
-  const volumeDoAno = (a: number) => {
-    const fins = dados.map((d) => fimDeMes(d.hm3, a));
-    return MESES.map((_, m) => (fins.every((f) => f[m]) ? arred((fins.reduce((t, f) => t + f[m]!.valor, 0) / cap) * 100) : null));
+  const volumeDosMeses = (ms: MesAno[]) => {
+    const fins = dados.map((d) => fimDosMeses(d.hm3, ms));
+    return ms.map((_, i) => (fins.every((f) => f[i]) ? arred((fins.reduce((t, f) => t + f[i]!.valor, 0) / cap) * 100) : null));
   };
   const mensal: Mensal = {
-    volume: volumeDoAno(ano),
-    volumeAnterior: volumeDoAno(ano - 1),
+    volume: volumeDosMeses(meses),
+    volumeAnterior: volumeDosMeses(umAnoAntes),
     operacional: esperaMes.map((e) => arred(((cap - e) / cap) * 100)),
   };
   const m = Number(hoje.slice(5, 7)) - 1;
@@ -223,5 +236,5 @@ export async function volumesEspera(sistema: string, hoje: string) {
     operacionalHm3: arred(cap - esperaMes[m]!),
     operacionalPct: arred(((cap - esperaMes[m]!) / cap) * 100),
   };
-  return { linhas, totais: { chuvoso: total('chuvoso'), seco: total('seco') } as Totais, totaisMes, mensal, capacidadeHm3: arred(cap) };
+  return { linhas, meses, totais: { chuvoso: total('chuvoso'), seco: total('seco') } as Totais, totaisMes, mensal, capacidadeHm3: arred(cap) };
 }

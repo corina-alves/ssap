@@ -130,35 +130,55 @@ export function GraficoDiaTransposicao({ leituras, referencia }: { leituras: { h
   return <Grafico opcao={opcao} altura={340} rotulo="Vazão observada pelo SAISP ao longo do dia" />;
 }
 
-/** Volumes de espera: volume útil do sistema no ano (barras), operacional e ano anterior (linhas). */
+/**
+ * Volumes de espera: volume útil do sistema nos 12 meses até o mês atual (barras), operacional e
+ * o mesmo mês um ano antes (linhas). Em nov/2026 o eixo vai de Dez/25 a Nov/26, sem mês em branco.
+ */
 export function GraficoVolumesEspera({
-  ano,
+  meses,
   volume,
   anterior,
   operacional,
   periodos = false,
 }: {
-  ano: number;
+  /** os 12 meses do eixo (mes 1–12), do mais antigo ao atual */
+  meses: { ano: number; mes: number }[];
+  /** alinhados a `meses` */
   volume: (number | null)[];
   anterior: (number | null)[];
+  /** operacional (%) por mês do calendário (jan = 0) */
   operacional: (number | null)[];
   /** separa o período chuvoso (dez–mai) do seco (jun–nov) com faixas de fundo e divisas tracejadas */
   periodos?: boolean;
 }) {
-  const faixa = (nome: string, de: string, ate: string, cor: string, rotulo = true) => [
-    {
-      name: rotulo ? nome : '',
-      xAxis: de,
-      itemStyle: { color: cor, borderColor: COR.fraco, borderWidth: 1, borderType: 'dashed' as const },
-      label: { position: 'insideTop' as const, color: COR.profundo, fontSize: 12, fontWeight: 700, distance: 6 },
-    },
-    { xAxis: ate },
-  ];
+  const rotulo = (m: { ano: number; mes: number }) => `${MESES[m.mes - 1]}/${String(m.ano).slice(2)}`;
+  const eixo = meses.map(rotulo);
+  const oper = meses.map((m) => operacional[m.mes - 1] ?? null);
+  const umAnoAntes = (m: { ano: number; mes: number }) => rotulo({ ano: m.ano - 1, mes: m.mes });
+  const [ini, fim] = [meses[0]!, meses.at(-1)!];
+
   const chuvoso = 'rgba(4,84,252,.08)';
   const seco = 'rgba(245,183,42,.12)';
+  // trechos seguidos do mesmo período na janela; o nome completo só cabe nos trechos de 4 meses ou mais
+  const trechos: { seco: boolean; de: number; ate: number }[] = [];
+  meses.forEach((m, i) => {
+    const s = m.mes >= 6 && m.mes <= 11;
+    const ultimo = trechos.at(-1);
+    if (ultimo && ultimo.seco === s) ultimo.ate = i;
+    else trechos.push({ seco: s, de: i, ate: i });
+  });
+  const faixas = trechos.map((t) => [
+    {
+      name: t.ate - t.de >= 3 ? (t.seco ? 'Período seco (jun–nov)' : 'Período chuvoso (dez–mai)') : t.seco ? 'Seco' : 'Chuvoso',
+      xAxis: eixo[t.de],
+      itemStyle: { color: t.seco ? seco : chuvoso, borderColor: COR.fraco, borderWidth: 1, borderType: 'dashed' as const },
+      label: { position: 'insideTop' as const, color: COR.profundo, fontSize: 12, fontWeight: 700, distance: 6 },
+    },
+    { xAxis: eixo[t.ate] },
+  ]);
   const opcao: EChartsOption = {
     tooltip: { trigger: 'axis', valueFormatter: (v) => `${fmt(v, 1)}%` },
-    xAxis: { type: 'category', data: MESES, axisLabel: { color: COR.fraco } },
+    xAxis: { type: 'category', data: eixo, axisLabel: { color: COR.fraco } },
     // com os períodos, sobra espaço acima de 100% para os nomes das faixas não cobrirem os valores
     yAxis: {
       type: 'value',
@@ -170,28 +190,17 @@ export function GraficoVolumesEspera({
     },
     series: [
       {
-        name: `Volume útil ${ano}`,
+        name: `Volume útil ${rotulo(ini)}–${rotulo(fim)}`,
         type: 'bar',
         barMaxWidth: 44,
-        ...(periodos
-          ? {
-              markArea: {
-                silent: true,
-                data: [
-                  faixa('Período chuvoso (dez–mai)', 'Jan', 'Mai', chuvoso),
-                  faixa('Período seco (jun–nov)', 'Jun', 'Nov', seco),
-                  faixa('Chuvoso', 'Dez', 'Dez', chuvoso),
-                ] as never,
-              },
-            }
-          : {}),
-        data: volume.map((v, i) => (v === null ? null : { value: v, itemStyle: { color: v > (operacional[i] ?? 101) ? '#f59e0b' : COR.azul, borderRadius: [4, 4, 0, 0] } })),
+        ...(periodos ? { markArea: { silent: true, data: faixas as never } } : {}),
+        data: volume.map((v, i) => (v === null ? null : { value: v, itemStyle: { color: v > (oper[i] ?? 101) ? '#f59e0b' : COR.azul, borderRadius: [4, 4, 0, 0] } })),
         itemStyle: { color: COR.azul },
         label: { show: true, position: 'top', fontSize: 13, fontWeight: 700, color: COR.profundo, formatter: (p) => fmt(p.value, 1) },
       },
-      { name: 'Operacional (acima: espera)', type: 'line', data: operacional, lineStyle: { color: COR.verde, width: 3 }, itemStyle: { color: COR.verde }, symbolSize: 7 },
-      { name: `Volume útil ${ano - 1}`, type: 'line', data: anterior, lineStyle: { color: COR.fraco, width: 2, type: 'dashed' }, itemStyle: { color: COR.fraco }, symbolSize: 5 },
+      { name: 'Operacional (acima: espera)', type: 'line', data: oper, lineStyle: { color: COR.verde, width: 3 }, itemStyle: { color: COR.verde }, symbolSize: 7 },
+      { name: `Volume útil ${umAnoAntes(ini)}–${umAnoAntes(fim)}`, type: 'line', data: anterior, lineStyle: { color: COR.fraco, width: 2, type: 'dashed' }, itemStyle: { color: COR.fraco }, symbolSize: 5 },
     ],
   };
-  return <Grafico opcao={opcao} altura={360} rotulo={`Volume útil do sistema e volume operacional, mês a mês, em ${ano}`} />;
+  return <Grafico opcao={opcao} altura={360} rotulo={`Volume útil do sistema e volume operacional, mês a mês, de ${rotulo(ini)} a ${rotulo(fim)}`} />;
 }

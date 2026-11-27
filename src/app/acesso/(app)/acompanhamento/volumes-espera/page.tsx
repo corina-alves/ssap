@@ -47,10 +47,9 @@ export default async function VolumesEspera({ searchParams }: { searchParams: Pr
   const sistema = SISTEMAS[um(sp.sistema)] ? um(sp.sistema) : 'cantareira';
   const def = SISTEMAS[sistema]!;
   const hoje = hojeSp();
-  const ano = Number(hoje.slice(0, 4));
   const mesAtual = Number(hoje.slice(5, 7));
   const atual = periodoDoMes(mesAtual);
-  const { linhas, totais, totaisMes, mensal, capacidadeHm3 } = await volumesEspera(sistema, hoje);
+  const { linhas, meses, totais, totaisMes, mensal, capacidadeHm3 } = await volumesEspera(sistema, hoje);
   const leitura = linhas.map((l) => l.dataAtual).filter(Boolean).sort().at(-1);
   const falhas = linhas.filter((l) => l.erro);
   const varia = linhas.some((l) => l.periodo.chuvoso?.min !== l.periodo.chuvoso?.max || l.periodo.seco?.min !== l.periodo.seco?.max);
@@ -123,23 +122,20 @@ export default async function VolumesEspera({ searchParams }: { searchParams: Pr
         </Mensagem>
       )}
 
+      {/* Cartões: volume útil total e volume de espera. Os do operacional estão ocultos; para voltar,
+          {cartao('Operacional', 'chuvoso' | 'seco', 'operacional')} ou {cartaoMes('Operacional', 'operacional')}. */}
       <div className={`acp-cartoes${def.periodos ? '' : ' acp-cartoes--mes'}`}>
         <div className="acp-cartao acp-cartao--sistema">
-          <span className="acp-cartao__rotulo">Volume útil do sistema</span>
+          <span className="acp-cartao__rotulo">Volume útil total</span>
           <strong>{num(capacidadeHm3)} hm³</strong>
         </div>
         {def.periodos ? (
           <>
-            {cartao('Espera', 'chuvoso', 'espera')}
-            {cartao('Operacional', 'chuvoso', 'operacional')}
-            {cartao('Espera', 'seco', 'espera')}
-            {cartao('Operacional', 'seco', 'operacional')}
+            {cartao('Volume de espera', 'chuvoso', 'espera')}
+            {cartao('Volume de espera', 'seco', 'espera')}
           </>
         ) : (
-          <>
-            {cartaoMes('Espera', 'espera')}
-            {cartaoMes('Operacional', 'operacional')}
-          </>
+          cartaoMes('Volume de espera', 'espera')
         )}
       </div>
 
@@ -150,25 +146,35 @@ export default async function VolumesEspera({ searchParams }: { searchParams: Pr
         <div className="table-responsive">
           <table className="table align-middle mb-0">
             <thead>
-              <tr>
-                <th>Reservatório</th>
-                <th className="text-end">Útil (hm³)</th>
+              <tr className="acp-titulos">
+                <th rowSpan={2}>Reservatório</th>
+                <th className="text-end">Volume total</th>
                 {def.periodos ? (
                   <>
-                    <th className="text-end">Espera dez–mai (%)</th>
-                    <th className="text-end">Oper. dez–mai (%)</th>
-                    <th className="text-end">Espera jun–nov (%)</th>
-                    <th className="text-end">Oper. jun–nov (%)</th>
-                    <th className="text-end">Oper. do mês (%)</th>
+                    <th className="text-end">Espera dez–mai</th>
+                    <th className="text-end">Oper. dez–mai</th>
+                    <th className="text-end">Espera jun–nov</th>
+                    <th className="text-end">Oper. jun–nov</th>
+                    <th className="text-end">Oper. do mês</th>
                   </>
                 ) : (
                   <>
-                    <th className="text-end">Espera{doMes} (%)</th>
-                    <th className="text-end">Operacional{doMes} (%)</th>
+                    <th className="text-end">Espera{doMes}</th>
+                    <th className="text-end">Operacional{doMes}</th>
                   </>
                 )}
-                <th className="text-end">Volume atual (%)</th>
-                <th>Situação no mês</th>
+                {/* Oculta: <th className="text-end">Volume atual</th> */}
+                <th rowSpan={2}>Situação no mês</th>
+              </tr>
+              {/* unidade de cada coluna (hm³, %, m³/s...) */}
+              <tr className="acp-unidades">
+                <th className="text-center">hm³</th>
+                {Array.from({ length: def.periodos ? 5 : 2 }, (_, i) => (
+                  <th key={i} className="text-center">
+                    %
+                  </th>
+                ))}
+                {/* Oculta: <th className="text-center">%</th> (volume atual) */}
               </tr>
             </thead>
             <tbody>
@@ -196,7 +202,8 @@ export default async function VolumesEspera({ searchParams }: { searchParams: Pr
                         <td className="text-end">{num(operMes)}</td>
                       </>
                     )}
-                    <td className="text-end fw-semibold">{num(l.atualPct)}</td>
+                    {/* Oculta (a situação no mês continua usando o volume atual):
+                    <td className="text-end fw-semibold">{num(l.atualPct)}</td> */}
                     <td>
                       <Situacao atual={l.atualPct} limite={l.limiteMes} />
                     </td>
@@ -208,8 +215,17 @@ export default async function VolumesEspera({ searchParams }: { searchParams: Pr
         </div>
         <p className="acp-nota">
           Operacional (%): planilha de volumes operacionais mensais. Espera (%) = 100 − operacional.
-          {def.periodos && varia && ' Faixas (mín.–máx.) quando o operacional muda de mês a mês no período.'} Útil (hm³) e volume atual: SSD SP Águas.
+          {def.periodos && varia && ' Faixas (mín.–máx.) quando o operacional muda de mês a mês no período.'} Volume total e volume atual (usado na
+          situação do mês): SSD SP Águas.
         </p>
+        <dl className="acp-legenda">
+          <dt>Volume útil total</dt>
+          <dd>Volume de água disponível para utilização no reservatório.</dd>
+          <dt>Volume de espera</dt>
+          <dd>Volume do reservatório mantido vazio para armazenar água durante períodos de cheias.</dd>
+          <dt>Volume operacional</dt>
+          <dd>Volume de água utilizado na operação do reservatório.</dd>
+        </dl>
       </div>
 
       {graficos.map((g) => (
@@ -223,9 +239,10 @@ export default async function VolumesEspera({ searchParams }: { searchParams: Pr
             )}
           </div>
           <p className="acp-nota mt-0 mb-2">
-            Barras: volume útil no último dia com leitura de cada mês (SSD), em laranja quando acima do operacional. Linhas: volume operacional da planilha e o volume do ano anterior.
+            Barras: volume útil nos últimos 12 meses, no último dia com leitura de cada mês (SSD), em laranja quando acima do operacional. Linhas: volume operacional da planilha e o
+            volume do mesmo mês um ano antes.
           </p>
-          <GraficoVolumesEspera ano={ano} volume={g.volume} anterior={g.anterior} operacional={g.operacional} periodos={def.periodos} />
+          <GraficoVolumesEspera meses={meses} volume={g.volume} anterior={g.anterior} operacional={g.operacional} periodos={def.periodos} />
         </div>
       ))}
     </>
